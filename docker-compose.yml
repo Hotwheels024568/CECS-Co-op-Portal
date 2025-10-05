@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: db                       # <-- This must match config.ini 'db'
+      POSTGRES_USER: CIS_425_Project        # <-- This must match config.ini 'Username'
+      POSTGRES_PASSWORD: CECS_Co-op_Portal  # <-- This must match config.ini 'Password'
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
