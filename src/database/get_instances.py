@@ -16,37 +16,50 @@ from src.database.schema import (
 from src.database.functions import get_first_element, get_row
 
 
+async def get_account_by_id(session: AsyncSession, id: int) -> Optional[Accounts]:
+    return await session.get(Accounts, id)
+
+
+async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Addresses]:
+    return await session.get(Addresses, id)
+
+
+async def get_company_by_id(session: AsyncSession, id: int) -> Optional[Companies]:
+    return await session.get(Companies, id)
+
+
 async def get_company_by_name(session: AsyncSession, name: str) -> Optional[Companies]:
     statement = select(Companies).where(Companies.name == name)
-    return get_first_element(session, statement)
+    return await get_first_element(session, statement)
+
+
+async def get_contact_by_id(session: AsyncSession, id: int) -> Optional[ContactInfo]:
+    return await session.get(ContactInfo, id)
 
 
 async def get_contact_by_email(
     session: AsyncSession, email: str
 ) -> Optional[ContactInfo]:
     statement = select(ContactInfo).where(ContactInfo.email == email)
-    return get_first_element(session, statement)
+    return await get_first_element(session, statement)
 
 
 async def get_employer_profile_by_id(
     session: AsyncSession, profile_id: int
 ) -> Optional[Employers]:
-    statement = select(Employers).where(Employers.id == profile_id)
-    return await get_first_element(session, statement)
+    return await session.get(Employers, profile_id)
 
 
 async def get_student_profile_by_id(
     session: AsyncSession, profile_id: int
 ) -> Optional[Students]:
-    statement = select(Students).where(Students.id == profile_id)
-    return await get_first_element(session, statement)
+    return await session.get(Students, profile_id)
 
 
 async def get_faculty_profile_by_id(
     session: AsyncSession, profile_id: int
 ) -> Optional[Faculty]:
-    statement = select(Faculty).where(Faculty.id == profile_id)
-    return await get_first_element(session, statement)
+    return await session.get(Faculty, profile_id)
 
 
 async def get_profile_by_account_id(
@@ -78,5 +91,4 @@ async def get_profile_by_account_id(
 async def get_internship_by_id(
     session: AsyncSession, id: int
 ) -> Optional[InternshipOpportunities]:
-    statement = select(InternshipOpportunities).where(InternshipOpportunities.id == id)
-    return await get_first_element(session, statement)
+    return await session.get(InternshipOpportunities, id)
