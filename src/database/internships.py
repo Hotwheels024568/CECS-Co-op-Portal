@@ -9,13 +9,13 @@ from src.database.get_instances import (
     get_student_profile_by_id,
 )
 from src.database.schema import (
-    Account,
-    Company,
-    Employer,
-    InternshipLocation,
-    InternshipOpportunity,
-    InternshipApplication,
-    InternshipSummary,
+    Accounts,
+    Companies,
+    Employers,
+    InternshipLocations,
+    InternshipOpportunities,
+    InternshipApplications,
+    InternshipSummaries,
 )
 
 
@@ -52,7 +52,7 @@ async def create_internship_from_account(
         (Tuple[bool, str]): (True, "Internship opportunity created successfully")
             or (False, "Error message")
     """
-    statement = select(Account.profile_id).where(Account.id == account_id)
+    statement = select(Accounts.profile_id).where(Accounts.id == account_id)
     employer_id = await get_first_element(session, statement)
     """
     # Get account info, confirm it's an employer and has profile_id
@@ -122,18 +122,18 @@ async def create_internship(
         if location_type == "Company":
             # Find the Company address_id for this employer
             statement = (
-                select(Company.address_id)
-                .join(Employer, Employer.company_id == Company.id)
-                .where(Employer.id == employer_id)
+                select(Companies.address_id)
+                .join(Employers, Employers.company_id == Companies.id)
+                .where(Employers.id == employer_id)
             )
             address_id = await get_first_element(session, statement)
 
-        location = InternshipLocation(type=location_type, address_id=address_id)
+        location = InternshipLocations(type=location_type, address_id=address_id)
         session.add(location)
         await session.flush()  # Populates location.id
 
         # 2. Create InternshipOpportunity
-        opportunity = InternshipOpportunity(
+        opportunity = InternshipOpportunities(
             employer_id=employer_id,
             title=title,
             description=description,
@@ -165,7 +165,7 @@ async def create_internship_application_from_account(
     """
     Docs
     """
-    statement = select(Account.profile_id).where(Account.id == account_id)
+    statement = select(Accounts.profile_id).where(Accounts.id == account_id)
     student_id = await get_first_element(session, statement)
     """
     # Get account info, confirm it's a student and has profile_id
@@ -221,7 +221,7 @@ async def create_internship_application(
         ):
             coop_credit_eligibility = True
 
-        application = InternshipApplication(
+        application = InternshipApplications(
             internship_id=internship_id,
             student_id=student_id,
             coop_credit_eligibility=coop_credit_eligibility,
@@ -258,7 +258,7 @@ async def create_internship_summary(
     """
     Docs
     """
-    summary = InternshipSummary(application_id=application_id, summary="")
+    summary = InternshipSummaries(application_id=application_id, summary="")
     session.add(summary)
     await session.commit()
     return True, "Internship summary created successfully."

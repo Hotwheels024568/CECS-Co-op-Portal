@@ -3,11 +3,11 @@ from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.schema import (
-    Account,
-    Address,
-    Company,
+    Accounts,
+    Addresses,
+    Companies,
     ContactInfo,
-    Employer,
-    Student,
+    Employers,
+    Students,
     Faculty,
 )

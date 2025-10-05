@@ -5,12 +5,12 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.functions import execute, get_first_element
 from src.database.schema import (
-    Account,
-    Address,
-    Company,
+    Accounts,
+    Addresses,
+    Companies,
     ContactInfo,
-    Employer,
-    Student,
+    Employers,
+    Students,
     Faculty,
 )
 
@@ -34,12 +34,12 @@ async def sign_up(
         Optional[int]: The newly created Account id, or None on failure (e.g., username taken).
     """
     statement = (
-        insert(Account)
+        insert(Accounts)
         .values(
             username=username, password=password, user_type=user_type, profile_id=None
         )
-        .on_conflict_do_nothing(index_elements=[Account.username])
-        .returning(Account.id)
+        .on_conflict_do_nothing(index_elements=[Accounts.username])
+        .returning(Accounts.id)
     )
     try:
         account_id = await get_first_element(session, statement)
@@ -108,7 +108,7 @@ async def create_employer_profile(
     """
     try:
         # 1. Create Address
-        address = Address(
+        address = Addresses(
             address_line1=address_line1,
             address_line2=address_line2,
             city=city,
@@ -120,7 +120,7 @@ async def create_employer_profile(
         await session.flush()  # Populates address.id
 
         # 2. Create Company (unique on name)
-        company = Company(
+        company = Companies(
             name=company_name, address_id=address.id, website_link=website_link
         )
         session.add(company)
@@ -134,13 +134,15 @@ async def create_employer_profile(
         await session.flush()  # Populates contact.id or raises
 
         # 4. Create Employer
-        employer = Employer(company_id=company.id, contact_id=contact.id)
+        employer = Employers(company_id=company.id, contact_id=contact.id)
         session.add(employer)
         await session.flush()  # Populates employer.id
 
         # 5. Link profile to account
         statement = (
-            update(Account).where(Account.id == account_id).values(profile_id=employer.id)
+            update(Accounts)
+            .where(Accounts.id == account_id)
+            .values(profile_id=employer.id)
         )
         await execute(session, statement)
 
@@ -222,7 +224,7 @@ async def create_student_profile(
         await session.flush()  # Populates contact.id or raises
 
         # 2. Create Student profile
-        student = Student(
+        student = Students(
             contact_id=contact.id,
             department=department,
             major=major,
@@ -237,7 +239,9 @@ async def create_student_profile(
 
         # 3. Link profile to account
         statement = (
-            update(Account).where(Account.id == account_id).values(profile_id=student.id)
+            update(Accounts)
+            .where(Accounts.id == account_id)
+            .values(profile_id=student.id)
         )
         await execute(session, statement)
 
@@ -318,7 +322,9 @@ async def create_faculty_profile(
 
         # 3. Link profile to account
         statement = (
-            update(Account).where(Account.id == account_id).values(profile_id=faculty.id)
+            update(Accounts)
+            .where(Accounts.id == account_id)
+            .values(profile_id=faculty.id)
         )
         await execute(session, statement)
 

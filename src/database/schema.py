@@ -14,7 +14,7 @@ from sqlalchemy.orm import relationship, declarative_base
 Base = declarative_base()
 
 
-class Account(Base):
+class Accounts(Base):
     __tablename__ = "accounts"
     id = Column(Integer, primary_key=True)
     username = Column(String(150), unique=True, nullable=False)
@@ -26,8 +26,8 @@ class Account(Base):
     profile_id = Column(Integer)  # Nullable
 
 
-class Address(Base):
-    __tablename__ = "address"
+class Addresses(Base):
+    __tablename__ = "addresses"
     id = Column(Integer, primary_key=True)
     address_line1 = Column(String(100), nullable=False)
     address_line2 = Column(String(100))  # Nullable
@@ -37,13 +37,13 @@ class Address(Base):
     country = Column(String(50), nullable=False)
 
 
-class Company(Base):
+class Companies(Base):
     __tablename__ = "companies"
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False, unique=True)
-    address_id = Column(Integer, ForeignKey("address.id"), nullable=False)
+    address_id = Column(Integer, ForeignKey("addresses.id"), nullable=False)
     website_link = Column(String(255))
-    address = relationship("Address")
+    addresses = relationship("Addresses")
 
 
 class ContactInfo(Base):
@@ -56,7 +56,7 @@ class ContactInfo(Base):
     phone = Column(String(30))  # Nullable
 
 
-class Employer(Base):
+class Employers(Base):
     __tablename__ = "employers"
     id = Column(Integer, primary_key=True)
     contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
@@ -65,7 +65,7 @@ class Employer(Base):
     contact = relationship("ContactInfo")
 
 
-class Student(Base):
+class Students(Base):
     __tablename__ = "students"
     id = Column(Integer, primary_key=True)
     contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
@@ -87,23 +87,23 @@ class Faculty(Base):
     contact = relationship("ContactInfo")
 
 
-class InternshipLocation(Base):
-    __tablename__ = "internship_location"
+class InternshipLocations(Base):
+    __tablename__ = "internship_locations"
     id = Column(Integer, primary_key=True)
     type = Column(
         Enum("Remote", "Company", "Other", name="location_type"), nullable=False
     )
-    address_id = Column(Integer, ForeignKey("address.id"))  # Nullable
-    address = relationship("Address")
+    address_id = Column(Integer, ForeignKey("addresses.id"))  # Nullable
+    addresses = relationship("Addresses")
 
 
-class InternshipOpportunity(Base):
+class InternshipOpportunities(Base):
     __tablename__ = "internship_opportunities"
     id = Column(Integer, primary_key=True)
     employer_id = Column(Integer, ForeignKey("employers.id"), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
-    location_id = Column(Integer, ForeignKey("internship_location.id"), nullable=False)
+    location_id = Column(Integer, ForeignKey("internship_locations.id"), nullable=False)
     duration_weeks = Column(Integer, nullable=False)
     weekly_hours = Column(Integer, nullable=False)
     total_work_hours = Column(Integer, nullable=False)  # Calculated!
@@ -127,10 +127,10 @@ class InternshipOpportunity(Base):
         default="Open",
     )
     employer = relationship("Employer")
-    location = relationship("InternshipLocation")
+    location = relationship("InternshipLocations")
 
 
-class InternshipApplication(Base):
+class InternshipApplications(Base):
     __tablename__ = "internship_applications"
     id = Column(Integer, primary_key=True)
     internship_id = Column(
@@ -146,7 +146,7 @@ class InternshipApplication(Base):
     )
 
 
-class InternshipSummary(Base):
+class InternshipSummaries(Base):
     __tablename__ = "internship_summaries"
     id = Column(Integer, primary_key=True)
     application_id = Column(
