@@ -33,8 +33,7 @@ async def exists(
     """
     parameters = parameters or {}
     try:
-        result = await session.execute(statement, parameters)
-        return result.fetchone() is not None
+        return (await session.execute(statement, parameters)).fetchone() is not None
 
     except Exception as e:
         print(f"Error in DB 'exists' function:\nStatement: {statement}\nError: {e}")
@@ -57,13 +56,10 @@ async def get_first_element(
     """
     parameters = parameters or {}
     try:
-        result = await session.execute(statement, parameters)
-        return result.scalar_one_or_none()
-
+        return (await session.execute(statement, parameters)).scalar_one_or_none()
     except Exception as e:
         print(
-            f"Error in DB 'get_first_element' function:\n"
-            f"Statement: {statement}\nError: {e}"
+            f"Error in DB 'get_first_element' function:\nStatement: {statement}\nError: {e}"
         )
     return None
 
@@ -84,9 +80,7 @@ async def get_row(
     """
     parameters = parameters or {}
     try:
-        result = await session.execute(statement, parameters)
-        return result.first()
-
+        return (await session.execute(statement, parameters)).first()
     except Exception as e:
         print(f"Error in DB 'get_row' function:\nStatement: {statement}\nError: {e}")
     return None
@@ -108,9 +102,7 @@ async def get_all_rows(
     """
     parameters = parameters or {}
     try:
-        result = await session.execute(statement, parameters)
-        return result.all()
-
+        return (await session.execute(statement, parameters)).all()
     except Exception as e:
         print(f"Error in DB 'get_all_rows' function:\nStatement: {statement}\nError: {e}")
     return []
