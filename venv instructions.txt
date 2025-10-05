@@ -9,7 +9,7 @@ put the following at the end of the bat file (before :END):
 	rem Enforces python to see the src folder and run code as a module
 	set PYTHONPATH=%VIRTUAL_ENV%\..\src;%PYTHONPATH%
 
-To run open the "Researcher Collab. Patterns Project" folder cmd
+To run: Open a terminal in the project's root folder
 	To start the venv in cmd
 		venv\Scripts\activate.bat
 	
@@ -17,9 +17,8 @@ To run open the "Researcher Collab. Patterns Project" folder cmd
 		venv\Scripts\Activate.ps1
 	
 	To run
-		python -m rcp.(folder).(file)
-		python -m rcp.pdfs_and_csv.mcommunity_api
-		fastapi run src/rcp/backend/main.py
+		python -m src.(folder).(file)
+		uvicorn src.backend.main:app --reload --port 8000 --no-use-colors
 
 To end
 	deactivate
