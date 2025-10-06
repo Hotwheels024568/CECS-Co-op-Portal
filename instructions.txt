@@ -22,3 +22,15 @@ To run: Open a terminal in the project's root folder
 
 To end
 	deactivate
+
+To install & share
+	pip install (package)
+	pip freeze > requirements.txt
+
+React project
+	Run the following a the directory of choice
+		npx create-next-app@latest
+	
+	npm install
+	npm run dev
+	npm run build
