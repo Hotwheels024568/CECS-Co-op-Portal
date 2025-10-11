@@ -1,32 +1,38 @@
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     Enum,
-    Float,
     ForeignKey,
     Integer,
+    Numeric,
+    PrimaryKeyConstraint,
     String,
     Text,
-    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
 
 
-class Accounts(Base):
+class Account(Base):
     __tablename__ = "accounts"
     id = Column(Integer, primary_key=True)
     username = Column(String(150), unique=True, nullable=False)
+    # Require POST HTTPS request to server
+    # Hash, Salt & (Optional before hashing) Pepper on server and store
+    #   If a username does not exist, perform a fake hash computation with a dummy password hash so the time spent matches an existing user’s check.
+    #   Hash password comparisons should always use constant-time algorithms.
+    #       Compare hashes using hmac.compare_digest
     password = Column(String(255), nullable=False)
     user_type = Column(
         Enum("Employer", "Student", "Faculty", name="user_type"), nullable=False
     )
-    # Must be enforced by logic to point to correct profile table!
-    profile_id = Column(Integer)  # Nullable
+
+    __mapper_args__ = {"polymorphic_identity": "account", "polymorphic_on": user_type}
 
 
-class Addresses(Base):
+class Address(Base):
     __tablename__ = "addresses"
     id = Column(Integer, primary_key=True)
     address_line1 = Column(String(100), nullable=False)
@@ -37,13 +43,17 @@ class Addresses(Base):
     country = Column(String(50), nullable=False)
 
 
-class Companies(Base):
+class Company(Base):
     __tablename__ = "companies"
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False, unique=True)
-    address_id = Column(Integer, ForeignKey("addresses.id"), nullable=False)
-    website_link = Column(String(255))
-    addresses = relationship("Addresses")
+    name = Column(String(100), unique=True, nullable=False)
+    address_id = Column(Integer, ForeignKey("addresses.id"), unique=True, nullable=False)
+    website_link = Column(String(255))  # Nullable
+
+    address = relationship("Address", uselist=False)  # 1-to-1 with Address
+
+    employees = relationship("EmployerAccount", back_populates="company")
+    internships = relationship("Internship", back_populates="company")
 
 
 class ContactInfo(Base):
@@ -52,65 +62,98 @@ class ContactInfo(Base):
     first = Column(String(30), nullable=False)
     middle = Column(String(30))  # Nullable
     last = Column(String(30), nullable=False)
-    email = Column(String(150), nullable=False, unique=True)
+    email = Column(String(150), unique=True, nullable=False)
     phone = Column(String(30))  # Nullable
 
 
-class Employers(Base):
-    __tablename__ = "employers"
-    id = Column(Integer, primary_key=True)
-    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    company = relationship("Company")
-    contact = relationship("ContactInfo")
-
-
-class Students(Base):
-    __tablename__ = "students"
-    id = Column(Integer, primary_key=True)
-    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
-    department = Column(String(100), nullable=False)
-    major = Column(String(100), nullable=False)
-    credit_hours = Column(Integer, nullable=False)
-    gpa = Column(Float(2), nullable=False)  # precision hints for floating point types
-    start_semester_year = Column(String(20), nullable=False)
-    transfer = Column(Boolean, nullable=False)
-    resume_link = Column(String(255))
-    contact = relationship("ContactInfo")
-
-
-class Faculty(Base):
-    __tablename__ = "faculty"
-    id = Column(Integer, primary_key=True)
-    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
-    department = Column(String(100), nullable=False, unique=True)
-    contact = relationship("ContactInfo")
-
-
-class InternshipLocations(Base):
-    __tablename__ = "internship_locations"
-    id = Column(Integer, primary_key=True)
-    type = Column(
-        Enum("Remote", "Company", "Other", name="location_type"), nullable=False
+class EmployerAccount(Account):
+    __tablename__ = "employer_accounts"
+    id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
     )
-    address_id = Column(Integer, ForeignKey("addresses.id"))  # Nullable
-    addresses = relationship("Addresses")
+    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
+
+    company = relationship("Company", back_populates="employees")
+    contact = relationship("ContactInfo", uselist=False)  # 1-to-1 with ContactInfo
+
+    __mapper_args__ = {"polymorphic_identity": "Employer"}
 
 
-class InternshipOpportunities(Base):
-    __tablename__ = "internship_opportunities"
+class Department(Base):
+    __tablename__ = "departments"
     id = Column(Integer, primary_key=True)
-    employer_id = Column(Integer, ForeignKey("employers.id"), nullable=False)
+    name = Column(String(100), unique=True, nullable=False)
+
+    students = relationship("StudentAccount", back_populates="department")
+
+
+class Major(Base):
+    __tablename__ = "majors"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), unique=True, nullable=False)
+
+
+class StudentAccount(Account):
+    __tablename__ = "student_accounts"
+    id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
+    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
+    major_id = Column(Integer, ForeignKey("majors.id"), nullable=False)
+
+    credit_hours = Column(Integer, nullable=False)
+    # 4.0 (2, 1) up to 4.0000 (5, 4) overkill but don't want to worry about it
+    gpa = Column(Numeric(5, 4), nullable=False)
+    start_semester = Column(
+        Enum("Winter", "Summer", "Fall", name="start_semester_enum"), nullable=False
+    )
+    start_year = Column(Integer, nullable=False)
+    transfer = Column(Boolean, nullable=False)
+    resume_link = Column(String(255))  # Nullable
+
+    contact = relationship("ContactInfo", uselist=False)  # 1-to-1 with ContactInfo
+    department = relationship("Department", back_populates="students")
+    major = relationship("Major")
+
+    applications = relationship("InternshipApplication", back_populates="student")
+
+    __table_args__ = (
+        CheckConstraint("credit_hours >= 0", name="check_credit_hours_non_negative"),
+        CheckConstraint("gpa >= 0", name="check_gpa_non_negative"),
+        CheckConstraint("start_year >= 0", name="check_start_year_non_negative"),
+    )
+
+    __mapper_args__ = {"polymorphic_identity": "Student"}
+
+
+class FacultyAccount(Account):
+    __tablename__ = "faculty_accounts"
+    id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
+    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
+
+    contact = relationship("ContactInfo", uselist=False)  # 1-to-1 with ContactInfo
+    department = relationship("Department", uselist=False)  # 1-to-1 with Department
+
+    __mapper_args__ = {"polymorphic_identity": "Faculty"}
+
+
+class Internship(Base):
+    __tablename__ = "internships"
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
+    )
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
-    location_id = Column(Integer, ForeignKey("internship_locations.id"), nullable=False)
+    location_type = Column(
+        Enum("Remote", "Company", "Other", name="location_type"), nullable=False
+    )
+    # Nullable (Remote: NULL, Company: companies.address_id, Other: Unique address.id)
+    address_id = Column(Integer, ForeignKey("addresses.id"))
     duration_weeks = Column(Integer, nullable=False)
     weekly_hours = Column(Integer, nullable=False)
     total_work_hours = Column(Integer, nullable=False)  # Calculated!
-    # For full normalization: use association table
-    majors_of_interest = Column(String(255))  # Nullable
-    required_skills = Column(String(255))  # Nullable
-    preferred_skills = Column(String(255))  # Nullable
     salary_info = Column(String(255))  # Nullable
     status = Column(
         Enum(
@@ -125,53 +168,126 @@ class InternshipOpportunities(Base):
         ),
         nullable=False,
         default="Open",
+        server_default="Open",
     )
-    employer = relationship("Employer")
-    location = relationship("InternshipLocations")
 
+    company = relationship("Company", back_populates="internships")
+    address = relationship("Address")
+    majors = relationship("InternshipMajor", back_populates="internship")
 
-class InternshipApplications(Base):
-    __tablename__ = "internship_applications"
-    id = Column(Integer, primary_key=True)
-    internship_id = Column(
-        Integer, ForeignKey("internship_opportunities.id"), nullable=False
-    )
-    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    coop_credit_eligibility = Column(Boolean, nullable=False)
-    internship = relationship("InternshipOpportunity")
-    student = relationship("Student")
+    required_skills = relationship("InternshipReqSkill", back_populates="internship")
+    preferred_skills = relationship("InternshipPrefSkill", back_populates="internship")
+    applications = relationship("InternshipApplication", back_populates="internship")
 
     __table_args__ = (
-        UniqueConstraint("internship_id", "student_id", name="_internship_student_uc"),
+        CheckConstraint("duration_weeks >= 0", name="check_duration_weeks_non_negative"),
+        CheckConstraint("weekly_hours >= 0", name="check_weekly_hours_non_negative"),
+        CheckConstraint(
+            "total_work_hours >= 0", name="check_total_work_hours_non_negative"
+        ),
     )
 
 
-class InternshipSummaries(Base):
-    __tablename__ = "internship_summaries"
-    id = Column(Integer, primary_key=True)
-    application_id = Column(
-        Integer, ForeignKey("internship_applications.id"), unique=True, nullable=False
-    )
-    summary = Column(Text, nullable=False)
-    employer_approval = Column(
-        Enum("Approved", "Not Approved", name="employer_approval_enum"),
-        default="Not Approved",
+class InternshipMajor(Base):
+    __tablename__ = "internship_majors"
+    internship_id = Column(
+        Integer,
+        ForeignKey("internships.id", ondelete="CASCADE"),
         nullable=False,
     )
-    letter_grade = Column(String(2))  # E.g., A, B, C, etc.  # Nullable
-    application = relationship("InternshipApplication")
+    major_id = Column(
+        Integer, ForeignKey("majors.id", ondelete="CASCADE"), nullable=False
+    )
 
+    internship = relationship("Internship", back_populates="majors")
+    major = relationship("Major")
 
-"""
-# Optionally, you can add Major, Skill, and junction tables for full normalization.
-class Major(Base):
-    __tablename__ = "majors"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), unique=True, nullable=False)
+    __table_args__ = (
+        PrimaryKeyConstraint("internship_id", "major_id", name="_internship_major_pk"),
+    )
 
 
 class Skill(Base):
     __tablename__ = "skills"
     id = Column(Integer, primary_key=True)
     name = Column(String(100), unique=True, nullable=False)
-"""
+
+
+class InternshipReqSkill(Base):
+    __tablename__ = "internship_required_skills"
+    internship_id = Column(
+        Integer,
+        ForeignKey("internships.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    skill_id = Column(
+        Integer, ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
+    )
+
+    internship = relationship("Internship", back_populates="required_skills")
+    skill = relationship("Skill")
+
+    __table_args__ = PrimaryKeyConstraint(
+        "internship_id", "skill_id", name="_internship_required_skill_pk"
+    )
+
+
+class InternshipPrefSkill(Base):
+    __tablename__ = "internship_preferred_skills"
+    internship_id = Column(
+        Integer,
+        ForeignKey("internships.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    skill_id = Column(
+        Integer, ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
+    )
+
+    internship = relationship("Internship", back_populates="preferred_skills")
+    skill = relationship("Skill")
+
+    __table_args__ = PrimaryKeyConstraint(
+        "internship_id", "skill_id", name="_internship_preferred_skill_pk"
+    )
+
+
+class InternshipApplication(Base):
+    __tablename__ = "internship_applications"
+    internship_id = Column(
+        Integer,
+        ForeignKey("internships.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    student_id = Column(
+        Integer, ForeignKey("student_accounts.id", ondelete="CASCADE"), nullable=False
+    )
+    coop_credit_eligibility = Column(Boolean, nullable=False)
+
+    internship = relationship("Internship", back_populates="applications")
+    student = relationship("StudentAccount", back_populates="applications")
+    summary = relationship(
+        "InternshipSummary", back_populates="application", uselist=False
+    )
+
+    __table_args__ = PrimaryKeyConstraint(
+        "internship_id", "student_id", name="_internship_student_pk"
+    )
+
+
+class InternshipSummary(Base):
+    __tablename__ = "internship_summaries"
+    application_id = Column(
+        Integer,
+        ForeignKey("internship_applications.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        primary_key=True,
+    )
+    summary = Column(Text, nullable=False)
+    employer_approval = Column(Boolean, default=False, server_default="0", nullable=False)
+    letter_grade = Column(String(2))  # E.g., A, B, C, etc.  # Nullable
+
+    application = relationship(
+        "InternshipApplication", back_populates="summary", uselist=False
+    )
+    # 1-to-1 with InternshipApplication
