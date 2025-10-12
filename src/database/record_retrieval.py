@@ -24,6 +24,16 @@ from src.database.schema import (
 from src.database.functions import get_all_rows, get_first_element
 
 
+"""  Result helpers
+Method                  Complexity          Syntax                              Example
+.filter_by()            Simple checks       Keyword Args                        .filter_by(name='Alice', age=30)
+.where & .filter()      Complex Checks      Column expressions & operators      .where(and_(User.name == 'Alice', User.age > 25))
+    Supports operators ((>, <, ==, >=, <=, !=) and expressions (and_, or_, in_, like_, is_, etc.)
+        Operators:      https://docs.sqlalchemy.org/en/20/core/operators.html
+        Expressions:    https://docs.sqlalchemy.org/en/20/core/sqlelement.html
+"""
+
+
 async def get_account(session: AsyncSession, id: int) -> Optional[Account]:
     return await session.get(Account, id)
 
@@ -31,9 +41,7 @@ async def get_account(session: AsyncSession, id: int) -> Optional[Account]:
 async def get_account(
     session: AsyncSession, username: str, password: str
 ) -> Optional[Account]:
-    statement = select(Account).where(
-        Account.username == username, Account.password == password
-    )
+    statement = select(Account).filter_by(username=username, password=password)
     return await get_first_element(session, statement)
 
 
@@ -50,7 +58,7 @@ async def get_company(session: AsyncSession, id: int) -> Optional[Company]:
 
 
 async def get_company_by_name(session: AsyncSession, name: str) -> Optional[Company]:
-    statement = select(Company).where(Company.name == name)
+    statement = select(Company).filter_by(name=name)
     return await get_first_element(session, statement)
 
 
@@ -61,7 +69,7 @@ async def get_contact(session: AsyncSession, id: int) -> Optional[ContactInfo]:
 async def get_contact_by_email(
     session: AsyncSession, email: str
 ) -> Optional[ContactInfo]:
-    statement = select(ContactInfo).where(ContactInfo.email == email)
+    statement = select(ContactInfo).filter_by(email=email)
     return await get_first_element(session, statement)
 
 
@@ -69,13 +77,23 @@ async def get_employer(session: AsyncSession, id: int) -> Optional[EmployerAccou
     return await session.get(EmployerAccount, id)
 
 
-async def get_department(session: AsyncSession, name: str) -> Optional[Department]:
-    statement = select(Department).where(Department.name == name)
+async def get_department(session: AsyncSession, id: int) -> Optional[Department]:
+    return await session.get(Department, id)
+
+
+async def get_department_by_name(
+    session: AsyncSession, name: str
+) -> Optional[Department]:
+    statement = select(Department).filter_by(name=name)
     return await get_first_element(session, statement)
 
 
-async def get_major(session: AsyncSession, name: str) -> Optional[Major]:
-    statement = select(Major).where(Major.name == name)
+async def get_major(session: AsyncSession, id: int) -> Optional[Major]:
+    return await session.get(Major, id)
+
+
+async def get_major_by_name(session: AsyncSession, name: str) -> Optional[Major]:
+    statement = select(Major).filter_by(name=name)
     return await get_first_element(session, statement)
 
 
@@ -87,7 +105,7 @@ async def get_student(session: AsyncSession, id: int) -> Optional[StudentAccount
 async def get_student_by_dept(
     session: AsyncSession, department: str
 ) -> Optional[List[StudentAccount]]:
-    statement = select(StudentAccount).where(StudentAccount.department == department)
+    statement = select(StudentAccount).filter_by(department=department)
     return await get_all_rows(session, statement)
 
 
@@ -98,7 +116,7 @@ async def get_faculty(session: AsyncSession, id: int) -> Optional[FacultyAccount
 async def get_faculty_by_dept(
     session: AsyncSession, department: str
 ) -> Optional[FacultyAccount]:
-    statement = select(FacultyAccount).where(FacultyAccount.department == department)
+    statement = select(FacultyAccount).filter_by(department=department)
     return await get_first_element(session, statement)
 
 
@@ -107,30 +125,26 @@ async def get_internship(session: AsyncSession, id: int) -> Optional[Internship]
 
 
 async def get_internship_majors(session: AsyncSession, id: int) -> Optional[List[str]]:
-    statement = select(InternshipMajor.major).where(InternshipMajor.internship_id == id)
+    statement = select(InternshipMajor.major).filter_by(internship_id=id)
     return await get_all_rows(session, statement)
 
 
 async def get_internship_required_skills(
     session: AsyncSession, id: int
 ) -> Optional[List[str]]:
-    statement = select(InternshipReqSkill.skill).where(
-        InternshipReqSkill.internship_id == id
-    )
+    statement = select(InternshipReqSkill.skill).filter_by(internship_id=id)
     return await get_all_rows(session, statement)
 
 
 async def get_internship_preferred_skills(
     session: AsyncSession, id: int
 ) -> Optional[List[str]]:
-    statement = select(InternshipPrefSkill.skill).where(
-        InternshipPrefSkill.internship_id == id
-    )
+    statement = select(InternshipPrefSkill.skill).filter_by(internship_id=id)
     return await get_all_rows(session, statement)
 
 
 async def get_skill(session: AsyncSession, name: str) -> Optional[Skill]:
-    statement = select(Skill).where(Skill.name == name)
+    statement = select(Skill).filter_by(name=name)
     return await get_first_element(session, statement)
 
 
