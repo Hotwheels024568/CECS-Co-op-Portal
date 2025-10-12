@@ -671,7 +671,7 @@ async def add_summary(
     session: AsyncSession,
     internship_id: int,
     student_id: int,
-    summary: str,
+    summary: str = "",
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
     commit: bool = False,
