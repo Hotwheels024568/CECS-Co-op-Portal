@@ -29,6 +29,13 @@ class Account(Base):
         Enum("Employer", "Student", "Faculty", name="user_type"), nullable=False
     )
 
+    contact = relationship(
+        "ContactInfo",
+        back_populates="account",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
     __mapper_args__ = {"polymorphic_identity": "account", "polymorphic_on": user_type}
 
 
@@ -58,12 +65,14 @@ class Company(Base):
 
 class ContactInfo(Base):
     __tablename__ = "contact_info"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
     first = Column(String(30), nullable=False)
     middle = Column(String(30))  # Nullable
     last = Column(String(30), nullable=False)
     email = Column(String(150), unique=True, nullable=False)
     phone = Column(String(30))  # Nullable
+
+    account = relationship("Account", back_populates="contact", uselist=False)
 
 
 class EmployerAccount(Account):
@@ -72,10 +81,8 @@ class EmployerAccount(Account):
     company_id = Column(
         Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
     )
-    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
 
     company = relationship("Company", back_populates="employees")
-    contact = relationship("ContactInfo", uselist=False)  # 1-to-1 with ContactInfo
 
     __mapper_args__ = {"polymorphic_identity": "Employer"}
 
@@ -97,7 +104,6 @@ class Major(Base):
 class StudentAccount(Account):
     __tablename__ = "student_accounts"
     id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
-    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
     major_id = Column(Integer, ForeignKey("majors.id"), nullable=False)
 
@@ -111,7 +117,6 @@ class StudentAccount(Account):
     transfer = Column(Boolean, nullable=False)
     resume_link = Column(String(255))  # Nullable
 
-    contact = relationship("ContactInfo", uselist=False)  # 1-to-1 with ContactInfo
     department = relationship("Department", back_populates="students")
     major = relationship("Major")
 
@@ -129,10 +134,9 @@ class StudentAccount(Account):
 class FacultyAccount(Account):
     __tablename__ = "faculty_accounts"
     id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
-    contact_id = Column(Integer, ForeignKey("contact_info.id"), nullable=False)
+    # Could be Unique according to assignment directions
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
 
-    contact = relationship("ContactInfo", uselist=False)  # 1-to-1 with ContactInfo
     department = relationship("Department", uselist=False)  # 1-to-1 with Department
 
     __mapper_args__ = {"polymorphic_identity": "Faculty"}
@@ -216,9 +220,7 @@ class Skill(Base):
 class InternshipReqSkill(Base):
     __tablename__ = "internship_required_skills"
     internship_id = Column(
-        Integer,
-        ForeignKey("internships.id", ondelete="CASCADE"),
-        nullable=False,
+        Integer, ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
     )
     skill_id = Column(
         Integer, ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
@@ -235,9 +237,7 @@ class InternshipReqSkill(Base):
 class InternshipPrefSkill(Base):
     __tablename__ = "internship_preferred_skills"
     internship_id = Column(
-        Integer,
-        ForeignKey("internships.id", ondelete="CASCADE"),
-        nullable=False,
+        Integer, ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
     )
     skill_id = Column(
         Integer, ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
@@ -254,9 +254,7 @@ class InternshipPrefSkill(Base):
 class InternshipApplication(Base):
     __tablename__ = "internship_applications"
     internship_id = Column(
-        Integer,
-        ForeignKey("internships.id", ondelete="CASCADE"),
-        nullable=False,
+        Integer, ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
     )
     student_id = Column(
         Integer, ForeignKey("student_accounts.id", ondelete="CASCADE"), nullable=False

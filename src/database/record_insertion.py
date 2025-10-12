@@ -224,7 +224,6 @@ async def add_employer(
     session: AsyncSession,
     account_id: int,
     company_id: int,
-    contact_id: int,
     commit: bool = False,
 ) -> Optional[EmployerAccount]:
     """
@@ -234,14 +233,13 @@ async def add_employer(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         account_id (int): The ID of the associated Account.
         company_id (int): The ID of the associated Company.
-        contact_id (int): The ID of the associated ContactInfo.
         commit (bool, optional): If True, commits the transaction after adding.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
         Optional[EmployerAccount]: The newly created EmployerAccount object if successful, or None if insertion fails.
     """
-    entry = EmployerAccount(id=account_id, company_id=company_id, contact_id=contact_id)
+    entry = EmployerAccount(id=account_id, company_id=company_id)
     session.add(entry)
     try:
         await session.flush()
@@ -330,7 +328,6 @@ async def add_major(
 async def add_student(
     session: AsyncSession,
     account_id: int,
-    contact_id: int,
     department_id: int,
     major_id: int,
     credit_hours: int,
@@ -347,7 +344,6 @@ async def add_student(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         account_id (int): The ID of the associated Account.
-        contact_id (int): The ID of the associated ContactInfo.
         department_id (int): The ID of the Department the student belongs to.
         major_id (int): The ID of the Major the student is pursuing.
         credit_hours (int): The number of credit hours completed by the student.
@@ -364,7 +360,6 @@ async def add_student(
     """
     entry = StudentAccount(
         id=account_id,
-        contact_id=contact_id,
         department_id=department_id,
         major_id=major_id,
         credit_hours=credit_hours,
@@ -395,7 +390,6 @@ async def add_student(
 async def add_faculty(
     session: AsyncSession,
     account_id: int,
-    contact_id: int,
     department_id: int,
     commit: bool = False,
 ) -> Optional[FacultyAccount]:
@@ -405,7 +399,6 @@ async def add_faculty(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         account_id (int): The ID of the associated Account.
-        contact_id (int): The ID of the associated ContactInfo.
         department_id (int): The ID of the Department the faculty member belongs to.
         commit (bool, optional): If True, commits the transaction after adding.
             If False, commit must be handled externally. Defaults to False.
@@ -413,9 +406,7 @@ async def add_faculty(
     Returns:
         Optional[FacultyAccount]: The newly created FacultyAccount object if successful, or None if insertion fails.
     """
-    entry = FacultyAccount(
-        id=account_id, contact_id=contact_id, department_id=department_id
-    )
+    entry = FacultyAccount(id=account_id, department_id=department_id)
     session.add(entry)
     try:
         await session.flush()
