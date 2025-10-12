@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.schema import StudentAccount, FacultyAccount
-from src.database.manager import get_constraint_name_from_integrity_error
+from src.database.manage import get_constraint_name_from_integrity_error
 from src.database.record_insertion import add_contact, add_faculty, add_student
 from src.database.record_get_or_create import (
     get_or_create_department,

@@ -239,8 +239,10 @@ class InternshipReqSkill(Base):
     internship = relationship("Internship", back_populates="required_skills")
     skill = relationship("Skill")
 
-    __table_args__ = PrimaryKeyConstraint(
-        "internship_id", "skill_id", name="_internship_required_skill_pk"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "internship_id", "skill_id", name="_internship_required_skill_pk"
+        ),
     )
 
 
@@ -256,8 +258,10 @@ class InternshipPrefSkill(Base):
     internship = relationship("Internship", back_populates="preferred_skills")
     skill = relationship("Skill")
 
-    __table_args__ = PrimaryKeyConstraint(
-        "internship_id", "skill_id", name="_internship_preferred_skill_pk"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "internship_id", "skill_id", name="_internship_preferred_skill_pk"
+        ),
     )
 
 
@@ -277,8 +281,10 @@ class InternshipApplication(Base):
         "InternshipSummary", back_populates="application", uselist=False
     )
 
-    __table_args__ = PrimaryKeyConstraint(
-        "internship_id", "student_id", name="_internship_student_pk"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "internship_id", "student_id", name="_internship_student_pk"
+        ),
     )
 
 

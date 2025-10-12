@@ -151,17 +151,22 @@ async def count(session: AsyncSession, model) -> int:
 
 async def main() -> None:
     from src.database.schema import (
-        Accounts,
-        Addresses,
-        Companies,
+        Account,
+        Address,
+        Company,
         ContactInfo,
-        Employers,
-        Students,
-        Faculty,
-        InternshipLocations,
-        InternshipOpportunities,
-        InternshipApplications,
-        InternshipSummaries,
+        EmployerAccount,
+        Department,
+        Major,
+        StudentAccount,
+        FacultyAccount,
+        Internship,
+        InternshipMajor,
+        Skill,
+        InternshipReqSkill,
+        InternshipPrefSkill,
+        InternshipApplication,
+        InternshipSummary,
     )
 
     manager = await AsyncDBManager.create()
@@ -169,17 +174,22 @@ async def main() -> None:
         print(
             f"""
             Counts:
-            \tAccounts:                {await count(session, Accounts)}
-            \tAddresses:               {await count(session, Addresses)}
-            \tCompanies:               {await count(session, Companies)}
-            \tContactInfo:             {await count(session, ContactInfo)}
-            \tEmployers:               {await count(session, Employers)}
-            \tStudents:                {await count(session, Students)}
-            \tFaculty:                 {await count(session, Faculty)}
-            \tInternshipLocations:     {await count(session, InternshipLocations)}
-            \tInternshipOpportunities: {await count(session, InternshipOpportunities)}
-            \tInternshipApplications:  {await count(session, InternshipApplications)}
-            \tInternshipSummaries:     {await count(session, InternshipSummaries)}
+            \tAccount                  {await count(session,Account)}
+            \tAddress                  {await count(session,Address)}
+            \tCompany                  {await count(session,Company)}
+            \tContactInfo              {await count(session,ContactInfo)}
+            \tEmployerAccount          {await count(session,EmployerAccount)}
+            \tDepartment               {await count(session,Department)}
+            \tMajor                    {await count(session,Major)}
+            \tStudentAccount           {await count(session,StudentAccount)}
+            \tFacultyAccount           {await count(session,FacultyAccount)}
+            \tInternship               {await count(session,Internship)}
+            \tInternshipMajor          {await count(session,InternshipMajor)}
+            \tSkill                    {await count(session,Skill)}
+            \tInternshipReqSkill       {await count(session,InternshipReqSkill)}
+            \tInternshipPrefSkill      {await count(session,InternshipPrefSkill)}
+            \tInternshipApplication    {await count(session,InternshipApplication)}
+            \tInternshipSummary        {await count(session,InternshipSummary)}
             """.strip()
         )
 

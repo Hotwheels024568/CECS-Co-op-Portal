@@ -18,6 +18,7 @@ To run: Open a terminal in the project's root folder
 	
 	To run
 		python -m src.(folder).(file)
+		python -m src.database.manage
 		uvicorn src.backend.main:app --reload --port 8000 --no-use-colors
 
 To end
