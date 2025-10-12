@@ -31,11 +31,14 @@ async def get_account(session: AsyncSession, id: int) -> Optional[Account]:
 async def get_account(
     session: AsyncSession, username: str, password: str
 ) -> Optional[Account]:
-
     statement = select(Account).where(
         Account.username == username, Account.password == password
     )
     return await get_first_element(session, statement)
+
+
+async def login(session: AsyncSession, username: str, password: str) -> Optional[Account]:
+    return await get_account(session, username, password)
 
 
 async def get_address(session: AsyncSession, id: int) -> Optional[Address]:

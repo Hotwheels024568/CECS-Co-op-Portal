@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from sqlalchemy import Executable, Row, Select, Sequence
 from sqlalchemy.ext.asyncio.session import AsyncSession
 

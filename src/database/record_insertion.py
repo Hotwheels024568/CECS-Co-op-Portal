@@ -62,25 +62,28 @@ async def add_account(
         return None
 
 
-# async def add_address(
-#     session: AsyncSession,
-#     address_line1: str,
-#     city: str,
-#     state_province: str,
-#     zip_postal: str,
-#     country: str,
-#     commit: bool = False,
-# ) -> Optional[Address]:
-#     add_address(
-#         session,
-#         address_line1,
-#         None,
-#         city,
-#         state_province,
-#         zip_postal,
-#         country,
-#         commit,
-#     )
+async def sign_up(
+    session: AsyncSession,
+    username: str,
+    password: str,
+    user_type: str,
+    commit: bool = False,
+) -> Optional[Account]:
+    """
+    Adds a new Account record to the database.
+
+    Args:
+        session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        username (str): Desired account username (must be unique).
+        password (str): Pre-hashed password (do not pass plaintext).
+        user_type (str): The type of account, one of: 'Employer', 'Student', or 'Faculty'.
+        commit (bool, optional): If True, commits the transaction after adding.
+            If False, commit must be handled externally. Defaults to False.
+
+    Returns:
+        Optional[Account]: The newly created Account object if successful, or None if insertion fails.
+    """
+    return await add_account(session, username, password, user_type, commit)
 
 
 async def add_address(
@@ -152,11 +155,7 @@ async def add_company(
     Returns:
         Optional[Company]: The newly created Company object if successful, or None if insertion fails.
     """
-    entry = Company(
-        name=name,
-        address_id=address_id,
-        website_link=website_link,
-    )
+    entry = Company(name=name, address_id=address_id, website_link=website_link)
     session.add(entry)
     try:
         await session.flush()
@@ -201,11 +200,7 @@ async def add_contact(
         Optional[ContactInfo]: The newly created ContactInfo object if successful, or None if insertion fails.
     """
     entry = ContactInfo(
-        first=first_name,
-        middle=middle_name,
-        last=last_name,
-        email=email,
-        phone=phone,
+        first=first_name, middle=middle_name, last=last_name, email=email, phone=phone
     )
     session.add(entry)
     try:
@@ -227,6 +222,7 @@ async def add_contact(
 
 async def add_employer(
     session: AsyncSession,
+    account_id: int,
     company_id: int,
     contact_id: int,
     commit: bool = False,
@@ -236,6 +232,7 @@ async def add_employer(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        account_id (int): The ID of the associated Account.
         company_id (int): The ID of the associated Company.
         contact_id (int): The ID of the associated ContactInfo.
         commit (bool, optional): If True, commits the transaction after adding.
@@ -244,10 +241,7 @@ async def add_employer(
     Returns:
         Optional[EmployerAccount]: The newly created EmployerAccount object if successful, or None if insertion fails.
     """
-    entry = EmployerAccount(
-        company_id=company_id,
-        contact_id=contact_id,
-    )
+    entry = EmployerAccount(id=account_id, company_id=company_id, contact_id=contact_id)
     session.add(entry)
     try:
         await session.flush()
@@ -335,6 +329,7 @@ async def add_major(
 
 async def add_student(
     session: AsyncSession,
+    account_id: int,
     contact_id: int,
     department_id: int,
     major_id: int,
@@ -351,6 +346,7 @@ async def add_student(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        account_id (int): The ID of the associated Account.
         contact_id (int): The ID of the associated ContactInfo.
         department_id (int): The ID of the Department the student belongs to.
         major_id (int): The ID of the Major the student is pursuing.
@@ -367,6 +363,7 @@ async def add_student(
         Optional[StudentAccount]: The newly created StudentAccount object if successful, or None if insertion fails.
     """
     entry = StudentAccount(
+        id=account_id,
         contact_id=contact_id,
         department_id=department_id,
         major_id=major_id,
@@ -397,6 +394,7 @@ async def add_student(
 
 async def add_faculty(
     session: AsyncSession,
+    account_id: int,
     contact_id: int,
     department_id: int,
     commit: bool = False,
@@ -406,6 +404,7 @@ async def add_faculty(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        account_id (int): The ID of the associated Account.
         contact_id (int): The ID of the associated ContactInfo.
         department_id (int): The ID of the Department the faculty member belongs to.
         commit (bool, optional): If True, commits the transaction after adding.
@@ -415,8 +414,7 @@ async def add_faculty(
         Optional[FacultyAccount]: The newly created FacultyAccount object if successful, or None if insertion fails.
     """
     entry = FacultyAccount(
-        contact_id=contact_id,
-        department_id=department_id,
+        id=account_id, contact_id=contact_id, department_id=department_id
     )
     session.add(entry)
     try:
@@ -437,7 +435,7 @@ async def add_internship(
     title: str,
     description: str,
     location_type: str,
-    address_id: int,
+    address_id: Optional[int],
     duration_weeks: int,
     weekly_hours: int,
     total_work_hours: int,
@@ -516,10 +514,7 @@ async def add_internship_major(
     Returns:
         Optional[InternshipMajor]: The newly created InternshipMajor association object if successful, or None if insertion fails.
     """
-    entry = InternshipMajor(
-        internship_id=internship_id,
-        major_id=major_id,
-    )
+    entry = InternshipMajor(internship_id=internship_id, major_id=major_id)
     session.add(entry)
     try:
         await session.flush()
@@ -588,10 +583,7 @@ async def add_internship_required_skill(
     Returns:
         Optional[InternshipReqSkill]: The newly created InternshipReqSkill association object if successful, or None if insertion fails.
     """
-    entry = InternshipReqSkill(
-        internship_id=internship_id,
-        skill_id=skill_id,
-    )
+    entry = InternshipReqSkill(internship_id=internship_id, skill_id=skill_id)
     session.add(entry)
     try:
         await session.flush()
@@ -624,10 +616,7 @@ async def add_internship_preferred_skill(
     Returns:
         Optional[InternshipPrefSkill]: The newly created InternshipPrefSkill association object if successful, or None if insertion fails.
     """
-    entry = InternshipPrefSkill(
-        internship_id=internship_id,
-        skill_id=skill_id,
-    )
+    entry = InternshipPrefSkill(internship_id=internship_id, skill_id=skill_id)
     session.add(entry)
     try:
         await session.flush()

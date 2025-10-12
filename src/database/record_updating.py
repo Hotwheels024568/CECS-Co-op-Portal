@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from src.database.instance_retrieval import (
+from src.database.record_retrieval import (
     get_account,
     get_address,
     get_company,
