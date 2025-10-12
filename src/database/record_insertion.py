@@ -176,6 +176,7 @@ async def add_company(
 
 async def add_contact(
     session: AsyncSession,
+    account_id: int,
     first_name: str,
     middle_name: Optional[str],
     last_name: str,
@@ -188,6 +189,7 @@ async def add_contact(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        account_id (int): The ID of the associated Account.
         first_name (str): First name of the contact.
         middle_name (Optional[str]): Middle name of the contact, if any.
         last_name (str): Last name of the contact.
@@ -200,7 +202,12 @@ async def add_contact(
         Optional[ContactInfo]: The newly created ContactInfo object if successful, or None if insertion fails.
     """
     entry = ContactInfo(
-        first=first_name, middle=middle_name, last=last_name, email=email, phone=phone
+        id=account_id,
+        first=first_name,
+        middle=middle_name,
+        last=last_name,
+        email=email,
+        phone=phone,
     )
     session.add(entry)
     try:
@@ -430,7 +437,7 @@ async def add_internship(
     duration_weeks: int,
     weekly_hours: int,
     total_work_hours: int,
-    salary_info: str,
+    salary_info: Optional[str],
     status: str = "Open",
     commit: bool = False,
 ) -> Optional[Internship]:
@@ -662,7 +669,8 @@ async def add_application(
 
 async def add_summary(
     session: AsyncSession,
-    application_id: int,
+    internship_id: int,
+    student_id: int,
     summary: str,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
@@ -673,7 +681,8 @@ async def add_summary(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        application_id (int): The ID of the InternshipApplication to associate with the summary.
+        internship_id (int): The ID of the InternshipApplication's internship.
+        student_id (int): The ID of the InternshipApplication's student.
         summary (str): The summary text describing the internship experience.
         employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
         letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
@@ -684,7 +693,8 @@ async def add_summary(
         Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
     """
     entry = InternshipSummary(
-        application_id=application_id,
+        internship_id=internship_id,
+        student_id=student_id,
         summary=summary,
         employer_approval=employer_approval,
         letter_grade=letter_grade,

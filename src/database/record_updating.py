@@ -289,7 +289,6 @@ async def update_employer(
     session: AsyncSession,
     id: int,
     company_id: Optional[int] = None,
-    contact_id: Optional[int] = None,
     commit: bool = False,
 ) -> Optional[EmployerAccount]:
     """
@@ -299,7 +298,6 @@ async def update_employer(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the EmployerAccount to update.
         company_id (Optional[int], optional): Updated company ID, if any.
-        contact_id (Optional[int], optional): Updated contact info ID, if any.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
@@ -314,9 +312,6 @@ async def update_employer(
         updated = False
         if company_id is not None and employer.company_id != company_id:
             employer.company_id = company_id
-            updated = True
-        if contact_id is not None and employer.contact_id != contact_id:
-            employer.contact_id = contact_id
             updated = True
 
         if not updated:
@@ -337,7 +332,6 @@ async def update_employer(
 async def update_student(
     session: AsyncSession,
     id: int,
-    contact_id: Optional[int] = None,
     department_id: Optional[int] = None,
     major_id: Optional[int] = None,
     credit_hours: Optional[int] = None,
@@ -354,7 +348,6 @@ async def update_student(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the StudentAccount to update.
-        contact_id (Optional[int], optional): Updated contact info ID, if any.
         department_id (Optional[int], optional): Updated department ID, if any.
         major_id (Optional[int], optional): Updated major ID, if any.
         credit_hours (Optional[int], optional): Updated number of credit hours, if any.
@@ -375,9 +368,6 @@ async def update_student(
             return None
 
         updated = False
-        if contact_id is not None and student.contact_id != contact_id:
-            student.contact_id = contact_id
-            updated = True
         if department_id is not None and student.department_id != department_id:
             student.department_id = department_id
             updated = True
@@ -426,7 +416,6 @@ async def update_student(
 async def update_faculty(
     session: AsyncSession,
     id: int,
-    contact_id: Optional[int] = None,
     department_id: Optional[int] = None,
     commit: bool = False,
 ) -> Optional[FacultyAccount]:
@@ -436,7 +425,6 @@ async def update_faculty(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the FacultyAccount to update.
-        contact_id (Optional[int], optional): Updated contact info ID, if any.
         department_id (Optional[int], optional): Updated department ID, if any.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
@@ -450,9 +438,6 @@ async def update_faculty(
             return None
 
         updated = False
-        if contact_id is not None and faculty.contact_id != contact_id:
-            faculty.contact_id = contact_id
-            updated = True
         if department_id is not None and faculty.department_id != department_id:
             faculty.department_id = department_id
             updated = True
@@ -621,7 +606,8 @@ async def update_application(
 
 async def update_summary(
     session: AsyncSession,
-    id: int,
+    internship_id: int,
+    student_id: int,
     summary: Optional[str] = None,
     employer_approval: Optional[bool] = None,
     letter_grade: Optional[str] = None,
@@ -643,7 +629,7 @@ async def update_summary(
         Optional[InternshipSummary]: The updated InternshipSummary object if successful, or None if the record does not exist or if an error occurs.
     """
     try:
-        summary_entry = await get_summary(session, id)
+        summary_entry = await get_summary(session, internship_id, student_id)
         if not summary_entry:
             return None
 
