@@ -4,6 +4,7 @@ from sqlalchemy import (
     Column,
     Enum,
     ForeignKey,
+    ForeignKeyConstraint,
     Integer,
     Numeric,
     PrimaryKeyConstraint,
@@ -93,12 +94,16 @@ class Department(Base):
     name = Column(String(100), unique=True, nullable=False)
 
     students = relationship("StudentAccount", back_populates="department")
+    faculty = relationship("FacultyAccount", back_populates="department")
 
 
 class Major(Base):
     __tablename__ = "majors"
     id = Column(Integer, primary_key=True)
     name = Column(String(100), unique=True, nullable=False)
+
+    students = relationship("StudentAccount", back_populates="major")
+    internships = relationship("InternshipMajor", back_populates="major")
 
 
 class StudentAccount(Account):
@@ -118,14 +123,14 @@ class StudentAccount(Account):
     resume_link = Column(String(255))  # Nullable
 
     department = relationship("Department", back_populates="students")
-    major = relationship("Major")
+    major = relationship("Major", back_populates="students")
 
     applications = relationship("InternshipApplication", back_populates="student")
 
     __table_args__ = (
-        CheckConstraint("credit_hours >= 0", name="check_credit_hours_non_negative"),
-        CheckConstraint("gpa >= 0", name="check_gpa_non_negative"),
-        CheckConstraint("start_year >= 0", name="check_start_year_non_negative"),
+        CheckConstraint("credit_hours >= 0", name="_check_credit_hours_non_negative"),
+        CheckConstraint("gpa >= 0", name="_check_gpa_non_negative"),
+        CheckConstraint("start_year >= 0", name="_check_start_year_non_negative"),
     )
 
     __mapper_args__ = {"polymorphic_identity": "Student"}
@@ -134,10 +139,11 @@ class StudentAccount(Account):
 class FacultyAccount(Account):
     __tablename__ = "faculty_accounts"
     id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
-    # Could be Unique according to assignment directions
+    # Should be Unique according to assignment directions
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
 
-    department = relationship("Department", uselist=False)  # 1-to-1 with Department
+    department = relationship("Department", back_populates="faculty")
+    # department = relationship("Department", uselist=False)  # 1-to-1 with Department
 
     __mapper_args__ = {"polymorphic_identity": "Faculty"}
 
@@ -184,10 +190,14 @@ class Internship(Base):
     applications = relationship("InternshipApplication", back_populates="internship")
 
     __table_args__ = (
-        CheckConstraint("duration_weeks >= 0", name="check_duration_weeks_non_negative"),
-        CheckConstraint("weekly_hours >= 0", name="check_weekly_hours_non_negative"),
+        CheckConstraint("duration_weeks >= 0", name="_check_duration_weeks_non_negative"),
+        CheckConstraint("weekly_hours >= 0", name="_check_weekly_hours_non_negative"),
         CheckConstraint(
-            "total_work_hours >= 0", name="check_total_work_hours_non_negative"
+            "total_work_hours >= 0", name="_check_total_work_hours_non_negative"
+        ),
+        CheckConstraint(
+            "location_type != 'Remote' OR address_id IS NULL",
+            name="_location_type_address_ck",
         ),
     )
 
@@ -204,7 +214,7 @@ class InternshipMajor(Base):
     )
 
     internship = relationship("Internship", back_populates="majors")
-    major = relationship("Major")
+    major = relationship("Major", back_populates="internships")
 
     __table_args__ = (
         PrimaryKeyConstraint("internship_id", "major_id", name="_internship_major_pk"),
@@ -274,18 +284,24 @@ class InternshipApplication(Base):
 
 class InternshipSummary(Base):
     __tablename__ = "internship_summaries"
-    application_id = Column(
-        Integer,
-        ForeignKey("internship_applications.id", ondelete="CASCADE"),
-        unique=True,
-        nullable=False,
-        primary_key=True,
-    )
+    internship_id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, primary_key=True)
     summary = Column(Text, nullable=False)
     employer_approval = Column(Boolean, default=False, server_default="0", nullable=False)
     letter_grade = Column(String(2))  # E.g., A, B, C, etc.  # Nullable
 
+    # 1-to-1 with InternshipApplication
     application = relationship(
         "InternshipApplication", back_populates="summary", uselist=False
     )
-    # 1-to-1 with InternshipApplication
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["internship_id", "student_id"],
+            [
+                "internship_applications.internship_id",
+                "internship_applications.student_id",
+            ],
+            ondelete="CASCADE",
+        ),
+    )
