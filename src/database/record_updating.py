@@ -629,32 +629,32 @@ async def update_summary(
         Optional[InternshipSummary]: The updated InternshipSummary object if successful, or None if the record does not exist or if an error occurs.
     """
     try:
-        summary_entry = await get_summary(session, internship_id, student_id)
-        if not summary_entry:
+        summary = await get_summary(session, internship_id, student_id)
+        if not summary:
             return None
 
         updated = False
-        if summary is not None and summary_entry.summary != summary:
-            summary_entry.summary = summary
+        if summary is not None and summary.summary != summary:
+            summary.summary = summary
             updated = True
         if (
             employer_approval is not None
-            and summary_entry.employer_approval != employer_approval
+            and summary.employer_approval != employer_approval
         ):
-            summary_entry.employer_approval = employer_approval
+            summary.employer_approval = employer_approval
             updated = True
-        if letter_grade is not None and summary_entry.letter_grade != letter_grade:
-            summary_entry.letter_grade = letter_grade
+        if letter_grade is not None and summary.letter_grade != letter_grade:
+            summary.letter_grade = letter_grade
             updated = True
 
         if not updated:
-            return summary_entry
+            return summary
 
         if commit:
             await session.commit()
         else:
             await session.flush()
-        return summary_entry
+        return summary
 
     except Exception as e:
         await session.rollback()
