@@ -2,6 +2,7 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from src.database.record_retrieval import get_application, get_application_from_internship
 from src.database.schema import (
     Account,
     Address,
@@ -669,6 +670,40 @@ async def add_application(
 
 async def add_summary(
     session: AsyncSession,
+    application_id: int,
+    summary: str = "",
+    employer_approval: bool = False,
+    letter_grade: Optional[str] = None,
+    commit: bool = False,
+) -> Optional[InternshipSummary]:
+    """
+    Adds a new InternshipSummary record to the database.
+
+    Args:
+        session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        application_id (int): The ID of the InternshipApplication.
+        summary (str, optional): The summary text describing the internship experience. Defaults to "".
+        employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
+        letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
+        commit (bool, optional): If True, commits the transaction after adding.
+            If False, commit must be handled externally. Defaults to False.
+
+    Returns:
+        Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
+    """
+
+    application = await get_application(session, application_id)
+    if application is None:
+        print("No InternshipApplication found for provided application_id.")
+        return None
+
+    return await _add_summary(
+        session, application.id, summary, employer_approval, letter_grade, commit
+    )
+
+
+async def add_summary_from_internship(
+    session: AsyncSession,
     internship_id: int,
     student_id: int,
     summary: str = "",
@@ -683,7 +718,7 @@ async def add_summary(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         internship_id (int): The ID of the InternshipApplication's internship.
         student_id (int): The ID of the InternshipApplication's student.
-        summary (str): The summary text describing the internship experience.
+        summary (str, optional): The summary text describing the internship experience. Defaults to "".
         employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
         letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
         commit (bool, optional): If True, commits the transaction after adding.
@@ -692,9 +727,29 @@ async def add_summary(
     Returns:
         Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
     """
+
+    application = await get_application_from_internship(
+        session, internship_id, student_id
+    )
+    if application is None:
+        print("No InternshipApplication found for provided internship_id and student_id.")
+        return None
+
+    return await _add_summary(
+        session, application.id, summary, employer_approval, letter_grade, commit
+    )
+
+
+async def _add_summary(
+    session: AsyncSession,
+    application_id: int,
+    summary: str = "",
+    employer_approval: bool = False,
+    letter_grade: Optional[str] = None,
+    commit: bool = False,
+) -> Optional[InternshipSummary]:
     entry = InternshipSummary(
-        internship_id=internship_id,
-        student_id=student_id,
+        id=application_id,
         summary=summary,
         employer_approval=employer_approval,
         letter_grade=letter_grade,

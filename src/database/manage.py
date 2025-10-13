@@ -34,6 +34,10 @@ DATABASE_URL = get_database_url()
 
 
 class AsyncDBManager:
+    """
+    Docs
+    """
+
     _instance: Optional["AsyncDBManager"] = None
 
     def __init__(self, autocommit: bool = False) -> None:
@@ -61,43 +65,21 @@ class AsyncDBManager:
         async with self.engine.begin() as conn:
             await conn.run_sync(self.metadata.create_all)
 
-    # async def _seed_db_from_csv(self, csv_path: Path = RESEARCHER_CSV) -> None:
-    #     async with self.session() as session:
-    #         # Only seed if no researchers
-    #         result = await session.execute(select(Researchers))
-    #         if result.first() is not None:
-    #             return
+    async def _drop_db(self) -> None:
+        async with self.engine.begin() as conn:
+            await conn.run_sync(self.metadata.drop_all)
 
-    #         # Insert from CSV (make a sample if missing)
-    #         if not csv_path.exists():
-    #             csv_path.write_text(
-    #                 "uniqname,first_name,middle_name,last_name\njansmith,Jan,,Smith\nbobdoe,Bob,A.,Doe"
-    #             )
+    """
+    async def _drop_db(self) -> None:
+        async with self.engine.begin() as conn:
+            # Drop the public schema and recreate it, drops all tables & relationships
+            await conn.execute(text("DROP SCHEMA public CASCADE"))
+            await conn.execute(text("CREATE SCHEMA public"))
+    """
 
-    #         # Insert from CSV
-    #         data = []
-    #         with open(csv_path, "r", newline="") as file:
-    #             reader = csv.reader(file)
-    #             next(reader)  # Skip header
-    #             for temp in reader:
-    #                 # Parse according to your previous logic
-    #                 # uniqname, first_name, middle_name, last_name, first_initial, middle_initial, last_initial
-    #                 researcher = {
-    #                     "first_name": temp[1],
-    #                     "first_initial": temp[4][0] if temp[4] else "",
-    #                     "middle_name": temp[2],
-    #                     "middle_initial": temp[5][0] if temp[5] else "",
-    #                     "last_name": temp[3],
-    #                     "last_initial": temp[6][0] if temp[6] else "",
-    #                     "uniqname": temp[0],
-    #                 }
-    #                 data.append(researcher)
-
-    #         if data:
-    #             await session.execute(Researchers.insert(), data)
-
-    #         if not self.autocommit:
-    #             await session.commit()
+    async def drop_and_create_db(self) -> None:
+        await self._drop_db()
+        await self._create_db()
 
     # --- context manager (manager.session())
     @asynccontextmanager
@@ -133,6 +115,46 @@ class AsyncDBManager:
             await self._session_obj.__aexit__(exc_type, exc_val, exc_tb)
             self._session = None
 
+    """
+    async def _seed_db_from_csv(self, csv_path: Path = RESEARCHER_CSV) -> None:
+        async with self.session() as session:
+            # Only seed if no researchers
+            result = await session.execute(select(Researchers))
+            if result.first() is not None:
+                return
+
+            # Insert from CSV (make a sample if missing)
+            if not csv_path.exists():
+                csv_path.write_text(
+                    "uniqname,first_name,middle_name,last_name\njansmith,Jan,,Smith\nbobdoe,Bob,A.,Doe"
+                )
+
+            # Insert from CSV
+            data = []
+            with open(csv_path, "r", newline="") as file:
+                reader = csv.reader(file)
+                next(reader)  # Skip header
+                for temp in reader:
+                    # Parse according to your previous logic
+                    # uniqname, first_name, middle_name, last_name, first_initial, middle_initial, last_initial
+                    researcher = {
+                        "first_name": temp[1],
+                        "first_initial": temp[4][0] if temp[4] else "",
+                        "middle_name": temp[2],
+                        "middle_initial": temp[5][0] if temp[5] else "",
+                        "last_name": temp[3],
+                        "last_initial": temp[6][0] if temp[6] else "",
+                        "uniqname": temp[0],
+                    }
+                    data.append(researcher)
+
+            if data:
+                await session.execute(Researchers.insert(), data)
+
+            if not self.autocommit:
+                await session.commit()
+    """
+
 
 def get_constraint_name_from_integrity_error(e) -> str:
     # Handles asyncpg, psycopg2, or most DBAPIs used with SQLAlchemy
@@ -149,7 +171,7 @@ async def count(session: AsyncSession, model) -> int:
     return result if result is not None else 0  # return result or 0
 
 
-async def main() -> None:
+async def main(recreate: bool = False) -> None:
     from src.database.schema import (
         Account,
         Address,
@@ -171,6 +193,9 @@ async def main() -> None:
 
     manager = await AsyncDBManager.create()
     async with manager.session() as session:
+        if recreate:
+            await manager.drop_and_create_db()
+
         print(
             f"""
             Counts:
@@ -196,3 +221,35 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+"""
+Migration (Schema swap) Instructions
+    pip install alembic
+        or if you're using Flask:
+        pip install Flask-Migrate
+            See https://flask-migrate.readthedocs.io/en/latest/
+
+    Set Up Alembic (if not already)
+        alembic init migrations
+
+    After changing your models (the schema), run:
+        alembic revision --autogenerate -m "Describe changes"
+            This detects differences between your models and the current DB and creates a migration script
+
+    Review the generated script in migrations/versions/
+    Apply it:
+        alembic upgrade head
+
+    ------------------
+
+    Flask Example (with Flask-Migrate)
+        In your app setup
+            from flask_migrate import Migrate
+            migrate = Migrate(app, db)
+
+        Generate migration:
+            flask db migrate -m "Describe changes"
+
+        Apply migration:
+            flask db upgrade
+"""

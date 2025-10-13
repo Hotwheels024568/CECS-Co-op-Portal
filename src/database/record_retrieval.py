@@ -171,12 +171,30 @@ async def get_skill_by_name(session: AsyncSession, name: str) -> Optional[Skill]
 
 
 async def get_application(
+    session: AsyncSession, id: int
+) -> Optional[InternshipApplication]:
+    return await session.get(InternshipApplication, id)
+
+
+async def get_application_from_internship(
     session: AsyncSession, internship_id: int, student_id: int
 ) -> Optional[InternshipApplication]:
-    return await session.get(InternshipApplication, (internship_id, student_id))
+    statement = select(InternshipApplication).filter_by(
+        internship_id=internship_id, student_id=student_id
+    )
+    return await get_first_element(session, statement)
 
 
-async def get_summary(
+async def get_summary(session: AsyncSession, id: int) -> Optional[InternshipSummary]:
+    return await session.get(InternshipSummary, id)
+
+
+async def get_summary_from_internship(
     session: AsyncSession, internship_id: int, student_id: int
 ) -> Optional[InternshipSummary]:
-    return await session.get(InternshipSummary, (internship_id, student_id))
+    application = await get_application_from_internship(
+        session, internship_id, student_id
+    )
+    if application is None:
+        return None
+    return application.summary

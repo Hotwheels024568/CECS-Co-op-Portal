@@ -473,11 +473,11 @@ async def update_internship(
     commit: bool = False,
 ) -> Optional[Internship]:
     """
-    Updates the fields of an InternshipOpportunity record in the database.
+    Updates the fields of an Internship record in the database.
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        id (int): The ID of the InternshipOpportunity to update.
+        id (int): The ID of the Internship to update.
         company_id (Optional[int], optional): Updated company ID, if any.
         title (Optional[str], optional): Updated title, if any.
         description (Optional[str], optional): Updated description, if any.
@@ -492,7 +492,7 @@ async def update_internship(
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipOpportunity]: The updated InternshipOpportunity object if successful, or None if the record does not exist or if an error occurs.
+        Optional[Internship]: The updated Internship object if successful, or None if the record does not exist or if an error occurs.
     """
     try:
         internship = await get_internship(session, id)
@@ -556,8 +556,7 @@ async def update_internship(
 
 async def update_application(
     session: AsyncSession,
-    internship_id: int,
-    student_id: int,
+    id: int,
     coop_credit_eligibility: Optional[bool] = None,
     commit: bool = False,
 ) -> Optional[InternshipApplication]:
@@ -566,7 +565,7 @@ async def update_application(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        internship_id (int): The internship ID part of the composite key.
+        id (int): The ID of the InternshipApplication to update.
         student_id (int): The student ID part of the composite key.
         coop_credit_eligibility (Optional[bool], optional): Updated co-op credit eligibility, if any.
         commit (bool, optional): If True, commits the transaction after updating.
@@ -577,7 +576,7 @@ async def update_application(
             or None if the record does not exist or if an error occurs.
     """
     try:
-        application = await get_application(session, internship_id, student_id)
+        application = await get_application(session, id)
         if not application:
             return None
 
@@ -590,7 +589,7 @@ async def update_application(
             updated = True
 
         if not updated:
-            return application  # No changes; return unchanged instance
+            return application
 
         if commit:
             await session.commit()
@@ -606,9 +605,8 @@ async def update_application(
 
 async def update_summary(
     session: AsyncSession,
-    internship_id: int,
-    student_id: int,
-    summary: Optional[str] = None,
+    id: int,
+    summary_text: Optional[str] = None,
     employer_approval: Optional[bool] = None,
     letter_grade: Optional[str] = None,
     commit: bool = False,
@@ -629,13 +627,13 @@ async def update_summary(
         Optional[InternshipSummary]: The updated InternshipSummary object if successful, or None if the record does not exist or if an error occurs.
     """
     try:
-        summary = await get_summary(session, internship_id, student_id)
+        summary = await get_summary(session, id)
         if not summary:
             return None
 
         updated = False
-        if summary is not None and summary.summary != summary:
-            summary.summary = summary
+        if summary_text is not None and summary.summary != summary_text:
+            summary.summary = summary_text
             updated = True
         if (
             employer_approval is not None
