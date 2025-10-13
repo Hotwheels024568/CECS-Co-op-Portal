@@ -1,298 +1,370 @@
-# from typing import Any, Dict, List, Optional, Tuple
-# from sqlalchemy import insert, select, update
-# from sqlalchemy.exc import IntegrityError
-# from sqlalchemy.ext.asyncio.session import AsyncSession
+from typing import List, Optional, Tuple
+from sqlalchemy.exc import IntegrityError, DBAPIError
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
-# from src.database.functions import get_first_element
-# from src.database.instance_retrieval import (
-#     get_internship_by_id,
-#     get_student_profile_by_id,
-# )
-# from src.database.schema import (
-#     Accounts,
-#     Addresses,
-#     Companies,
-#     Employers,
-#     InternshipLocations,
-#     InternshipOpportunities,
-#     InternshipApplications,
-#     InternshipSummaries,
-# )
-
-
-# async def create_internship_from_account(
-#     session: AsyncSession,
-#     account_id: int,
-#     title: str,
-#     description: str,
-#     location_type: str,
-#     duration_weeks: int,
-#     weekly_hours: int,
-#     majors_of_interest: str,
-#     required_skills: str,
-#     preferred_skills: str,
-#     salary_info: str,
-#     # Address
-#     address_line1: Optional[str] = None,
-#     address_line2: Optional[str] = None,
-#     city: Optional[str] = None,
-#     state_province: Optional[str] = None,
-#     zip_postal: Optional[str] = None,
-#     country: Optional[str] = None,
-# ) -> Tuple[bool, str]:
-#     """
-#     Atomically creates an internship opportunity and its location from an account_id.
-
-#     Args:
-#         session (AsyncSession): Async DB session.
-#         account_id (int): The account ID (must be an Employer).
-#         title (str): Title of the internship.
-#         description (str): Description of the internship.
-#         location_type (str): One of "Company", "Remote", "Other".
-#         duration_weeks (int): Duration in weeks.
-#         weekly_hours (int): Expected hours per week.
-#         majors_of_interest (str): Majors of interest.
-#         required_skills (str): Required skills.
-#         preferred_skills (str): Preferred skills.
-#         salary_info (str): Salary or stipend information.
-
-#     Returns:
-#         (Tuple[bool, str]): (True, "Internship opportunity created successfully")
-#             or (False, "Error message")
-#     """
-#     statement = select(Accounts.profile_id).where(Accounts.id == account_id)
-#     employer_id = await get_first_element(session, statement)
-#     """
-#     # Get account info, confirm it's an employer and has profile_id
-#     statement = select(Account.user_type, Account.profile_id).where(Account.id == account_id)
-#     result = await get_row(session, statement)
-#     if result is None:
-#         return False, "Account does not exist."
-
-#     user_type, employer_id = result
-#     if user_type != "Employer":
-#         return False, "Account is not an employer."
-#     if not employer_id:
-#         return False, "Account does not have an employer profile."
-#     """
-#     return await create_internship(
-#         session,
-#         employer_id,
-#         title,
-#         description,
-#         location_type,
-#         duration_weeks,
-#         weekly_hours,
-#         majors_of_interest,
-#         required_skills,
-#         preferred_skills,
-#         salary_info,
-#         address_line1,
-#         address_line2,
-#         city,
-#         state_province,
-#         zip_postal,
-#         country,
-#     )
+from src.database.manage import get_constraint_name_from_integrity_error
+from src.database.record_get_or_create import get_or_create_major, get_or_create_skill
+from src.database.record_insertion import (
+    add_address,
+    add_application,
+    add_internship,
+    add_internship_major,
+    add_internship_preferred_skill,
+    add_internship_required_skill,
+    add_summary,
+)
+from src.database.record_retrieval import (
+    get_address,
+    get_application,
+    get_application_from_internship,
+    get_company,
+    get_employer,
+    get_internship,
+    get_student,
+)
+from src.database.schema import Internship
+from src.database.schema import (
+    Internship,
+    InternshipApplication,
+    InternshipSummary,
+)
 
 
-# async def create_internship(
-#     session: AsyncSession,
-#     employer_id: int,
-#     title: str,
-#     description: str,
-#     location_type: str,
-#     duration_weeks: int,
-#     weekly_hours: int,
-#     majors_of_interest: str,
-#     required_skills: str,
-#     preferred_skills: str,
-#     salary_info: str,
-#     # Address
-#     address_line1: Optional[str] = None,
-#     address_line2: Optional[str] = None,
-#     city: Optional[str] = None,
-#     state_province: Optional[str] = None,
-#     zip_postal: Optional[str] = None,
-#     country: Optional[str] = None,
-# ) -> Tuple[bool, str]:
-#     """
-#     Atomically creates an internship opportunity and its location.
+async def create_internship(
+    session: AsyncSession,
+    account_id: int,
+    title: str,
+    description: str,
+    location_type: str,
+    address_id: Optional[int],
+    duration_weeks: int,
+    weekly_hours: int,
+    salary_info: Optional[str],
+    status: str = "Open",
+    # Majors & Skills
+    majors: Optional[List[str]] = None,
+    required_skills: Optional[List[str]] = None,
+    preferred_skills: Optional[List[str]] = None,
+    # Address (for Other)
+    address_line1: Optional[str] = None,
+    address_line2: Optional[str] = None,
+    city: Optional[str] = None,
+    state_province: Optional[str] = None,
+    zip_postal: Optional[str] = None,
+    country: Optional[str] = None,
+) -> Tuple[Optional[Internship], str]:
+    """
+    Atomically creates a new Internship for the employer associated with the provided account.
 
-#     Args:
-#         session (AsyncSession): Async DB session.
-#         employer_id (int): The employer's ID.
-#         title (str): Title of the internship.
-#         description (str): Description of the internship.
-#         location_type (str): One of "Company", "Remote", "Other".
-#         duration_weeks (int): Duration in weeks.
-#         weekly_hours (int): Expected hours per week.
-#         majors_of_interest (str): Majors of interest.
-#         required_skills (str): Required skills.
-#         preferred_skills (str): Preferred skills.
-#         salary_info (str): Salary or stipend information.
+    Args:
+        session (AsyncSession): Active SQLAlchemy async session.
+        account_id (int): The EmployerAccount's account ID.
+        title (str): Internship title.
+        description (str): Internship description.
+        location_type (str): 'Other', 'Company', or 'Remote'.
+        address_id (Optional[int]): Address to use (if location_type != 'Remote' or directly supplied).
+        duration_weeks (int): Number of weeks.
+        weekly_hours (int): Hours/week.
+        salary_info (Optional[str]): Salary/compensation details.
+        status (str): One of: 'Open', 'Closed', 'PendingStart', 'InProgress', 'WaitingSummary', 'WaitingGrade', or 'Completed'
+        majors (List[str], optional): List of major names related to this internship.
+        required_skills (List[str], optional): List of required skill names.
+        preferred_skills (List[str], optional): List of preferred skill names.
+        address_line1~country: Address fields for 'Other' locations.
 
-#     Returns:
-#         (Tuple[bool, str]): (True, "Internship opportunity created successfully")
-#             or (False, "Error message")
-#     """
-#     try:
-#         address_id: Optional[int] = None
-#         # 1. Create InternshipLocation
-#         if location_type == "Other":
-#             # Create Address
-#             address = Addresses(
-#                 address_line1=address_line1,
-#                 address_line2=address_line2,
-#                 city=city,
-#                 state_province=state_province,
-#                 zip_postal=zip_postal,
-#                 country=country,
-#             )
-#             session.add(address)
-#             await session.flush()  # Populates address.id
-#             address_id = address.id
+    Returns:
+        Tuple[Optional[Internship], str]:
+            (Internship, "Internship created successfully.") on success.
+            (None, "Reason") with a descriptive message on failure.
+    """
+    try:
+        # 1. Ensure EmployerAccount exists
+        employer = await get_employer(session, account_id)
+        if not employer:
+            return None, "Account is not associated with an employer account."
 
-#         elif location_type == "Company":
-#             # Find the Company address_id for this employer
-#             statement = (
-#                 select(Companies.address_id)
-#                 .join(Employers, Employers.company_id == Companies.id)
-#                 .where(Employers.id == employer_id)
-#             )
-#             address_id = await get_first_element(session, statement)
+        # 2. Get the Company object
+        company = await get_company(session, employer.company_id)
+        if not company:
+            return None, "Employer's company not found."
 
-#         location = InternshipLocations(type=location_type, address_id=address_id)
-#         session.add(location)
-#         await session.flush()  # Populates location.id
+        # 3. Determine address based on location_type
+        address_id = None
 
-#         # 2. Create InternshipOpportunity
-#         opportunity = InternshipOpportunities(
-#             employer_id=employer_id,
-#             title=title,
-#             description=description,
-#             location_id=location.id,
-#             duration_weeks=duration_weeks,
-#             weekly_hours=weekly_hours,
-#             total_work_hours=duration_weeks * weekly_hours,
-#             majors_of_interest=majors_of_interest,
-#             required_skills=required_skills,
-#             preferred_skills=preferred_skills,
-#             salary_info=salary_info,
-#         )
-#         session.add(opportunity)
+        if location_type == "Other":
+            address = None
+            if address_id is not None:
+                address = await get_address(session, id)
+                if not address:
+                    return None, f"Address of ID {address_id} not found."
 
-#         # 3. Commit all changes
-#         await session.commit()
-#         return True, "Internship opportunity created successfully."
+            else:
+                if not all([address_line1, city, state_province, zip_postal, country]):
+                    return None, "Missing address fields for 'Other' location type."
 
-#     except Exception as e:
-#         await session.rollback()
-#         return False, f"Unexpected error in DB 'create_internship' function: {e}"
+                address = await add_address(
+                    session,
+                    address_line1,
+                    address_line2,
+                    city,
+                    state_province,
+                    zip_postal,
+                    country,
+                )
+                if address is None:
+                    return None, "Failed to create address for internship."
 
+            address_id = address.id
 
-# async def create_internship_application_from_account(
-#     session: AsyncSession,
-#     account_id: int,
-#     internship_id: int,
-# ) -> Tuple[bool, str]:
-#     """
-#     Docs
-#     """
-#     statement = select(Accounts.profile_id).where(Accounts.id == account_id)
-#     student_id = await get_first_element(session, statement)
-#     """
-#     # Get account info, confirm it's a student and has profile_id
-#     statement = select(Account.user_type, Account.profile_id).where(Account.id == account_id)
-#     result = await get_row(session, statement)
-#     if result is None:
-#         return False, "Account does not exist."
+        elif location_type == "Company":
+            address_id = company.address_id
 
-#     user_type, student_id = result
-#     if user_type != "Student":
-#         return False, "Account is not a student."
-#     if not student_id:
-#         return False, "Account does not have a student profile."
-#     """
-#     return await create_internship_application(session, student_id, internship_id)
+        elif location_type == "Remote":
+            address_id = None
 
+        else:
+            return None, f"Unknown or unsupported location_type: {location_type}"
 
-# async def create_internship_application(
-#     session: AsyncSession,
-#     student_id: int,
-#     internship_id: int,
-# ) -> Tuple[bool, str]:
-#     """
-#     Creates an internship application for a student.
+        # 4. Create the Internship
+        internship = await add_internship(
+            session,
+            company.id,
+            title,
+            description,
+            location_type,
+            address_id,
+            duration_weeks,
+            weekly_hours,
+            duration_weeks * weekly_hours,
+            salary_info,
+            status,
+        )
+        if internship is None:
+            await session.rollback()
+            return None, "Failed to create internship."
 
-#     Args:
-#         session (AsyncSession): Database session.
-#         student_id (int): ID of the student profile applying.
-#         internship_id (int): ID of the internship opportunity.
+        # 5. Link majors
+        if majors:
+            for major_name in majors:
+                major = await get_or_create_major(session, major_name)
+                if not major:
+                    await session.rollback()
+                    return None, f"Failed to find or create major: {major_name}"
+                await add_internship_major(session, internship.id, major.id)
 
-#     Returns:
-#         Tuple[bool, str]: (True, success message) or (False, error message).
-#     """
-#     try:
-#         student = await get_student_profile_by_id(session, student_id)
-#         if not student:
-#             return False, "Student profile not found."
+        # 6. Link required skills
+        if required_skills:
+            for skill_name in required_skills:
+                skill = await get_or_create_skill(session, skill_name)
+                if not skill:
+                    await session.rollback()
+                    return None, f"Failed to find or create required skill: {skill_name}"
+                await add_internship_required_skill(session, internship.id, skill.id)
 
-#         internship = await get_internship_by_id(session, internship_id)
-#         if not internship:
-#             return False, "Internship opportunity not found."
+        # 7. Link preferred skills
+        if preferred_skills:
+            for skill_name in preferred_skills:
+                skill = await get_or_create_skill(session, skill_name)
+                if not skill:
+                    await session.rollback()
+                    return None, f"Failed to find or create preferred skill: {skill_name}"
+                await add_internship_preferred_skill(session, internship.id, skill.id)
 
-#         coop_credit_eligibility = False
-#         # TODO: When "semesters completed" is available, use that in eligibility logic.
-#         coop_credit_eligibility = False
-#         if (
-#             student.gpa >= 2
-#             and internship.duration_weeks >= 7
-#             and internship.total_work_hours >= 140
-#             # and Semesters Completed >= 1
-#             # if student.transfer
-#             # else Semesters Completed >= 2
-#         ):
-#             coop_credit_eligibility = True
+        # 8. Commit
+        await session.commit()
+        return internship, "Internship created successfully."
 
-#         application = InternshipApplications(
-#             internship_id=internship_id,
-#             student_id=student_id,
-#             coop_credit_eligibility=coop_credit_eligibility,
-#         )
-#         session.add(application)
-#         await session.commit()
-#         return True, "Internship application created successfully."
+    except IntegrityError as e:
+        await session.rollback()
+        return None, f"Unique constraint violated in create_internship: {e}"
 
-#     except IntegrityError as e:
-#         await session.rollback()
-#         # Check if it's due to the unique constraint on (internship_id, student_id)
-#         constraint = getattr(getattr(e.orig, "diag", None), "constraint_name", "") or str(
-#             e
-#         )
-#         if "_internship_student_uc" in constraint:
-#             return False, "You have already applied to this internship."
-#         else:
-#             return False, "A database integrity error occurred."
+    except DBAPIError as e:
+        await session.rollback()
+        return None, f"Database API error in create_internship: {e}"
 
-#     except Exception as e:
-#         await session.rollback()
-#         return (
-#             False,
-#             f"Unexpected error in DB 'create_internship_application' function: {e}",
-#         )
+    except Exception as e:
+        await session.rollback()
+        return None, f"Unexpected error in create_internship: {e}"
 
 
-# # Run when a InternshipOpportunity.status is set to "PendingStart"
-# async def create_internship_summary(
-#     session: AsyncSession,
-#     application_id: int,
-#     summary: str,
-# ) -> Tuple[bool, str]:
-#     """
-#     Docs
-#     """
-#     summary = InternshipSummaries(application_id=application_id, summary="")
-#     session.add(summary)
-#     await session.commit()
-#     return True, "Internship summary created successfully."
+async def create_application(
+    session: AsyncSession,
+    student_id: int,
+    internship_id: int,
+) -> Tuple[Optional[InternshipApplication], str]:
+    """
+    Atomically creates an internship application for a student to a given internship.
+
+    Validates student and internship existence and calculates co-op credit eligibility.
+    Handles duplicate applications gracefully with a user-friendly message.
+
+    Args:
+        session (AsyncSession): The SQLAlchemy asynchronous database session.
+        student_id (int): The ID of the student applying.
+        internship_id (int): The ID of the internship.
+
+    Returns:
+        Tuple[Optional[InternshipApplication], str]:
+            (InternshipApplication, "Success message") on success,
+            (None, "Reason for failure") otherwise.
+    """
+    try:
+        # 1. Check student existence
+        student = await get_student(session, student_id)
+        if not student:
+            return None, "Student account not found."
+
+        # 2. Check internship existence
+        internship = await get_internship(session, internship_id)
+        if not internship:
+            return None, "Internship not found."
+
+        # 3. Determine co-op credit eligibility
+        # TODO: (Expand logic if/when semester info is available)
+        coop_credit_eligibility = (
+            student.gpa >= 2
+            and internship.duration_weeks >= 7
+            and internship.total_work_hours >= 140
+            # and Semesters Completed >= 1
+            # if student.transfer
+            # else Semesters Completed >= 2
+        )
+
+        # 4. Add the application
+        application = await add_application(
+            session, internship_id, student_id, coop_credit_eligibility, commit=True
+        )
+        if not application:
+            await session.rollback()
+            return None, "Failed to create internship application."
+
+        return application, "Internship application created successfully."
+
+    except IntegrityError as e:
+        await session.rollback()
+        constraint = get_constraint_name_from_integrity_error(e)
+        # Your PK constraint is named '_internship_student_pk' (adjust if needed)
+        if "_internship_student_pk" in constraint:
+            return None, "You have already applied to this internship."
+        return None, f"A database integrity error occurred: {constraint}"
+
+    except DBAPIError as e:
+        await session.rollback()
+        return None, f"Database API error in create_internship_application: {e}"
+
+    except Exception as e:
+        await session.rollback()
+        return None, f"Unexpected error in create_internship_application: {e}"
+
+
+# Run when a Internship.status is set to "PendingStart"
+async def create_summary(
+    session: AsyncSession,
+    application_id: int,
+    summary_text: str = "",
+    employer_approval: bool = False,
+    letter_grade: Optional[str] = None,
+) -> Tuple[Optional[InternshipSummary], str]:
+    """
+    Atomically creates an internship summary for a given internship application.
+
+    Args:
+        session (AsyncSession): The database session.
+        application_id (int): The ID of the internship application.
+        summary_text (str, optional): Summary text, defaults to empty string.
+        employer_approval (bool, optional): Employer approval, defaults to False.
+        letter_grade (Optional[str], optional): Letter grade.
+
+    Returns:
+        Tuple[Optional[InternshipSummary], str]
+            (InternshipSummary, "Internship summary created successfully.") on success.
+            (None, "Reason") with a descriptive message on failure.
+    """
+    # Check the application exists
+    application = await get_application(session, application_id)
+    if not application:
+        return None, "Internship application not found for this internship/student."
+
+    return await _create_summary(
+        session, application.id, summary_text, employer_approval, letter_grade
+    )
+
+
+async def create_summary_from_internship(
+    session: AsyncSession,
+    internship_id: int,
+    student_id: int,
+    summary_text: str = "",
+    employer_approval: bool = False,
+    letter_grade: Optional[str] = None,
+) -> Tuple[Optional[InternshipSummary], str]:
+    """
+    Atomically creates an internship summary for a given internship application.
+
+    Args:
+        session (AsyncSession): The database session.
+        student_id (int): The ID of the student.
+        internship_id (int): The ID of the internship.
+        summary_text (str, optional): Summary text, defaults to empty string.
+        employer_approval (bool, optional): Employer approval, defaults to False.
+        letter_grade (Optional[str], optional): Letter grade.
+
+    Returns:
+        Tuple[Optional[InternshipSummary], str]
+            (InternshipSummary, "Internship summary created successfully.") on success.
+            (None, "Reason") with a descriptive message on failure.
+    """
+    application = await get_application_from_internship(
+        session, internship_id, student_id
+    )
+    if not application:
+        return None, "Internship application not found for this internship/student."
+
+    return await _create_summary(
+        session, application.id, summary_text, employer_approval, letter_grade
+    )
+
+
+async def _create_summary(
+    session: AsyncSession,
+    application_id: int,
+    summary_text: str = "",
+    employer_approval: bool = False,
+    letter_grade: Optional[str] = None,
+) -> Tuple[Optional[InternshipSummary], str]:
+    try:
+        summary = await add_summary(
+            session,
+            application_id,
+            summary_text,
+            employer_approval,
+            letter_grade,
+            commit=True,
+        )
+        if not summary:
+            await session.rollback()
+            return None, "Failed to create internship summary."
+
+        return summary, "Internship summary created successfully."
+
+    except IntegrityError as e:
+        await session.rollback()
+        constraint = get_constraint_name_from_integrity_error(e)
+        # Adjust constraint name if you've named your PK/FK differently!
+        if (
+            "internship_summaries_pkey" in constraint
+            or "internship_summaries_pk" in constraint
+        ):
+            return None, "A summary for this application already exists."
+        return (
+            None,
+            f"Database integrity error in create_internship_summary: {constraint}",
+        )
+
+    except DBAPIError as e:
+        await session.rollback()
+        return None, f"Database API error in create_internship_summary: {e}"
+
+    except Exception as e:
+        await session.rollback()
+        return None, f"Unexpected error in create_internship_summary: {e}"
