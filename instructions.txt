@@ -30,7 +30,11 @@ To install & share
 
 React project
 	Run the following a the directory of choice
-		npx create-next-app@latest
+		npm create vite@latest
+			
+			project name:	frontend
+			framework:		React
+			variant:		React Router v7 (Choose from JavaScript, TypeScript, or Router (TS, default code for page routing))
 	
 	npm install
 	npm run dev
