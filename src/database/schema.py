@@ -18,10 +18,20 @@ Base = declarative_base()
 
 class Account(Base):
     """
-    Base user account model for all users in the system.
-    User type is an enum: Employer, Student, or Faculty.
-    Passwords should be hashed and compared securely, per application security requirements.
-    Each account is associated with contact info (one-to-one).
+    Base user account model.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        username (str): Unique username.
+        password (str): Hashed user password. Should be securely hashed and compared per security best practices.
+        user_type (str): User type; one of 'Employer', 'Student', or 'Faculty'.
+        contact (ContactInfo): Associated Contact Info (one-to-one).
+
+    Security Considerations:
+        - Passwords are required to be sent via POST over HTTPS only.
+        - All passwords should be hashed, salted, and, optionally, peppered on the server before storage.
+        - If a username does not exist, the system should perform a fake hash to mitigate timing attacks.
+        - Hash comparisons must be done in constant time using methods like hmac.compare_digest.
     """
 
     __tablename__ = "accounts"
@@ -29,11 +39,6 @@ class Account(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    # Require POST HTTPS request to server
-    # Hash, Salt & (Optional before hashing) Pepper on server and store
-    #   If a username does not exist, perform a fake hash computation with a dummy password hash so the time spent matches an existing user’s check.
-    #   Hash password comparisons should always use constant-time algorithms.
-    #       Compare hashes using hmac.compare_digest
     user_type: Mapped[str] = mapped_column(
         Enum("Employer", "Student", "Faculty", name="user_type"), nullable=False
     )
@@ -51,8 +56,16 @@ class Account(Base):
 
 class Address(Base):
     """
-    Stores postal addresses for companies and internships.
-    Allows for an optional second address line.
+    Stores postal address information for companies and internships.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        address_line1 (str): First line of the street address.
+        address_line2 (str, optional): Second line of the street address. Defaults to None.
+        city (str): City name.
+        state_province (str): State or province.
+        zip_postal (str): ZIP or postal code.
+        country (str): Country.
     """
 
     __tablename__ = "addresses"
@@ -69,8 +82,16 @@ class Address(Base):
 
 class Company(Base):
     """
-    Represents a company that offers internships.
-    Each company has a unique name, is associated with a unique address, and may have an optional website.
+    Represents a company offering internships.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        name (str): Unique company name.
+        address_id (int): Foreign key to the Address.
+        website_link (str, optional): Company website. Defaults to None.
+        address (Address): Associated Address (one-to-one).
+        employees (list[EmployerAccount]): Employer accounts associated with the company.
+        internships (list[Internship]): Internships offered by the company.
     """
 
     __tablename__ = "companies"
@@ -96,8 +117,16 @@ class Company(Base):
 
 class ContactInfo(Base):
     """
-    Stores personal contact information for an account, including name, email, and optional middle name and phone number.
-    Each account has exactly one associated contact info entry.
+    Stores contact details for an account.
+
+    Attributes:
+        id (int): Primary key and foreign key to the Account (one-to-one).
+        first (str): First name.
+        middle (str, optional): Middle name. Defaults to None.
+        last (str): Last name.
+        email (str): Unique email address.
+        phone (str, optional): Phone number. Defaults to None.
+        account (Account): Associated Account (one-to-one).
     """
 
     __tablename__ = "contact_info"
@@ -119,8 +148,14 @@ class ContactInfo(Base):
 
 class EmployerAccount(Account):
     """
-    Specialized user account for employers.
-    Each employer is associated with a company and inherits login credentials and contact info from Account.
+    Employer user account.
+
+    Inherits login credentials and contact info from Account.
+
+    Attributes:
+        id (int): Primary key and foreign key to the Account (one-to-one).
+        company_id (int): Foreign key to the Company.
+        company (Company): Associated Company.
     """
 
     __tablename__ = "employer_accounts"
@@ -139,8 +174,13 @@ class EmployerAccount(Account):
 
 class Department(Base):
     """
-    Represents an academic department within the system.
-    Used to group students and faculty members by their field or area of study.
+    Represents an Academic Department.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        name (str): Unique Department name.
+        faculty (list[FacultyAccount]): Faculty accounts within the Department.
+        students (list[StudentAccount]): Student accounts within the Department.
     """
 
     __tablename__ = "departments"
@@ -148,18 +188,23 @@ class Department(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
-    students: Mapped[list["StudentAccount"]] = relationship(
-        "StudentAccount", back_populates="department"
-    )
     faculty: Mapped[list["FacultyAccount"]] = relationship(
         "FacultyAccount", back_populates="department"
+    )
+    students: Mapped[list["StudentAccount"]] = relationship(
+        "StudentAccount", back_populates="department"
     )
 
 
 class Major(Base):
     """
-    Represents a field of study (major) that students can be enrolled in.
-    Each major has a unique name, and is associated with students and relevant internships.
+    Represents a Major (field of study).
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        name (str): Unique Major name.
+        students (list[StudentAccount]): Student accounts enrolled in the Major.
+        internships (list[InternshipMajor]): Internships associated with the Major.
     """
 
     __tablename__ = "majors"
@@ -177,8 +222,21 @@ class Major(Base):
 
 class StudentAccount(Account):
     """
-    Specialized user account for students.
-    Stores enrollment information, academic details (GPA, credit hours, major, department, transfer status), and an optional resume link.
+    Student user account.
+
+    Attributes:
+        id (int): Primary key and foreign key to the Account (one-to-one).
+        department_id (int): Foreign key to the Department.
+        major_id (int): Foreign key to the Major.
+        credit_hours (int): Number of credit hours completed (must be non-negative).
+        gpa (float): GPA (0 or greater, up to 4 decimal places).
+        start_semester (str): The Student's first semester taking classes ('Winter', 'Summer', or 'Fall').
+        start_year (int): The year the Student started taking classes (must be non-negative).
+        transfer (bool): Whether the student transferred from another institution.
+        resume_link (str, optional): Link to the student’s resume. Defaults to None.
+        department (Department): Associated Department.
+        major (Major): Associated Major.
+        applications (list[InternshipApplication]): Internship applications submitted by the Student.
     """
 
     __tablename__ = "student_accounts"
@@ -192,7 +250,7 @@ class StudentAccount(Account):
     major_id: Mapped[int] = mapped_column(ForeignKey("majors.id"), nullable=False)
 
     credit_hours: Mapped[int] = mapped_column(Integer, nullable=False)
-    # 4.0 (2, 1) up to 4.0000 (5, 4) overkill but don't want to worry about it
+    # 4.0 (2, 1) up to 4.0000 (5, 4) overkill, but don't want to worry about it
     gpa: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False)
     start_semester: Mapped[str] = mapped_column(
         Enum("Winter", "Summer", "Fall", name="start_semester_enum"), nullable=False
@@ -221,8 +279,12 @@ class StudentAccount(Account):
 
 class FacultyAccount(Account):
     """
-    Specialized user account for faculty members.
-    Each faculty member is associated with a single academic department and inherits login credentials and contact info from Account.
+    Faculty user account.
+
+    Attributes:
+        id (int): Primary key and foreign key to the Account (one-to-one).
+        department_id (int): Foreign key to the Department.
+        department (Department): Associated Department.
     """
 
     __tablename__ = "faculty_accounts"
@@ -246,10 +308,32 @@ class FacultyAccount(Account):
 
 class Internship(Base):
     """
-    Represents an internship opportunity posted by a company.
-    Includes details such as title, description, location, duration, work hours, salary info,
-    and current status (as an enumerated set of states in the application process).
-    May be associated with specific majors and skill requirements.
+    Internship opportunity posted by a Company.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        company_id (int): Foreign key to the Company.
+        title (str): Internship title.
+        description (str): Detailed description of the internship.
+        location_type (str): Location type ('Remote', 'Company', or 'Other').
+        address_id (int, optional): Foreign key to an Address. Nullable if Remote; required otherwise.
+        duration_weeks (int): Internship duration in weeks (must be non-negative).
+        weekly_hours (int): Number of work hours per week (must be non-negative).
+        total_work_hours (int): Total number of work hours (must be non-negative).
+        salary_info (str, optional): Salary or compensation information. Defaults to None.
+        status (str): Current status ('Open', 'Closed', 'PendingStart', 'InProgress', 'WaitingSummary', 'WaitingGrade', 'Completed').
+            Defaults to 'Open'.
+        company (Company): Associated Company.
+        address (Address): Associated Address, if applicable.
+        majors (list[InternshipMajor]): Association objects linking Majors to the internship.
+        required_skills (list[InternshipReqSkill]): Association objects linking required Skills to the internship.
+        preferred_skills (list[InternshipPrefSkill]): Association objects linking preferred Skills to the internship.
+        applications (list[InternshipApplication]): Applications submitted for this internship.
+
+    Notes:
+        - To access related Major objects: [imajor.major for imajor in internship.majors]
+        - To access related required Skill objects: [iskill.skill for iskill in internship.required_skills]
+        - To access related preferred Skill objects: [iskill.skill for iskill in internship.preferred_skills]
     """
 
     __tablename__ = "internships"
@@ -318,8 +402,15 @@ class Internship(Base):
 
 class InternshipMajor(Base):
     """
-    Associates an internship with eligible majors.
-    Implements a many-to-many relationship between internships and majors using a composite primary key.
+    Associate an Internship with a Major.
+
+    Implements a many-to-many relationship between Internships and Majors using a composite primary key.
+
+    Attributes:
+        internship_id (int): Foreign key to the Internship (part of composite primary key).
+        major_id (int): Foreign key to the Major (part of composite primary key).
+        internship (Internship): Associated Internship.
+        major (Major): Associated Major.
     """
 
     __tablename__ = "internship_majors"
@@ -341,8 +432,11 @@ class InternshipMajor(Base):
 
 class Skill(Base):
     """
-    Represents a skill that can be required or preferred for internships.
-    Each skill has a unique name.
+    Represents a Skill.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        name (str): Unique Skill name.
     """
 
     __tablename__ = "skills"
@@ -353,8 +447,15 @@ class Skill(Base):
 
 class InternshipReqSkill(Base):
     """
-    Associates required skills with internships.
-    Implements a many-to-many relationship between internships and skills via a composite primary key.
+    Associate a required Skill with an Internship.
+
+    Implements a many-to-many relationship between Internships and Skills using a composite primary key.
+
+    Attributes:
+        internship_id (int): Foreign key to the Internship (part of composite primary key).
+        skill_id (int): Foreign key to the Skill (part of composite primary key).
+        internship (Internship): Associated Internship.
+        skill (Skill): Associated required Skill.
     """
 
     __tablename__ = "internship_required_skills"
@@ -380,8 +481,15 @@ class InternshipReqSkill(Base):
 
 class InternshipPrefSkill(Base):
     """
-    Associates preferred (nice-to-have) skills with internships.
-    Implements a many-to-many relationship between internships and skills via a composite primary key.
+    Associate a preferred (nice-to-have) Skill with an Internship.
+
+    Implements a many-to-many relationship between Internships and Skills using a composite primary key.
+
+    Attributes:
+        internship_id (int): Foreign key to the Internship (part of composite primary key).
+        skill_id (int): Foreign key to the Skill (part of composite primary key).
+        internship (Internship): Associated Internship.
+        skill (Skill): Associated preferred Skill.
     """
 
     __tablename__ = "internship_preferred_skills"
@@ -407,9 +515,20 @@ class InternshipPrefSkill(Base):
 
 class InternshipApplication(Base):
     """
-    Represents a student's application to a specific internship.
-    Tracks which student applied to which internship and whether the application is eligible for co-op credit.
-    Each application is unique per (internship, student) pairing.
+    Represents a Student's application to a specific Internship.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        internship_id (int): Foreign key to the Internship.
+        student_id (int): Foreign key to the StudentAccount.
+        coop_credit_eligibility (bool): Whether the application is eligible for co-op credit.
+        internship (Internship): Associated Internship.
+        student (StudentAccount): Associated Student.
+        summary (InternshipSummary): Associated summary for the application (one-to-one).
+
+    Notes:
+        There is a unique constraint on (internship_id, student_id):
+        I.e., each student can only apply to a given internship once.
     """
 
     __tablename__ = "internship_applications"
@@ -444,10 +563,17 @@ class InternshipApplication(Base):
 
 class InternshipSummary(Base):
     """
-    Contains the completion summary and employer's evaluation for a specific internship application.
-    Employer approval is a boolean (False = Not Approved/Default; True = Approved).
-    Letter grade is an optional string (e.g., "A+", "A", "B").
-    Strict one-to-one relationship with InternshipApplication; uses the same primary key.
+    Contains the completion summary and the employer's evaluation for a specific InternshipApplication.
+
+    Attributes:
+        id (int): Primary key and foreign key to the InternshipApplication (one-to-one).
+        summary (str): Completion summary text.
+        employer_approval (bool): Employer approval status (False = Not Approved by default; True = Approved).
+        letter_grade (str, optional): Letter grade (e.g., "A+", "A", "B"). Defaults to None.
+        application (InternshipApplication): Associated InternshipApplication (one-to-one).
+
+    Notes:
+        Uses a strict one-to-one relationship with InternshipApplication, sharing the same primary key.
     """
 
     __tablename__ = "internship_summaries"
@@ -461,7 +587,7 @@ class InternshipSummary(Base):
     employer_approval: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("FALSE")
     )
-    # Nullable, e.g. "A", "B", "C"
+    # Nullable, e.g., "A", "B", "C"
     letter_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)
 
     # 1-to-1 with InternshipApplication
