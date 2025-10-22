@@ -41,8 +41,10 @@ async def get_account(session: AsyncSession, id: int) -> Optional[Account]:
     return await session.get(Account, id)
 
 
-async def login(session: AsyncSession, username: str, password: str) -> Optional[Account]:
-    statement = select(Account).filter_by(username=username, password=password)
+async def get_account_by_username(
+    session: AsyncSession, username: str
+) -> Optional[Account]:
+    statement = select(Account).filter_by(username=username)
     return await get_first_element(session, statement)
 
 
