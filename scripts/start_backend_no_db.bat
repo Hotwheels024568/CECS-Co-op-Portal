@@ -1,5 +1,5 @@
 @echo off
-REM Activate Python venv and run the backend using Uvicorn
+REM Activate Python venv and runs FastAPI app with uvicorn
 
 REM Change directory to the repository root
 cd /d "%~dp0\.."
@@ -14,5 +14,3 @@ if exist "venv\Scripts\activate.bat" (
 
 REM Start FastAPI/Uvicorn server
 uvicorn src.backend.main:app --reload --port 8000 --no-use-colors
-
-pause

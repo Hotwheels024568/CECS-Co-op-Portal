@@ -1,8 +1,8 @@
 #!/bin/bash
-# Activate Python venv and run the backend using Uvicorn
+# Activate Python venv in the repository root
 
 # Change directory to the repository root
-cd "$(dirname "$0")"/..
+cd "$(dirname "$0")"/.. || exit 1
 
 # Activate venv in the repository root
 if [ -d "venv" ]; then
@@ -12,5 +12,5 @@ else
   exit 1
 fi
 
-# Start FastAPI/Uvicorn server
-uvicorn src.backend.main:app --reload --port 8000
+# Open an interactive shell with the venv activated
+bash --rcfile <(echo "PS1='(venv) \w\$ '")
