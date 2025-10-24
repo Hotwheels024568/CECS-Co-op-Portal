@@ -50,7 +50,7 @@ class AsyncDBManager:
         self._session = None
 
     @classmethod
-    async def create(cls, autocommit: bool = False) -> Self:
+    async def create(cls, autocommit: bool = False):
         if cls._instance:
             return cls._instance
         self = cls._instance = cls(autocommit)
