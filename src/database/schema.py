@@ -233,7 +233,7 @@ class StudentAccount(Account):
         start_semester (str): The Student's first semester taking classes ('Winter', 'Summer', or 'Fall').
         start_year (int): The year the Student started taking classes (must be non-negative).
         transfer (bool): Whether the student transferred from another institution.
-        resume_link (str, optional): Link to the student’s resume. Defaults to None.
+        resume_link (str, optional): Link to the student's resume. Defaults to None.
         department (Department): Associated Department.
         major (Major): Associated Major.
         applications (list[InternshipApplication]): Internship applications submitted by the Student.
