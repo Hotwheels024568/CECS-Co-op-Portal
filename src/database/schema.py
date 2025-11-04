@@ -24,7 +24,7 @@ class Account(Base):
         id (int): Auto-incrementing primary key.
         username (str): Unique username.
         password (str): Hashed user password. Should be securely hashed and compared per security best practices.
-        user_type (str): User type; one of 'Employer', 'Student', or 'Faculty'.
+        user_type (str, optional): User type; one of 'Employer', 'Student', or 'Faculty'.
         contact (ContactInfo): Associated Contact Info (one-to-one).
 
     Security Considerations:
@@ -39,9 +39,8 @@ class Account(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    user_type: Mapped[str] = mapped_column(
-        Enum("Employer", "Student", "Faculty", name="user_type"), nullable=False
-    )
+    user_type: Mapped[str | None] = mapped_column(Enum("Employer", "Student", "Faculty", name="user_type"))
+    # An Admin user type could be useful
 
     # 1-to-1 with ContactInfo
     contact: Mapped["ContactInfo"] = relationship(
@@ -336,6 +335,8 @@ class Internship(Base):
         - To access related preferred Skill objects: [iskill.skill for iskill in internship.preferred_skills]
     """
 
+    # Fields to store dates for creation, latest update, and latest status update could be useful
+
     __tablename__ = "internships"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -521,14 +522,19 @@ class InternshipApplication(Base):
         id (int): Auto-incrementing primary key.
         internship_id (int): Foreign key to the Internship.
         student_id (int): Foreign key to the StudentAccount.
+        application_date (str): ISO 8601 timestamp of when the application was submitted.
+        note (str, optional): Note or message from the student to the employer. Defaults to None.
+        resume_link (str, optional): Link to the student's application specific resume. Defaults to None.
+        cover_letter_link (str, optional): Link to the student's application specific cover letter. Defaults to None.
         coop_credit_eligibility (bool): Whether the application is eligible for co-op credit.
+        selected (bool): Indicates if this application was chosen/hired by the employer for the internship.
         internship (Internship): Associated Internship.
         student (StudentAccount): Associated Student.
         summary (InternshipSummary): Associated summary for the application (one-to-one).
 
     Notes:
-        There is a unique constraint on (internship_id, student_id):
-        I.e., each student can only apply to a given internship once.
+        - Each student can only apply to a given internship once.
+            - Unique constraint on internship_id and student_id
     """
 
     __tablename__ = "internship_applications"
@@ -540,7 +546,11 @@ class InternshipApplication(Base):
     student_id: Mapped[int] = mapped_column(
         ForeignKey("student_accounts.id", ondelete="CASCADE"), nullable=False
     )
+    note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    cover_letter_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
     coop_credit_eligibility: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("FALSE"))
 
     internship: Mapped["Internship"] = relationship(
         "Internship", back_populates="applications"
@@ -567,7 +577,8 @@ class InternshipSummary(Base):
 
     Attributes:
         id (int): Primary key and foreign key to the InternshipApplication (one-to-one).
-        summary (str): Completion summary text.
+        summary (str): Completion summary text of the internship experience.
+        file_link (str, optional): Link to supporting documents or uploaded files, e.g. additional reports or proof of work. Defaults to ""
         employer_approval (bool): Employer approval status (False = Not Approved by default; True = Approved).
         letter_grade (str, optional): Letter grade (e.g., "A+", "A", "B"). Defaults to None.
         application (InternshipApplication): Associated InternshipApplication (one-to-one).
@@ -584,6 +595,7 @@ class InternshipSummary(Base):
     summary: Mapped[str] = mapped_column(
         Text, nullable=False, default="", server_default=""
     )
+    file_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
     employer_approval: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("FALSE")
     )

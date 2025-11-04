@@ -629,6 +629,7 @@ async def add_internship_preferred_skill(
         return None
 
 
+# TODO Update to new schema
 async def add_application(
     session: AsyncSession,
     internship_id: int,
@@ -668,6 +669,7 @@ async def add_application(
         return None
 
 
+# TODO Update to new schema
 async def add_summary(
     session: AsyncSession,
     application_id: int,
@@ -702,6 +704,7 @@ async def add_summary(
     )
 
 
+# TODO Update to new schema
 async def add_summary_from_internship(
     session: AsyncSession,
     internship_id: int,
@@ -740,6 +743,7 @@ async def add_summary_from_internship(
     )
 
 
+# TODO Update to new schema
 async def _add_summary(
     session: AsyncSession,
     application_id: int,

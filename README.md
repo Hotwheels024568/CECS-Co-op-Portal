@@ -1,6 +1,6 @@
 # CECS Co-op Portal
 
-CIS 425 Project – Information Systems (Fall 2025)
+CIS 425 Project - Information Systems (Fall 2025)
 
 A collaborative project for the CIS 425 course designed to streamline the connection between students, employers, and faculty for credit-bearing internships (co-ops). This portal supports creation and management of profiles, internship postings, applications, and department-based approvals.
 

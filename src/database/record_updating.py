@@ -554,6 +554,7 @@ async def update_internship(
         return None
 
 
+# TODO Update to new schema
 async def update_application(
     session: AsyncSession,
     id: int,
@@ -603,6 +604,7 @@ async def update_application(
         return None
 
 
+# TODO Update to new schema
 async def update_summary(
     session: AsyncSession,
     id: int,

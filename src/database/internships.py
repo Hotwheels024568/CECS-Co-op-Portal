@@ -187,6 +187,7 @@ async def create_internship(
         return None, f"Unexpected error in create_internship: {e}"
 
 
+# TODO Update to new schema
 async def create_application(
     session: AsyncSession,
     student_id: int,
@@ -257,6 +258,7 @@ async def create_application(
         return None, f"Unexpected error in create_internship_application: {e}"
 
 
+# TODO Update to new schema
 # Run when a Internship.status is set to "PendingStart"
 async def create_summary(
     session: AsyncSession,
@@ -290,6 +292,7 @@ async def create_summary(
     )
 
 
+# TODO Update to new schema
 async def create_summary_from_internship(
     session: AsyncSession,
     internship_id: int,
@@ -325,6 +328,7 @@ async def create_summary_from_internship(
     )
 
 
+# TODO Update to new schema
 async def _create_summary(
     session: AsyncSession,
     application_id: int,
