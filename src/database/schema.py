@@ -12,6 +12,10 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_base
+from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.sql import func
+
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -133,11 +137,11 @@ class ContactInfo(Base):
     id: Mapped[int] = mapped_column(
         ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True
     )
-    first: Mapped[str] = mapped_column(String(30), nullable=False)
-    middle: Mapped[str | None] = mapped_column(String(30), nullable=True)  # Nullable
-    last: Mapped[str] = mapped_column(String(30), nullable=False)
-    email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
-    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)  # Nullable
+    first: Mapped[str] = mapped_column(String(50), nullable=False)
+    middle: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Nullable
+    last: Mapped[str] = mapped_column(String(50), nullable=False)
+    email: Mapped[str] = mapped_column(String(254), unique=True, nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Nullable
 
     # 1-to-1 with Account
     account: Mapped["Account"] = relationship(
@@ -520,14 +524,14 @@ class InternshipApplication(Base):
 
     Attributes:
         id (int): Auto-incrementing primary key.
-        internship_id (int): Foreign key to the Internship.
         student_id (int): Foreign key to the StudentAccount.
+        internship_id (int): Foreign key to the Internship.
         application_date (str): ISO 8601 timestamp of when the application was submitted.
+        coop_credit_eligibility (bool): Whether the application is eligible for co-op credit.
         note (str, optional): Note or message from the student to the employer. Defaults to None.
         resume_link (str, optional): Link to the student's application specific resume. Defaults to None.
         cover_letter_link (str, optional): Link to the student's application specific cover letter. Defaults to None.
-        coop_credit_eligibility (bool): Whether the application is eligible for co-op credit.
-        selected (bool): Indicates if this application was chosen/hired by the employer for the internship.
+        selected (bool): Indicates if this application was chosen/hired by the employer for the internship. Defaults to False.
         internship (Internship): Associated Internship.
         student (StudentAccount): Associated Student.
         summary (InternshipSummary): Associated summary for the application (one-to-one).
@@ -540,16 +544,21 @@ class InternshipApplication(Base):
     __tablename__ = "internship_applications"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    internship_id: Mapped[int] = mapped_column(
-        ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
-    )
     student_id: Mapped[int] = mapped_column(
         ForeignKey("student_accounts.id", ondelete="CASCADE"), nullable=False
     )
+    internship_id: Mapped[int] = mapped_column(
+        ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
+    )
+    application_date: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.timezone('utc', func.now())
+    )
+    coop_credit_eligibility: Mapped[bool] = mapped_column(Boolean, nullable=False)
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
     resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
     cover_letter_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    coop_credit_eligibility: Mapped[bool] = mapped_column(Boolean, nullable=False)
     selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("FALSE"))
 
     internship: Mapped["Internship"] = relationship(
@@ -578,7 +587,7 @@ class InternshipSummary(Base):
     Attributes:
         id (int): Primary key and foreign key to the InternshipApplication (one-to-one).
         summary (str): Completion summary text of the internship experience.
-        file_link (str, optional): Link to supporting documents or uploaded files, e.g. additional reports or proof of work. Defaults to ""
+        file_link (str, optional): Link to supporting document(s) or file(s), e.g. additional reports or proof of work. Defaults to ""
         employer_approval (bool): Employer approval status (False = Not Approved by default; True = Approved).
         letter_grade (str, optional): Letter grade (e.g., "A+", "A", "B"). Defaults to None.
         application (InternshipApplication): Associated InternshipApplication (one-to-one).

@@ -2,6 +2,8 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from datetime import datetime, timezone
+
 from src.database.record_retrieval import get_application, get_application_from_internship
 from src.database.schema import (
     Account,
@@ -149,7 +151,7 @@ async def add_company(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         name (str): The name of the company (must be unique).
         address_id (int): The ID of an existing Address to associate with the company.
-        website_link (Optional[str], optional): The company's website URL. Defaults to None.
+        website_link (Optional[str], optional): Link to the company's website. Defaults to None.
         commit (bool, optional): If True, commits the transaction after adding.
             If False, commit must be handled externally. Defaults to False.
 
@@ -359,7 +361,7 @@ async def add_student(
         start_semester (str): The semester the student started (e.g., 'Winter', 'Summer', or 'Fall').
         start_year (int): The year the student started.
         transfer (bool): Indicates whether the student is a transfer student.
-        resume_link (Optional[str], optional): URL link to the student's resume. Defaults to None.
+        resume_link (Optional[str], optional): Link to the student's resume. Defaults to None.
         commit (bool, optional): If True, commits the transaction after adding.
             If False, commit must be handled externally. Defaults to False.
 
@@ -629,12 +631,15 @@ async def add_internship_preferred_skill(
         return None
 
 
-# TODO Update to new schema
 async def add_application(
     session: AsyncSession,
-    internship_id: int,
     student_id: int,
+    internship_id: int,
     coop_credit_eligibility: bool,
+    note: Optional[str] = None,
+    resume_link: Optional[str] = None,
+    cover_letter_link: Optional[str] = None,
+    selected: bool = False,
     commit: bool = False,
 ) -> Optional[InternshipApplication]:
     """
@@ -642,9 +647,13 @@ async def add_application(
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        internship_id (int): The ID of the Internship to which the student is applying.
         student_id (int): The ID of the Student applying for the internship.
+        internship_id (int): The ID of the Internship to which the student is applying.
         coop_credit_eligibility (bool): Indicates whether the application is eligible for co-op credit.
+        note (str, optional): Application note or message from the student to the employer. Defaults to None.
+        resume_link (str, optional): Application specific resume link. Defaults to None.
+        cover_letter_link (str, optional): Application specific cover letter link. Defaults to None.
+        selected (bool, optional): Indicates if this application was chosen by the employer for the internship. Defaults to False.
         commit (bool, optional): If True, commits the transaction after adding.
             If False, commit must be handled externally. Defaults to False.
 
@@ -652,9 +661,14 @@ async def add_application(
         Optional[InternshipApplication]: The newly created InternshipApplication object if successful, or None if insertion fails.
     """
     entry = InternshipApplication(
-        internship_id=internship_id,
         student_id=student_id,
+        internship_id=internship_id,
+        application_date=datetime.now(timezone.utc),
         coop_credit_eligibility=coop_credit_eligibility,
+        note=note,
+        resume_link=resume_link,
+        cover_letter_link=cover_letter_link,
+        selected=selected,
     )
     session.add(entry)
     try:
@@ -669,11 +683,11 @@ async def add_application(
         return None
 
 
-# TODO Update to new schema
 async def add_summary(
     session: AsyncSession,
     application_id: int,
     summary: str = "",
+    file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
     commit: bool = False,
@@ -685,6 +699,7 @@ async def add_summary(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         application_id (int): The ID of the InternshipApplication.
         summary (str, optional): The summary text describing the internship experience. Defaults to "".
+        file_link (str, optional): Link to supporting document(s) or file(s). Defaults to None.
         employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
         letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
         commit (bool, optional): If True, commits the transaction after adding.
@@ -700,16 +715,16 @@ async def add_summary(
         return None
 
     return await _add_summary(
-        session, application.id, summary, employer_approval, letter_grade, commit
+        session, application.id, summary, file_link, employer_approval, letter_grade, commit
     )
 
 
-# TODO Update to new schema
 async def add_summary_from_internship(
     session: AsyncSession,
     internship_id: int,
     student_id: int,
     summary: str = "",
+    file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
     commit: bool = False,
@@ -722,6 +737,7 @@ async def add_summary_from_internship(
         internship_id (int): The ID of the InternshipApplication's internship.
         student_id (int): The ID of the InternshipApplication's student.
         summary (str, optional): The summary text describing the internship experience. Defaults to "".
+        file_link (str, optional): Link to supporting document(s) or file(s). Defaults to None.
         employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
         letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
         commit (bool, optional): If True, commits the transaction after adding.
@@ -739,15 +755,15 @@ async def add_summary_from_internship(
         return None
 
     return await _add_summary(
-        session, application.id, summary, employer_approval, letter_grade, commit
+        session, application.id, summary, file_link, employer_approval, letter_grade, commit
     )
 
 
-# TODO Update to new schema
 async def _add_summary(
     session: AsyncSession,
     application_id: int,
     summary: str = "",
+    file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
     commit: bool = False,
@@ -755,6 +771,7 @@ async def _add_summary(
     entry = InternshipSummary(
         id=application_id,
         summary=summary,
+        file_link=file_link,
         employer_approval=employer_approval,
         letter_grade=letter_grade,
     )

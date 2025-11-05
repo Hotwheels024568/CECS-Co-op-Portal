@@ -22,7 +22,6 @@ from src.database.record_retrieval import (
     get_internship,
     get_student,
 )
-from src.database.schema import Internship
 from src.database.schema import (
     Internship,
     InternshipApplication,
@@ -187,11 +186,13 @@ async def create_internship(
         return None, f"Unexpected error in create_internship: {e}"
 
 
-# TODO Update to new schema
 async def create_application(
     session: AsyncSession,
     student_id: int,
     internship_id: int,
+    note: Optional[str] = None,
+    resume_link: Optional[str] = None,
+    cover_letter_link: Optional[str] = None,
 ) -> Tuple[Optional[InternshipApplication], str]:
     """
     Atomically creates an internship application for a student to a given internship.
@@ -203,6 +204,9 @@ async def create_application(
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         student_id (int): The ID of the student applying.
         internship_id (int): The ID of the internship.
+        note (Optional[str], optional): Message from student to employer.
+        resume_link (Optional[str], optional): Resume link.
+        cover_letter_link (Optional[str], optional): Cover letter link.
 
     Returns:
         Tuple[Optional[InternshipApplication], str]:
@@ -233,7 +237,14 @@ async def create_application(
 
         # 4. Add the application
         application = await add_application(
-            session, internship_id, student_id, coop_credit_eligibility, commit=True
+            session,
+            student_id,
+            internship_id,
+            coop_credit_eligibility,
+            note=note,
+            resume_link=resume_link,
+            cover_letter_link=cover_letter_link,
+            commit=True
         )
         if not application:
             await session.rollback()
@@ -244,8 +255,7 @@ async def create_application(
     except IntegrityError as e:
         await session.rollback()
         constraint = get_constraint_name_from_integrity_error(e)
-        # Your PK constraint is named '_internship_student_pk' (adjust if needed)
-        if "_internship_student_pk" in constraint:
+        if "_internship_student_uc" in constraint:
             return None, "You have already applied to this internship."
         return None, f"A database integrity error occurred: {constraint}"
 
@@ -258,12 +268,12 @@ async def create_application(
         return None, f"Unexpected error in create_internship_application: {e}"
 
 
-# TODO Update to new schema
 # Run when a Internship.status is set to "PendingStart"
 async def create_summary(
     session: AsyncSession,
     application_id: int,
     summary_text: str = "",
+    file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
 ) -> Tuple[Optional[InternshipSummary], str]:
@@ -274,6 +284,7 @@ async def create_summary(
         session (AsyncSession): The database session.
         application_id (int): The ID of the internship application.
         summary_text (str, optional): Summary text, defaults to empty string.
+        file_link (Optional[str], optional): Link to supporting document(s).
         employer_approval (bool, optional): Employer approval, defaults to False.
         letter_grade (Optional[str], optional): Letter grade.
 
@@ -282,22 +293,21 @@ async def create_summary(
             (InternshipSummary, "Internship summary created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
-    # Check the application exists
     application = await get_application(session, application_id)
     if not application:
         return None, "Internship application not found for this internship/student."
 
     return await _create_summary(
-        session, application.id, summary_text, employer_approval, letter_grade
+        session, application.id, summary_text, file_link, employer_approval, letter_grade
     )
 
 
-# TODO Update to new schema
 async def create_summary_from_internship(
     session: AsyncSession,
     internship_id: int,
     student_id: int,
     summary_text: str = "",
+    file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
 ) -> Tuple[Optional[InternshipSummary], str]:
@@ -309,6 +319,7 @@ async def create_summary_from_internship(
         student_id (int): The ID of the student.
         internship_id (int): The ID of the internship.
         summary_text (str, optional): Summary text, defaults to empty string.
+        file_link (Optional[str], optional): Link to supporting document(s).
         employer_approval (bool, optional): Employer approval, defaults to False.
         letter_grade (Optional[str], optional): Letter grade.
 
@@ -324,15 +335,15 @@ async def create_summary_from_internship(
         return None, "Internship application not found for this internship/student."
 
     return await _create_summary(
-        session, application.id, summary_text, employer_approval, letter_grade
+        session, application.id, summary_text, file_link, employer_approval, letter_grade
     )
 
 
-# TODO Update to new schema
 async def _create_summary(
     session: AsyncSession,
     application_id: int,
     summary_text: str = "",
+    file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
 ) -> Tuple[Optional[InternshipSummary], str]:
@@ -341,6 +352,7 @@ async def _create_summary(
             session,
             application_id,
             summary_text,
+            file_link,
             employer_approval,
             letter_grade,
             commit=True,
@@ -354,10 +366,10 @@ async def _create_summary(
     except IntegrityError as e:
         await session.rollback()
         constraint = get_constraint_name_from_integrity_error(e)
-        # Adjust constraint name if you've named your PK/FK differently!
         if (
             "internship_summaries_pkey" in constraint
             or "internship_summaries_pk" in constraint
+            or "internship_summaries_id_key" in constraint
         ):
             return None, "A summary for this application already exists."
         return (

@@ -43,14 +43,14 @@ async def update_account(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the Account to update.
-        username (Optional[str], optional): Updated username (must be unique), if any.
-        password (Optional[str], optional): Updated pre-hashed password, if any.
-        user_type (Optional[str], optional): Updated user type ('Employer', 'Student', 'Faculty'), if any.
+        username (Optional[str], optional): Updated username (must be unique).
+        password (Optional[str], optional): Updated pre-hashed password.
+        user_type (Optional[str], optional): Updated user type ('Employer', 'Student', 'Faculty').
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Account]: The updated Account object if successful, or None if the account does not exist or if an error occurs.
+        Optional[Account]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         account = await get_account(session, id)
@@ -105,17 +105,17 @@ async def update_address(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         address_id (int): The ID of the Address to update.
-        address_line1 (Optional[str], optional): Updated first line, if any.
-        address_line2 (Optional[str], optional): Updated second line, if any.
-        city (Optional[str], optional): Updated city, if any.
-        state_province (Optional[str], optional): Updated state or province, if any.
-        zip_postal (Optional[str], optional): Updated ZIP or postal code, if any.
-        country (Optional[str], optional): Updated country, if any.
+        address_line1 (Optional[str], optional): Updated first line.
+        address_line2 (Optional[str], optional): Updated second line.
+        city (Optional[str], optional): Updated city.
+        state_province (Optional[str], optional): Updated state or province.
+        zip_postal (Optional[str], optional): Updated ZIP or postal code.
+        country (Optional[str], optional): Updated country.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Address]: The updated Address object if successful, or None if the address does not exist or if an error occurs.
+        Optional[Address]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         address = await get_address(session, id)
@@ -171,14 +171,14 @@ async def update_company(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the Company to update.
-        name (Optional[str], optional): Updated company name (must be unique), if any.
-        address_id (Optional[int], optional): Updated address ID, if any.
-        website_link (Optional[str], optional): Updated website link, if any.
+        name (Optional[str], optional): Updated company name (must be unique).
+        address_id (Optional[int], optional): Updated address ID.
+        website_link (Optional[str], optional): Updated website link.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Company]: The updated Company object if successful, or None if the company does not exist or if an error occurs.
+        Optional[Company]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         company = await get_company(session, id)
@@ -232,16 +232,16 @@ async def update_contact(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the ContactInfo record to update.
-        first (Optional[str], optional): Updated first name, if any.
-        middle (Optional[str], optional): Updated middle name, if any.
-        last (Optional[str], optional): Updated last name, if any.
-        email (Optional[str], optional): Updated email address (must be unique), if any.
-        phone (Optional[str], optional): Updated phone number, if any.
+        first (Optional[str], optional): Updated first name.
+        middle (Optional[str], optional): Updated middle name.
+        last (Optional[str], optional): Updated last name.
+        email (Optional[str], optional): Updated email address (must be unique).
+        phone (Optional[str], optional): Updated phone number.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[ContactInfo]: The updated ContactInfo object if successful, or None if the record does not exist or if an error occurs.
+        Optional[ContactInfo]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         contact = await get_contact(session, id)
@@ -297,12 +297,12 @@ async def update_employer(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the EmployerAccount to update.
-        company_id (Optional[int], optional): Updated company ID, if any.
+        company_id (Optional[int], optional): Updated company ID.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[EmployerAccount]: The updated EmployerAccount object if successful, or None if the record does not exist or if an error occurs.
+        Optional[EmployerAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         employer = await get_employer(session, id)
@@ -348,19 +348,19 @@ async def update_student(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the StudentAccount to update.
-        department_id (Optional[int], optional): Updated department ID, if any.
-        major_id (Optional[int], optional): Updated major ID, if any.
-        credit_hours (Optional[int], optional): Updated number of credit hours, if any.
-        gpa (Optional[float], optional): Updated GPA, if any.
-        start_semester (Optional[str], optional): Updated start semester, if any.
-        start_year (Optional[int], optional): Updated start year, if any.
-        transfer (Optional[bool], optional): Updated transfer status, if any.
-        resume_link (Optional[str], optional): Updated resume link, if any.
+        department_id (Optional[int], optional): Updated department ID.
+        major_id (Optional[int], optional): Updated major ID.
+        credit_hours (Optional[int], optional): Updated number of credit hours.
+        gpa (Optional[float], optional): Updated GPA.
+        start_semester (Optional[str], optional): Updated start semester.
+        start_year (Optional[int], optional): Updated start year.
+        transfer (Optional[bool], optional): Updated transfer status.
+        resume_link (Optional[str], optional): Updated resume link.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[StudentAccount]: The updated StudentAccount object if successful, or None if the record does not exist or if an error occurs.
+        Optional[StudentAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         student = await get_student(session, id)
@@ -425,12 +425,12 @@ async def update_faculty(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the FacultyAccount to update.
-        department_id (Optional[int], optional): Updated department ID, if any.
+        department_id (Optional[int], optional): Updated department ID.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[FacultyAccount]: The updated FacultyAccount object if successful, or None if the record does not exist or if an error occurs.
+        Optional[FacultyAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         faculty = await get_faculty(session, id)
@@ -478,21 +478,21 @@ async def update_internship(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the Internship to update.
-        company_id (Optional[int], optional): Updated company ID, if any.
-        title (Optional[str], optional): Updated title, if any.
-        description (Optional[str], optional): Updated description, if any.
-        location_type (Optional[str], optional): Updated location type ('Remote', 'Company', 'Other'), if any.
-        address_id (Optional[int], optional): Updated address ID, if any.
-        duration_weeks (Optional[int], optional): Updated duration in weeks, if any.
-        weekly_hours (Optional[int], optional): Updated weekly hours, if any.
-        total_work_hours (Optional[int], optional): Updated total work hours, if any.
-        salary_info (Optional[str], optional): Updated salary information, if any.
-        status (Optional[str], optional): Updated status ('Open', 'Closed', etc.), if any.
+        company_id (Optional[int], optional): Updated company ID.
+        title (Optional[str], optional): Updated title.
+        description (Optional[str], optional): Updated description.
+        location_type (Optional[str], optional): Updated location type ('Remote', 'Company', 'Other').
+        address_id (Optional[int], optional): Updated address ID.
+        duration_weeks (Optional[int], optional): Updated duration in weeks.
+        weekly_hours (Optional[int], optional): Updated weekly hours.
+        total_work_hours (Optional[int], optional): Updated total work hours.
+        salary_info (Optional[str], optional): Updated salary information.
+        status (Optional[str], optional): Updated status ('Open', 'Closed', etc.).
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Internship]: The updated Internship object if successful, or None if the record does not exist or if an error occurs.
+        Optional[Internship]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         internship = await get_internship(session, id)
@@ -554,11 +554,14 @@ async def update_internship(
         return None
 
 
-# TODO Update to new schema
 async def update_application(
     session: AsyncSession,
     id: int,
     coop_credit_eligibility: Optional[bool] = None,
+    note: Optional[str] = None,
+    resume_link: Optional[str] = None,
+    cover_letter_link: Optional[str] = None,
+    selected: Optional[bool] = None,
     commit: bool = False,
 ) -> Optional[InternshipApplication]:
     """
@@ -567,14 +570,16 @@ async def update_application(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the InternshipApplication to update.
-        student_id (int): The student ID part of the composite key.
-        coop_credit_eligibility (Optional[bool], optional): Updated co-op credit eligibility, if any.
+        coop_credit_eligibility (Optional[bool], optional): Updated co-op eligibility.
+        note (Optional[str], optional): Updated note or message.
+        resume_link (Optional[str], optional): Updated resume link.
+        cover_letter_link (Optional[str], optional): Updated cover letter link.
+        selected (Optional[bool], optional): Updated selection status.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipApplication]: The updated InternshipApplication object if successful,
-            or None if the record does not exist or if an error occurs.
+        Optional[InternshipApplication]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         application = await get_application(session, id)
@@ -582,11 +587,20 @@ async def update_application(
             return None
 
         updated = False
-        if (
-            coop_credit_eligibility is not None
-            and application.coop_credit_eligibility != coop_credit_eligibility
-        ):
+        if coop_credit_eligibility is not None and application.coop_credit_eligibility != coop_credit_eligibility:
             application.coop_credit_eligibility = coop_credit_eligibility
+            updated = True
+        if note is not None and application.note != note:
+            application.note = note
+            updated = True
+        if resume_link is not None and application.resume_link != resume_link:
+            application.resume_link = resume_link
+            updated = True
+        if cover_letter_link is not None and application.cover_letter_link != cover_letter_link:
+            application.cover_letter_link = cover_letter_link
+            updated = True
+        if selected is not None and application.selected != selected:
+            application.selected = selected
             updated = True
 
         if not updated:
@@ -604,11 +618,11 @@ async def update_application(
         return None
 
 
-# TODO Update to new schema
 async def update_summary(
     session: AsyncSession,
     id: int,
     summary_text: Optional[str] = None,
+    file_link: Optional[str] = None,
     employer_approval: Optional[bool] = None,
     letter_grade: Optional[str] = None,
     commit: bool = False,
@@ -619,14 +633,15 @@ async def update_summary(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the InternshipSummary to update.
-        summary (Optional[str], optional): Updated summary text, if any.
-        employer_approval (Optional[bool], optional): Updated employer approval status, if any.
-        letter_grade (Optional[str], optional): Updated letter grade, if any.
+        summary (Optional[str], optional): Updated summary text.
+        file_link (Optional[str], optional): Updated file or document link.
+        employer_approval (Optional[bool], optional): Updated employer approval status.
+        letter_grade (Optional[str], optional): Updated letter grade.
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipSummary]: The updated InternshipSummary object if successful, or None if the record does not exist or if an error occurs.
+        Optional[InternshipSummary]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
         summary = await get_summary(session, id)
@@ -637,10 +652,10 @@ async def update_summary(
         if summary_text is not None and summary.summary != summary_text:
             summary.summary = summary_text
             updated = True
-        if (
-            employer_approval is not None
-            and summary.employer_approval != employer_approval
-        ):
+        if file_link is not None and summary.file_link != file_link:
+            summary.file_link = file_link
+            updated = True
+        if employer_approval is not None and summary.employer_approval != employer_approval:
             summary.employer_approval = employer_approval
             updated = True
         if letter_grade is not None and summary.letter_grade != letter_grade:
