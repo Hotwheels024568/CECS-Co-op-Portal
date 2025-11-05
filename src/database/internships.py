@@ -2,6 +2,8 @@ from typing import List, Optional, Tuple
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from datetime import datetime
+
 from src.database.manage import get_constraint_name_from_integrity_error
 from src.database.record_get_or_create import get_or_create_major, get_or_create_skill
 from src.database.record_insertion import (
@@ -27,6 +29,7 @@ from src.database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
+from src.utils.academics import semesters_since_enrollment
 
 
 async def create_internship(
@@ -225,14 +228,12 @@ async def create_application(
             return None, "Internship not found."
 
         # 3. Determine co-op credit eligibility
-        # TODO: (Expand logic if/when semester info is available)
         coop_credit_eligibility = (
             student.gpa >= 2
             and internship.duration_weeks >= 7
             and internship.total_work_hours >= 140
-            # and Semesters Completed >= 1
-            # if student.transfer
-            # else Semesters Completed >= 2
+            and semesters_since_enrollment(student.start_semester, student.start_year)
+                >= (1 if student.transfer else 2)
         )
 
         # 4. Add the application
