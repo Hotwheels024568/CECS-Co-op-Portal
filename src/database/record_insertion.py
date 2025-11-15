@@ -28,8 +28,9 @@ from src.database.schema import (
 async def add_account(
     session: AsyncSession,
     username: str,
-    password: str,
-    user_type: str,
+    password: bytes,
+    salt: bytes,
+    user_type: str = None,
     commit: bool = False,
 ) -> Optional[Account]:
     """
@@ -46,7 +47,7 @@ async def add_account(
     Returns:
         Optional[Account]: The newly created Account object if successful, or None if insertion fails.
     """
-    entry = Account(username=username, password=password, user_type=user_type)
+    entry = Account(username=username, password=password, salt=salt, user_type=user_type)
     session.add(entry)
     try:
         await session.flush()  # Tries the insert

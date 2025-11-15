@@ -4,6 +4,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    LargeBinary,
     Numeric,
     PrimaryKeyConstraint,
     String,
@@ -42,7 +43,8 @@ class Account(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
+    salt: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
     user_type: Mapped[str | None] = mapped_column(
         Enum("Employer", "Student", "Faculty", name="user_type")
     )

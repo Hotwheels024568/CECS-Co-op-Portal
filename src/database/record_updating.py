@@ -33,7 +33,8 @@ async def update_account(
     session: AsyncSession,
     id: int,
     username: Optional[str] = None,
-    password: Optional[str] = None,
+    password: Optional[bytes] = None,
+    salt: Optional[bytes] = None,
     user_type: Optional[str] = None,
     commit: bool = False,
 ) -> Optional[Account]:
@@ -63,6 +64,9 @@ async def update_account(
             updated = True
         if password is not None and account.password != password:
             account.password = password
+            updated = True
+        if salt is not None and account.salt != salt:
+            account.salt = salt
             updated = True
         if user_type is not None and account.user_type != user_type:
             account.user_type = user_type
