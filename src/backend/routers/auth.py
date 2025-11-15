@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from typing import Dict
 import secrets
 import hmac
 import time
@@ -29,7 +28,7 @@ class LoginResponse(BaseModel):
 
 
 @router.post("/register")
-async def register(request: AuthRequest) -> Dict:
+async def register(request: AuthRequest) -> dict:
     """
     Register a new account.
 
@@ -56,10 +55,10 @@ async def register(request: AuthRequest) -> Dict:
         if account is not None:
             return {"success": True}
 
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists or registration failed",
-        )
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Username already exists or registration failed",
+    )
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -123,7 +122,7 @@ async def login(request: AuthRequest) -> LoginResponse:
 
 # --- Helper: hash_and_pepper Example (You can use bcrypt/scrypt/argon2, but here's a basic PBKDF2 example) ---
 @router.post("/logout")
-async def logout(request: LogoutRequest) -> Dict:
+async def logout(request: LogoutRequest) -> dict:
     """
     Log out a user by invalidating their session.
 
