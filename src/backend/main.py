@@ -4,7 +4,24 @@ from contextlib import asynccontextmanager
 
 from src.database.manage import AsyncDBManager
 from src.backend.globals import DB_MANAGER
+
 from src.backend.routers.auth import router as auth_router
+from src.backend.routers.accounts import router as accounts_router
+from src.backend.routers.notifications import router as notifications_router
+
+from src.backend.routers.profiles.students import router as students_router
+from src.backend.routers.profiles.employers import router as employers_router
+from src.backend.routers.profiles.faculty import router as faculty_router
+from src.backend.routers.profiles.companies import router as companies_router
+
+from src.backend.routers.internships.internships import router as internships_router
+from src.backend.routers.internships.applications import router as applications_router
+from src.backend.routers.internships.summaries import router as summaries_router
+
+from src.backend.routers.references.addresses import router as addresses_router
+from src.backend.routers.references.departments import router as departments_router
+from src.backend.routers.references.majors import router as majors_router
+from src.backend.routers.references.skills import router as skills_router
 
 
 @asynccontextmanager
@@ -38,6 +55,22 @@ async def root() -> dict[str, str]:
 
 
 app.include_router(auth_router, prefix="/auth")
+app.include_router(accounts_router, prefix="/accounts")
+app.include_router(notifications_router, prefix="/notifications")
+
+app.include_router(students_router, prefix="/students")
+app.include_router(employers_router, prefix="/employers")
+app.include_router(faculty_router, prefix="/faculty")
+app.include_router(companies_router, prefix="/companies")
+
+app.include_router(internships_router, prefix="/internships")
+app.include_router(applications_router, prefix="/applications")
+app.include_router(summaries_router, prefix="/summaries")
+
+app.include_router(addresses_router, prefix="/addresses")
+app.include_router(departments_router, prefix="/departments")
+app.include_router(majors_router, prefix="/majors")
+app.include_router(skills_router, prefix="/skills")
 
 """
 Core Routers to Implement
@@ -93,13 +126,7 @@ Here's a concise summary for implementation and file/folder structure guidance:
     notifications_router.py (optional/bonus)
 
 Quick Use-Case Mapping
-    Authentication: /auth/
-    Accounts/Profiles: /accounts/, /students/, /employers/, /faculty/
-    Company and Address: /companies/, /addresses/
-    Department/Major: /departments/, /majors/
-    Internship Posting/Searching: /internships/
-    Application Submission/Management: /applications/
-    Summary Submission/Approval/Grading: /summaries/
+    ...
     Skill Tagging: /skills/, with internship linkage
     Notification/Communication: /notifications/ (if implementing email/alerts)
 """
