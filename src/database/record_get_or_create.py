@@ -54,9 +54,7 @@ async def get_or_create_company(
         return await get_company_by_name(session, company_name)
 
 
-async def get_or_create_department(
-    session: AsyncSession, name: str
-) -> Optional[Department]:
+async def get_or_create_department(session: AsyncSession, name: str) -> Optional[Department]:
     """
     Retrieve a Department by name or create it if it does not exist, within the current transaction.
 

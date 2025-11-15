@@ -747,9 +747,7 @@ async def add_summary_from_internship(
         Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
     """
 
-    application = await get_application_from_internship(
-        session, internship_id, student_id
-    )
+    application = await get_application_from_internship(session, internship_id, student_id)
     if application is None:
         print("No InternshipApplication found for provided internship_id and student_id.")
         return None

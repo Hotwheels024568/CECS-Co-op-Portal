@@ -42,9 +42,7 @@ class AsyncDBManager:
 
     def __init__(self, autocommit: bool = False) -> None:
         self.engine = create_async_engine(DATABASE_URL, echo=False)
-        self.SessionMaker = async_sessionmaker(
-            self.engine, expire_on_commit=False, autoflush=False
-        )
+        self.SessionMaker = async_sessionmaker(self.engine, expire_on_commit=False, autoflush=False)
         self.metadata = Base.metadata
         self.autocommit = autocommit
         self._session = None

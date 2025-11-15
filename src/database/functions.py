@@ -58,9 +58,7 @@ async def get_first_element(
     try:
         return (await session.execute(statement, parameters)).scalar_one_or_none()
     except Exception as e:
-        print(
-            f"Error in DB 'get_first_element' function:\nStatement: {statement}\nError: {e}"
-        )
+        print(f"Error in DB 'get_first_element' function:\nStatement: {statement}\nError: {e}")
     return None
 
 

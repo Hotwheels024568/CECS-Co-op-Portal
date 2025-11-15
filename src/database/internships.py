@@ -233,7 +233,7 @@ async def create_application(
             and internship.duration_weeks >= 7
             and internship.total_work_hours >= 140
             and semesters_since_enrollment(student.start_semester, student.start_year)
-                >= (1 if student.transfer else 2)
+            >= (1 if student.transfer else 2)
         )
 
         # 4. Add the application
@@ -245,7 +245,7 @@ async def create_application(
             note=note,
             resume_link=resume_link,
             cover_letter_link=cover_letter_link,
-            commit=True
+            commit=True,
         )
         if not application:
             await session.rollback()
@@ -329,9 +329,7 @@ async def create_summary_from_internship(
             (InternshipSummary, "Internship summary created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
-    application = await get_application_from_internship(
-        session, internship_id, student_id
-    )
+    application = await get_application_from_internship(session, internship_id, student_id)
     if not application:
         return None, "Internship application not found for this internship/student."
 

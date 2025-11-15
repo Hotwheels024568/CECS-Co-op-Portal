@@ -88,9 +88,7 @@ async def login(
 # --- Helper: hash_and_pepper Example (You can use bcrypt/scrypt/argon2, but here's a basic PBKDF2 example) ---
 def hash_and_pepper(password: str, salt: bytes, pepper: str) -> bytes:
     pwd_bytes = (password + pepper).encode()
-    return hashlib.pbkdf2_hmac(
-        "sha256", pwd_bytes, salt, 100_000
-    )  # <-- adjustable iterations
+    return hashlib.pbkdf2_hmac("sha256", pwd_bytes, salt, 100_000)  # <-- adjustable iterations
 
 
 @router.post("/logout")

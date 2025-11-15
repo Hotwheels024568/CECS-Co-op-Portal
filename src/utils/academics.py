@@ -2,6 +2,7 @@ from datetime import datetime
 
 SEMESTER_ORDER = ["Winter", "Summer", "Fall"]
 
+
 def get_current_semester_and_year(dt: datetime) -> tuple[str, int]:
     month = dt.month
     year = dt.year
@@ -12,7 +13,10 @@ def get_current_semester_and_year(dt: datetime) -> tuple[str, int]:
     else:
         return "Fall", year
 
-def semesters_completed(start_semester: str, start_year: int, current_semester: str, current_year: int) -> int:
+
+def semesters_completed(
+    start_semester: str, start_year: int, current_semester: str, current_year: int
+) -> int:
     sem_index = SEMESTER_ORDER.index(start_semester)
     current_index = SEMESTER_ORDER.index(current_semester)
     year, count = start_year, 0
@@ -23,6 +27,7 @@ def semesters_completed(start_semester: str, start_year: int, current_semester: 
             sem_index = 0
             year += 1
     return count
+
 
 def semesters_since_enrollment(start_semester: str, start_year: int) -> int:
     current_semester, current_year = get_current_semester_and_year(datetime.now())

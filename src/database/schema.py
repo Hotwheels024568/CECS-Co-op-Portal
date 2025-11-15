@@ -43,7 +43,9 @@ class Account(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    user_type: Mapped[str | None] = mapped_column(Enum("Employer", "Student", "Faculty", name="user_type"))
+    user_type: Mapped[str | None] = mapped_column(
+        Enum("Employer", "Student", "Faculty", name="user_type")
+    )
     # An Admin user type could be useful
 
     # 1-to-1 with ContactInfo
@@ -101,9 +103,7 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    address_id: Mapped[int] = mapped_column(
-        ForeignKey("addresses.id"), unique=True, nullable=False
-    )
+    address_id: Mapped[int] = mapped_column(ForeignKey("addresses.id"), unique=True, nullable=False)
     # Nullable
     website_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
@@ -113,9 +113,7 @@ class Company(Base):
     employees: Mapped[list["EmployerAccount"]] = relationship(
         "EmployerAccount", back_populates="company"
     )
-    internships: Mapped[list["Internship"]] = relationship(
-        "Internship", back_populates="company"
-    )
+    internships: Mapped[list["Internship"]] = relationship("Internship", back_populates="company")
 
 
 class ContactInfo(Base):
@@ -134,9 +132,7 @@ class ContactInfo(Base):
 
     __tablename__ = "contact_info"
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True
-    )
+    id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
     first: Mapped[str] = mapped_column(String(50), nullable=False)
     middle: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Nullable
     last: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -144,9 +140,7 @@ class ContactInfo(Base):
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Nullable
 
     # 1-to-1 with Account
-    account: Mapped["Account"] = relationship(
-        "Account", back_populates="contact", uselist=False
-    )
+    account: Mapped["Account"] = relationship("Account", back_populates="contact", uselist=False)
 
 
 class EmployerAccount(Account):
@@ -163,9 +157,7 @@ class EmployerAccount(Account):
 
     __tablename__ = "employer_accounts"
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True
-    )
+    id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
     company_id: Mapped[int] = mapped_column(
         ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
     )
@@ -244,12 +236,8 @@ class StudentAccount(Account):
 
     __tablename__ = "student_accounts"
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True
-    )
-    department_id: Mapped[int] = mapped_column(
-        ForeignKey("departments.id"), nullable=False
-    )
+    id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), nullable=False)
     major_id: Mapped[int] = mapped_column(ForeignKey("majors.id"), nullable=False)
 
     credit_hours: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -262,9 +250,7 @@ class StudentAccount(Account):
     transfer: Mapped[bool] = mapped_column(Boolean, nullable=False)
     resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    department: Mapped["Department"] = relationship(
-        "Department", back_populates="students"
-    )
+    department: Mapped["Department"] = relationship("Department", back_populates="students")
     major: Mapped["Major"] = relationship("Major", back_populates="students")
 
     applications: Mapped[list["InternshipApplication"]] = relationship(
@@ -292,17 +278,11 @@ class FacultyAccount(Account):
 
     __tablename__ = "faculty_accounts"
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True
-    )
+    id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
     # Should be Unique according to assignment directions
-    department_id: Mapped[int] = mapped_column(
-        ForeignKey("departments.id"), nullable=False
-    )
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), nullable=False)
 
-    department: Mapped["Department"] = relationship(
-        "Department", back_populates="faculty"
-    )
+    department: Mapped["Department"] = relationship("Department", back_populates="faculty")
     # 1-to-1 with Department
     # department: Mapped["Department"] = relationship("Department", back_populates="faculty", uselist=False)
 
@@ -353,9 +333,7 @@ class Internship(Base):
         Enum("Remote", "Company", "Other", name="location_type"), nullable=False
     )
     # Nullable if Remote, else required (Company: companies.address_id; Other: Unique address.id)
-    address_id: Mapped[int | None] = mapped_column(
-        ForeignKey("addresses.id"), nullable=True
-    )
+    address_id: Mapped[int | None] = mapped_column(ForeignKey("addresses.id"), nullable=True)
     duration_weeks: Mapped[int] = mapped_column(Integer, nullable=False)
     weekly_hours: Mapped[int] = mapped_column(Integer, nullable=False)
     # Calculated externally
@@ -395,9 +373,7 @@ class Internship(Base):
     __table_args__ = (
         CheckConstraint("duration_weeks >= 0", name="_check_duration_weeks_non_negative"),
         CheckConstraint("weekly_hours >= 0", name="_check_weekly_hours_non_negative"),
-        CheckConstraint(
-            "total_work_hours >= 0", name="_check_total_work_hours_non_negative"
-        ),
+        CheckConstraint("total_work_hours >= 0", name="_check_total_work_hours_non_negative"),
         CheckConstraint(
             "location_type != 'Remote' OR address_id IS NULL",
             name="_location_type_address_ck",
@@ -472,15 +448,11 @@ class InternshipReqSkill(Base):
         ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
     )
 
-    internship: Mapped["Internship"] = relationship(
-        "Internship", back_populates="required_skills"
-    )
+    internship: Mapped["Internship"] = relationship("Internship", back_populates="required_skills")
     skill: Mapped["Skill"] = relationship("Skill")
 
     __table_args__ = (
-        PrimaryKeyConstraint(
-            "internship_id", "skill_id", name="_internship_required_skill_pk"
-        ),
+        PrimaryKeyConstraint("internship_id", "skill_id", name="_internship_required_skill_pk"),
     )
 
 
@@ -506,15 +478,11 @@ class InternshipPrefSkill(Base):
         ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
     )
 
-    internship: Mapped["Internship"] = relationship(
-        "Internship", back_populates="preferred_skills"
-    )
+    internship: Mapped["Internship"] = relationship("Internship", back_populates="preferred_skills")
     skill: Mapped["Skill"] = relationship("Skill")
 
     __table_args__ = (
-        PrimaryKeyConstraint(
-            "internship_id", "skill_id", name="_internship_preferred_skill_pk"
-        ),
+        PrimaryKeyConstraint("internship_id", "skill_id", name="_internship_preferred_skill_pk"),
     )
 
 
@@ -553,17 +521,17 @@ class InternshipApplication(Base):
     application_date: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=func.timezone('utc', func.now())
+        server_default=func.timezone("utc", func.now()),
     )
     coop_credit_eligibility: Mapped[bool] = mapped_column(Boolean, nullable=False)
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
     resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
     cover_letter_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("FALSE"))
-
-    internship: Mapped["Internship"] = relationship(
-        "Internship", back_populates="applications"
+    selected: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("FALSE")
     )
+
+    internship: Mapped["Internship"] = relationship("Internship", back_populates="applications")
     student: Mapped["StudentAccount"] = relationship(
         "StudentAccount", back_populates="applications"
     )
@@ -587,7 +555,8 @@ class InternshipSummary(Base):
     Attributes:
         id (int): Primary key and foreign key to the InternshipApplication (one-to-one).
         summary (str): Completion summary text of the internship experience.
-        file_link (str, optional): Link to supporting document(s) or file(s), e.g. additional reports or proof of work. Defaults to ""
+        file_link (str, optional): Link to supporting document(s) or file(s), e.g. additional reports or proof of work.
+            Defaults to ""
         employer_approval (bool): Employer approval status (False = Not Approved by default; True = Approved).
         letter_grade (str, optional): Letter grade (e.g., "A+", "A", "B"). Defaults to None.
         application (InternshipApplication): Associated InternshipApplication (one-to-one).
@@ -601,9 +570,7 @@ class InternshipSummary(Base):
     id: Mapped[int] = mapped_column(
         ForeignKey("internship_applications.id", ondelete="CASCADE"), primary_key=True
     )
-    summary: Mapped[str] = mapped_column(
-        Text, nullable=False, default="", server_default=""
-    )
+    summary: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
     file_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
     employer_approval: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("FALSE")

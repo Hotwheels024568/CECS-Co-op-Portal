@@ -41,9 +41,7 @@ async def get_account(session: AsyncSession, id: int) -> Optional[Account]:
     return await session.get(Account, id)
 
 
-async def get_account_by_username(
-    session: AsyncSession, username: str
-) -> Optional[Account]:
+async def get_account_by_username(session: AsyncSession, username: str) -> Optional[Account]:
     statement = select(Account).filter_by(username=username)
     return await get_first_element(session, statement)
 
@@ -65,9 +63,7 @@ async def get_contact(session: AsyncSession, id: int) -> Optional[ContactInfo]:
     return await session.get(ContactInfo, id)
 
 
-async def get_contact_by_email(
-    session: AsyncSession, email: str
-) -> Optional[ContactInfo]:
+async def get_contact_by_email(session: AsyncSession, email: str) -> Optional[ContactInfo]:
     statement = select(ContactInfo).filter_by(email=email)
     return await get_first_element(session, statement)
 
@@ -80,9 +76,7 @@ async def get_department(session: AsyncSession, id: int) -> Optional[Department]
     return await session.get(Department, id)
 
 
-async def get_department_by_name(
-    session: AsyncSession, name: str
-) -> Optional[Department]:
+async def get_department_by_name(session: AsyncSession, name: str) -> Optional[Department]:
     statement = select(Department).filter_by(name=name)
     return await get_first_element(session, statement)
 
@@ -101,9 +95,7 @@ async def get_student(session: AsyncSession, id: int) -> Optional[StudentAccount
 
 
 # TODO: Paginate
-async def get_students_by_department(
-    session: AsyncSession, name: str
-) -> List[StudentAccount]:
+async def get_students_by_department(session: AsyncSession, name: str) -> List[StudentAccount]:
     statement = select(StudentAccount).join(Department).filter(Department.name == name)
     return await get_first_element_of_all_rows(session, statement)
 
@@ -112,9 +104,7 @@ async def get_faculty(session: AsyncSession, id: int) -> Optional[FacultyAccount
     return await session.get(FacultyAccount, id)
 
 
-async def get_faculty_by_department(
-    session: AsyncSession, name: str
-) -> List[FacultyAccount]:
+async def get_faculty_by_department(session: AsyncSession, name: str) -> List[FacultyAccount]:
     statement = select(FacultyAccount).join(Department).filter(Department.name == name)
     return await get_first_element(session, statement)
 
@@ -134,16 +124,12 @@ async def get_internship_majors(session: AsyncSession, internship_id: int) -> Li
 
 async def get_major_internships(session: AsyncSession, major_id: int) -> List[Internship]:
     statement = (
-        select(Internship)
-        .join(InternshipMajor)
-        .filter(InternshipMajor.major_id == major_id)
+        select(Internship).join(InternshipMajor).filter(InternshipMajor.major_id == major_id)
     )
     return await get_first_element_of_all_rows(session, statement)
 
 
-async def get_internship_required_skills(
-    session: AsyncSession, internship_id: int
-) -> List[str]:
+async def get_internship_required_skills(session: AsyncSession, internship_id: int) -> List[str]:
     statement = (
         select(Skill.name)
         .join(InternshipReqSkill)
@@ -152,9 +138,7 @@ async def get_internship_required_skills(
     return await get_first_element_of_all_rows(session, statement)
 
 
-async def get_internship_preferred_skills(
-    session: AsyncSession, internship_id: int
-) -> List[str]:
+async def get_internship_preferred_skills(session: AsyncSession, internship_id: int) -> List[str]:
     statement = (
         select(Skill.name)
         .join(InternshipPrefSkill)
@@ -172,9 +156,7 @@ async def get_skill_by_name(session: AsyncSession, name: str) -> Optional[Skill]
     return await get_first_element(session, statement)
 
 
-async def get_application(
-    session: AsyncSession, id: int
-) -> Optional[InternshipApplication]:
+async def get_application(session: AsyncSession, id: int) -> Optional[InternshipApplication]:
     return await session.get(InternshipApplication, id)
 
 
@@ -194,9 +176,7 @@ async def get_summary(session: AsyncSession, id: int) -> Optional[InternshipSumm
 async def get_summary_from_internship(
     session: AsyncSession, internship_id: int, student_id: int
 ) -> Optional[InternshipSummary]:
-    application = await get_application_from_internship(
-        session, internship_id, student_id
-    )
+    application = await get_application_from_internship(session, internship_id, student_id)
     if application is None:
         return None
     return application.summary

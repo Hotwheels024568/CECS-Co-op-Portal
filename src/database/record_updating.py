@@ -521,10 +521,7 @@ async def update_internship(
         if weekly_hours is not None and internship.weekly_hours != weekly_hours:
             internship.weekly_hours = weekly_hours
             updated = True
-        if (
-            total_work_hours is not None
-            and internship.total_work_hours != total_work_hours
-        ):
+        if total_work_hours is not None and internship.total_work_hours != total_work_hours:
             internship.total_work_hours = total_work_hours
             updated = True
         if salary_info is not None and internship.salary_info != salary_info:
@@ -587,7 +584,10 @@ async def update_application(
             return None
 
         updated = False
-        if coop_credit_eligibility is not None and application.coop_credit_eligibility != coop_credit_eligibility:
+        if (
+            coop_credit_eligibility is not None
+            and application.coop_credit_eligibility != coop_credit_eligibility
+        ):
             application.coop_credit_eligibility = coop_credit_eligibility
             updated = True
         if note is not None and application.note != note:
