@@ -1,9 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
-from src.backend.api_endpoints.auth import router as auth_router
+from src.database.manage import AsyncDBManager
+from src.backend.globals import DB_MANAGER
+from src.backend.routers.auth import router as auth_router
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup code
+    global DB_MANAGER
+    DB_MANAGER = await AsyncDBManager.create()
+
+    yield  # <-- App runs while you wait here
+
+    # Shutdown code (if needed)
+    # Perform cleanup if applicable, e.g. await DB_MANAGER.close() if you define such a method
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Allow React dev client to connect
 app.add_middleware(
@@ -21,7 +37,6 @@ async def root() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
-app = FastAPI()
 app.include_router(auth_router, prefix="/auth")
 
 """
