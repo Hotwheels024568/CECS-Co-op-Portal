@@ -27,7 +27,6 @@ def get_database_url() -> str:
     database = config.get("Database")
     return f"postgresql+asyncpg://{username}:{password}@localhost:5432/{database}"
     # 5432 = the default port for Postgres (you can omit if the default)
-    # db = the database name you want to use
 
 
 DATABASE_URL = get_database_url()
@@ -35,7 +34,52 @@ DATABASE_URL = get_database_url()
 
 class AsyncDBManager:
     """
-    Docs
+    Asynchronous singleton manager for database engine, sessions, and schema control.
+
+    This class encapsulates the creation and management of a SQLAlchemy asynchronous database engine,
+    session factory, and utility methods for schema initialization and resetting. It provides
+    context-managed asynchronous sessions for use with FastAPI or other async frameworks.
+
+    Attributes:
+        engine (AsyncEngine): The SQLAlchemy asynchronous database engine.
+        SessionMaker (async_sessionmaker): A factory for creating AsyncSession objects.
+        metadata (MetaData): The metadata registry for SQLAlchemy models.
+        autocommit (bool): If True, sessions auto-commit after transactions; otherwise, manual commit control.
+        _session (Optional[AsyncSession]): Internal reference to the currently active session.
+        _instance (Optional[AsyncDBManager]): Singleton instance for this class.
+
+    Class Methods:
+        create(autocommit: bool = False) -> AsyncDBManager:
+            Asynchronously initializes or returns the singleton DB manager instance,
+            ensuring the database schema is created (and optionally seeded).
+
+    Instance Methods:
+        async def drop_and_create_db() -> None:
+            Drops all tables and re-creates the database schema.
+
+        @asynccontextmanager
+        async def session() -> AsyncGenerator[AsyncSession, None]:
+            Asynchronous context manager yielding a database session.
+            Ensures commit or rollback of the transaction on exit.
+
+        async def __aenter__() -> AsyncSession:
+            Enter an async context with an open session.
+        async def __aexit__(exc_type, exc_val, exc_tb) -> None:
+            Exit the async context, committing or rolling back as appropriate.
+
+    Usage:
+        # Startup
+        manager = await AsyncDBManager.create()
+        # Transaction
+        async with manager.session() as session:
+            # ... use session ...
+
+    Security Considerations:
+        - Do not expose the manager directly in public APIs.
+        - Always handle exceptions and rollbacks in session contexts.
+
+    Note:
+        This class is intended to be used as a singleton. Use 'await AsyncDBManager.create()' to obtain the instance.
     """
 
     _instance: Optional["AsyncDBManager"] = None
@@ -48,7 +92,7 @@ class AsyncDBManager:
         self._session = None
 
     @classmethod
-    async def create(cls, autocommit: bool = False):
+    async def create(cls, autocommit: bool = False) -> Self:
         if cls._instance:
             return cls._instance
         self = cls._instance = cls(autocommit)
@@ -68,7 +112,7 @@ class AsyncDBManager:
             await conn.run_sync(self.metadata.drop_all)
 
     """
-    async def _drop_db(self) -> None:
+    async def _ensure_drop_db(self) -> None:
         async with self.engine.begin() as conn:
             # Drop the public schema and recreate it, drops all tables & relationships
             await conn.execute(text("DROP SCHEMA public CASCADE"))
