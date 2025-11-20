@@ -254,13 +254,11 @@ repository-root/
 |   |   |   ├── __init__.py
 |   |   |   ├── accounts.py
 |   |   |   ├── auth.py
-|   |   |   └── notifications.py
-|   |   ├── utils/
-|   |   |   ├── __init__.py
-|   |   |   └── auth_utils.py
+|   |   |   ├── notifications.py
+|   |   |   └── utils.py
+|   |   ├── __init__.py
 |   |   ├── globals.py
-|   |   ├── main.py
-|   |   └── __init__.py
+|   |   └── main.py
 |   |
 |   ├── database/                     # Database management
 |   |   ├── __init__.py
@@ -269,6 +267,7 @@ repository-root/
 |   |   ├── internship_retrieval.py
 |   |   ├── manage.py                     # Asynchronous singleton manager for database engine, sessions, and schema control.
 |   |   ├── profile_insertion.py
+|   |   ├── profile_updating.py
 |   |   ├── record_deletion.py
 |   |   ├── record_get_or_create.py
 |   |   ├── record_insertion.py
