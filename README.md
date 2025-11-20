@@ -32,7 +32,7 @@ A collaborative project for the CIS 425 course designed to streamline the connec
 ## Quick Start
 
 **Get the portal up-and-running quickly:**
-~~~bash
+~~~sh
 # 1. Clone the repository
     git clone https://github.com/Hotwheels024568/CECS-Co-op-Portal
     cd CECS-Co-op-Portal
@@ -164,12 +164,13 @@ Recommended: Use Python 3.12 for best compatibility.
 ### 5. Config File Setup
 
 Create a file named `config.ini` in your repository root and insert the following:
-~~~
+~~~ini
 [db]
 Username = CIS_425_Project
 Password = CECS_Co-op_Portal
 Database = db
 ~~~
+
 ---
 
 ## Running the Web App
@@ -196,8 +197,6 @@ Database = db
     # Start the FastAPI Backend using uvicorn
     uvicorn src.rcp.backend.main:app --reload --port 8000   # --no-use-colors (Windows)
     ~~~
-  
-    
 
 ### 3. Frontend
 
@@ -221,14 +220,14 @@ Database = db
 ~~~sh
 repository-root/
 ├── scripts/                      # Helper Scripts
-|   ├── start_backend_no_db.bat       # Used
-|   ├── start_backend_no_db.sh
-|   ├── start_backend.bat             # Used
-|   ├── start_backend.sh
+|   ├── start_backend_no_db.bat       # Batch script to start the backend when the DB is already running
+|   ├── start_backend_no_db.sh        # Shell script to start the backend when the DB is already running
+|   ├── start_backend.bat             # Batch script to start the backend and DB
+|   ├── start_backend.sh              # Shell script to start the backend and DB
 |   ├── start_db_and_venv.bat
 |   ├── start_db_and_venv.sh
-|   ├── start_frontend.bat            # Used
-|   ├── start_frontend.sh
+|   ├── start_frontend.bat            # Batch script to start the frontend
+|   ├── start_frontend.sh             # Shell script to start the frontend
 |   ├── start_venv.bat
 |   └── start_venv.sh
 |
@@ -237,7 +236,7 @@ repository-root/
 |   |   ├── routers/
 |   |   |   ├── internships/
 |   |   |   |   ├── __init__.py
-|   |   |   |   ├── applications.py 
+|   |   |   |   ├── applications.py
 |   |   |   |   ├── internships.py
 |   |   |   |   └── summaries.py
 |   |   |   ├── profiles/
@@ -275,10 +274,10 @@ repository-root/
 |   |   ├── record_insertion.py
 |   |   ├── record_retrieval.py
 |   |   ├── record_updating.py
-|   |   └── schema.py                     # Database schema (table classes)
+|   |   └── schema.py                     # Database schema
 |   |
 |   ├── frontend/                     # React frontend
-|   |   ├── .react_router/...             # __
+|   |   ├── .react_router/...
 |   |   ├── app/                          # React App (main) files
 |   |   |   ├── routes/...
 |   |   |   ├── components/...                # currently welcome/
@@ -287,9 +286,9 @@ repository-root/
 |   |   |   └── routes.ts
 |   |   ├── node_modules/...              # Library (module) files
 |   |   ├── public/...                    # App assets
-|   |   ├── .dockerignore                     # do I need this file?
-|   |   ├── .gitignore                        # do I need this file?
-|   |   ├── Dockerfile                        # do I need this file?
+|   |   ├── .dockerignore
+|   |   ├── .gitignore                        # React specific ignored files for git
+|   |   ├── Dockerfile
 |   |   ├── package-lock.json
 |   |   ├── package.json
 |   |   ├── react-router.config.ts
@@ -299,8 +298,8 @@ repository-root/
 |   |
 |   ├── utils/                        # General utils
 |   |   ├── __init__.py
-|   |   └── academics.py # should this be placed within database (academics.py has functions used to determine co-op eligibility in internship_insertion.py: create_application), should determining co-op eligibility be done in the backend, or leave it?
-|   └── __init__.py                     # Python Package recognition & directory documentation
+|   |   └── academics.py
+|   └── __init__.py                     # Python package recognition & directory documentation
 |
 ├── venv/                         # Python venv (created)
 ├── .gitattributes
@@ -348,7 +347,7 @@ repository-root/
 ## Tech Stack
 
 - **Backend:** Python (FastAPI), SQLAlchemy & asyncpg
-- **Database:** SQLAlchemy (containerized with Docker)
+- **Database:** PostgreSQL (containerized with Docker)
 - **Frontend:** React, Node.js & Vite
 - **DevOps:** Docker & docker-compose
 
