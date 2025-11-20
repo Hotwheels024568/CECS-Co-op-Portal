@@ -29,6 +29,7 @@ from src.database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
+from src.utils.academics import semesters_since_enrollment
 
 
 async def create_internship(
@@ -192,7 +193,7 @@ async def create_application(
     session: AsyncSession,
     student_id: int,
     internship_id: int,
-    coop_credit_eligibility: bool,
+    coop_credit_eligibility: Optional[bool] = None,
     note: Optional[str] = None,
     resume_link: Optional[str] = None,
     cover_letter_link: Optional[str] = None,
@@ -227,7 +228,17 @@ async def create_application(
         if not internship:
             return None, "Internship not found."
 
-        # 3. Add the application
+        # 3. Optionally determine co-op credit eligibility
+        if not coop_credit_eligibility:
+            coop_credit_eligibility = (
+                student.gpa >= 2
+                and internship.duration_weeks >= 7
+                and internship.total_work_hours >= 140
+                and semesters_since_enrollment(student.start_semester, student.start_year)
+                >= (1 if student.transfer else 2)
+            )
+
+        # 4. Add the application
         application = await add_application(
             session,
             student_id,
