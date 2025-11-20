@@ -66,30 +66,6 @@ async def add_account(
         return None
 
 
-async def sign_up(
-    session: AsyncSession,
-    username: str,
-    password: str,
-    user_type: str,
-    commit: bool = False,
-) -> Optional[Account]:
-    """
-    Adds a new Account record to the database.
-
-    Args:
-        session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        username (str): Desired account username (must be unique).
-        password (str): Pre-hashed password (do not pass plaintext).
-        user_type (str): The type of account, one of: 'Employer', 'Student', or 'Faculty'.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
-
-    Returns:
-        Optional[Account]: The newly created Account object if successful, or None if insertion fails.
-    """
-    return await add_account(session, username, password, user_type, commit)
-
-
 async def add_address(
     session: AsyncSession,
     address_line1: str,
@@ -767,6 +743,22 @@ async def _add_summary(
     letter_grade: Optional[str] = None,
     commit: bool = False,
 ) -> Optional[InternshipSummary]:
+    """
+    Adds a new InternshipSummary record to the database.
+
+    Args:
+        session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
+        application_id (int): The ID of the InternshipApplication.
+        summary (str, optional): The summary text describing the internship experience. Defaults to "".
+        file_link (str, optional): Link to supporting document(s) or file(s). Defaults to None.
+        employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
+        letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
+        commit (bool, optional): If True, commits the transaction after adding.
+            If False, commit must be handled externally. Defaults to False.
+
+    Returns:
+        Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
+    """
     entry = InternshipSummary(
         id=application_id,
         summary=summary,
