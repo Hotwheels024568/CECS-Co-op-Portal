@@ -30,7 +30,7 @@ async def add_account(
     username: str,
     password: bytes,
     salt: bytes,
-    user_type: str = None,
+    user_type: Optional[str] = None,
     commit: bool = False,
 ) -> Optional[Account]:
     """
@@ -39,8 +39,9 @@ async def add_account(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         username (str): Desired account username (must be unique).
-        password (str): Pre-hashed password (do not pass plaintext).
-        user_type (str): The type of account, one of: 'Employer', 'Student', or 'Faculty'.
+        password (bytes): Pre-hashed password.
+        salt (bytes): Password salt for hashing.
+        user_type (Optional[str], optional): The type of account, one of: 'Employer', 'Student', or 'Faculty'. Defaults to None.
         commit (bool, optional): If True, commits the transaction after adding.
             If False, commit must be handled externally. Defaults to False.
 
@@ -82,7 +83,7 @@ async def add_address(
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         address_line1 (str): First line of the address.
-        address_line2 (str): Second line of the address, if any.
+        address_line2 (Optional[str]): Second line of the address, if any.
         city (str): City for the address.
         state_province (str): State or province for the address.
         zip_postal (str): ZIP or postal code for the address.

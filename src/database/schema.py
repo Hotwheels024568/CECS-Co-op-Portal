@@ -28,7 +28,8 @@ class Account(Base):
     Attributes:
         id (int): Auto-incrementing primary key.
         username (str): Unique username.
-        password (str): Hashed user password. Should be securely hashed and compared per security best practices.
+        password (bytes): Hashed user password.
+        salt (bytes): Random value for password hashing.
         user_type (str, optional): User type; one of 'Employer', 'Student', or 'Faculty'.
         contact (ContactInfo): Associated Contact Info (one-to-one).
 
@@ -46,7 +47,7 @@ class Account(Base):
     password: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
     salt: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
     user_type: Mapped[str | None] = mapped_column(
-        Enum("Employer", "Student", "Faculty", name="user_type")
+        Enum("Employer", "Student", "Faculty", name="user_type"), nullable=True
     )
     # An Admin user type could be useful
 

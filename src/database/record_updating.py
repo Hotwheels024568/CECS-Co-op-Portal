@@ -45,7 +45,8 @@ async def update_account(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         id (int): The ID of the Account to update.
         username (Optional[str], optional): Updated username (must be unique).
-        password (Optional[str], optional): Updated pre-hashed password.
+        password (Optional[bytes], optional): Updated pre-hashed password.
+        salt (Optional[bytes], optional): Updated password salt.
         user_type (Optional[str], optional): Updated user type ('Employer', 'Student', 'Faculty').
         commit (bool, optional): If True, commits the transaction after updating.
             If False, commit must be handled externally. Defaults to False.
