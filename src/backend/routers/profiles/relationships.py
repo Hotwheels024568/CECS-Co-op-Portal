@@ -6,9 +6,10 @@ from src.backend.routers.profiles.students import router
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.record_retrieval import (
     get_faculty,
-    get_faculty_by_department,
-    get_student,
-    get_students_by_department,
+    get_faculty_by_id,
+    get_faculty_by_department_id,
+    get_student_by_id,
+    get_students_by_department_id,
 )
 
 router = APIRouter()
@@ -30,8 +31,8 @@ async def get_dept_students(
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
-        profile = await get_faculty(db_session, account_id)
-        students = await get_students_by_department(db_session, profile.department)
+        profile = await get_faculty_by_id(db_session, account_id)
+        students = await get_students_by_department_id(db_session, profile.department)
 
         student_list = []
         for student in students:
@@ -76,8 +77,8 @@ async def get_dept_faculty(
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
-        profile = await get_student(db_session, account_id)
-        faculty = await get_faculty_by_department(db_session, profile.department)
+        profile = await get_student_by_id(db_session, account_id)
+        faculty = await get_faculty_by_department_id(db_session, profile.department)
 
         faculty_list = []
         for staff in faculty:

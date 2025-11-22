@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from datetime import datetime, timezone
 
-from src.database.record_retrieval import get_application, get_application_from_internship
+from src.database.record_retrieval import get_application_by_id, get_application_from_internship
 from src.database.schema import (
     Account,
     Address,
@@ -687,7 +687,7 @@ async def add_summary(
         Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
     """
 
-    application = await get_application(session, application_id)
+    application = await get_application_by_id(session, application_id)
     if application is None:
         print("No InternshipApplication found for provided application_id.")
         return None

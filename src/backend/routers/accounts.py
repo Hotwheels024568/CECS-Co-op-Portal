@@ -6,7 +6,7 @@ from src.backend.globals import DB_MANAGER, PEPPER, SESSION_STORE, AccountInfo, 
 from src.backend.routers.utils import get_current_session
 from src.backend.routers.utils import hash_password
 from src.database.record_updating import update_account
-from src.database.record_retrieval import get_account
+from src.database.record_retrieval import get_account_by_id
 
 router = APIRouter()
 
@@ -157,7 +157,7 @@ async def set_user_type(
     account_id = session_data["account_id"]
 
     async with DB_MANAGER.session() as session:
-        account = await get_account(session, account_id)
+        account = await get_account_by_id(session, account_id)
 
         if not account:
             raise HTTPException(status_code=404, detail="Account not found")

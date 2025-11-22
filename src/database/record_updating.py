@@ -3,16 +3,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.record_retrieval import (
-    get_account,
-    get_address,
-    get_company,
-    get_contact,
-    get_employer,
-    get_student,
-    get_faculty,
-    get_internship,
-    get_application,
-    get_summary,
+    get_account_by_id,
+    get_address_by_id,
+    get_company_by_id,
+    get_contact_by_id,
+    get_employer_by_id,
+    get_student_by_id,
+    get_faculty_by_id,
+    get_internship_by_id,
+    get_application_by_id,
+    get_summary_by_id,
 )
 
 from src.database.schema import (
@@ -55,7 +55,7 @@ async def update_account(
         Optional[Account]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        account = await get_account(session, id)
+        account = await get_account_by_id(session, id)
         if not account:
             return None
 
@@ -123,7 +123,7 @@ async def update_address(
         Optional[Address]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        address = await get_address(session, id)
+        address = await get_address_by_id(session, id)
         if not address:
             return None
 
@@ -186,7 +186,7 @@ async def update_company(
         Optional[Company]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        company = await get_company(session, id)
+        company = await get_company_by_id(session, id)
         if not company:
             return None
 
@@ -249,7 +249,7 @@ async def update_contact(
         Optional[ContactInfo]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        contact = await get_contact(session, id)
+        contact = await get_contact_by_id(session, id)
         if not contact:
             return None
 
@@ -310,7 +310,7 @@ async def update_employer(
         Optional[EmployerAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        employer = await get_employer(session, id)
+        employer = await get_employer_by_id(session, id)
         if not employer:
             return None
 
@@ -368,7 +368,7 @@ async def update_student(
         Optional[StudentAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        student = await get_student(session, id)
+        student = await get_student_by_id(session, id)
         if not student:
             return None
 
@@ -438,7 +438,7 @@ async def update_faculty(
         Optional[FacultyAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        faculty = await get_faculty(session, id)
+        faculty = await get_faculty_by_id(session, id)
         if not faculty:
             return None
 
@@ -500,7 +500,7 @@ async def update_internship(
         Optional[Internship]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        internship = await get_internship(session, id)
+        internship = await get_internship_by_id(session, id)
         if not internship:
             return None
 
@@ -584,7 +584,7 @@ async def update_application(
         Optional[InternshipApplication]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        application = await get_application(session, id)
+        application = await get_application_by_id(session, id)
         if not application:
             return None
 
@@ -649,7 +649,7 @@ async def update_summary(
         Optional[InternshipSummary]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
     try:
-        summary = await get_summary(session, id)
+        summary = await get_summary_by_id(session, id)
         if not summary:
             return None
 

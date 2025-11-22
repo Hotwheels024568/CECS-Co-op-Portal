@@ -6,7 +6,7 @@ from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
-from src.database.record_retrieval import get_student
+from src.database.record_retrieval import get_student_by_id
 
 router = APIRouter()
 
@@ -87,7 +87,7 @@ async def get_profile(
     # 2. Get profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
-        profile = await get_student(db_session, account_id)
+        profile = await get_student_by_id(db_session, account_id)
         contact = profile.contact
 
     return {

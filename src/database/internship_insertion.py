@@ -14,13 +14,13 @@ from src.database.record_insertion import (
     add_summary,
 )
 from src.database.record_retrieval import (
-    get_address,
-    get_application,
+    get_address_by_id,
+    get_application_by_id,
     get_application_from_internship,
-    get_company,
-    get_employer,
-    get_internship,
-    get_student,
+    get_company_by_id,
+    get_employer_by_id,
+    get_internship_by_id,
+    get_student_by_id,
 )
 from src.database.record_get_or_create import (
     get_or_create_major,
@@ -79,12 +79,12 @@ async def create_internship(
     """
     try:
         # 1. Ensure EmployerAccount exists
-        employer = await get_employer(session, account_id)
+        employer = await get_employer_by_id(session, account_id)
         if not employer:
             return None, "Account is not associated with an employer account."
 
         # 2. Get the Company object
-        company = await get_company(session, employer.company_id)
+        company = await get_company_by_id(session, employer.company_id)
         if not company:
             return None, "Employer's company not found."
 
@@ -94,7 +94,7 @@ async def create_internship(
         if location_type == "Other":
             address = None
             if address_id is not None:
-                address = await get_address(session, id)
+                address = await get_address_by_id(session, id)
                 if not address:
                     return None, f"Address of ID {address_id} not found."
 
@@ -217,12 +217,12 @@ async def create_application(
     """
     try:
         # 1. Check student existence
-        student = await get_student(session, student_id)
+        student = await get_student_by_id(session, student_id)
         if not student:
             return None, "Student account not found."
 
         # 2. Check internship existence
-        internship = await get_internship(session, internship_id)
+        internship = await get_internship_by_id(session, internship_id)
         if not internship:
             return None, "Internship not found."
 
@@ -294,7 +294,7 @@ async def create_summary(
             (InternshipSummary, "Internship summary created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
-    application = await get_application(session, application_id)
+    application = await get_application_by_id(session, application_id)
     if not application:
         return None, "Internship application not found for this internship/student."
 

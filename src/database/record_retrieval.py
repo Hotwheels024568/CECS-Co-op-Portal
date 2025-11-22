@@ -37,7 +37,7 @@ Method                  Complexity          Syntax                              
 """
 
 
-async def get_account(session: AsyncSession, id: int) -> Optional[Account]:
+async def get_account_by_id(session: AsyncSession, id: int) -> Optional[Account]:
     return await session.get(Account, id)
 
 
@@ -46,11 +46,11 @@ async def get_account_by_username(session: AsyncSession, username: str) -> Optio
     return await get_first_element(session, statement)
 
 
-async def get_address(session: AsyncSession, id: int) -> Optional[Address]:
+async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]:
     return await session.get(Address, id)
 
 
-async def get_company(session: AsyncSession, id: int) -> Optional[Company]:
+async def get_company_by_id(session: AsyncSession, id: int) -> Optional[Company]:
     return await session.get(Company, id)
 
 
@@ -59,7 +59,7 @@ async def get_company_by_name(session: AsyncSession, name: str) -> Optional[Comp
     return await get_first_element(session, statement)
 
 
-async def get_contact(session: AsyncSession, id: int) -> Optional[ContactInfo]:
+async def get_contact_by_id(session: AsyncSession, id: int) -> Optional[ContactInfo]:
     return await session.get(ContactInfo, id)
 
 
@@ -68,11 +68,11 @@ async def get_contact_by_email(session: AsyncSession, email: str) -> Optional[Co
     return await get_first_element(session, statement)
 
 
-async def get_employer(session: AsyncSession, id: int) -> Optional[EmployerAccount]:
+async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[EmployerAccount]:
     return await session.get(EmployerAccount, id)
 
 
-async def get_department(session: AsyncSession, id: int) -> Optional[Department]:
+async def get_department_by_id(session: AsyncSession, id: int) -> Optional[Department]:
     return await session.get(Department, id)
 
 
@@ -81,7 +81,7 @@ async def get_department_by_name(session: AsyncSession, name: str) -> Optional[D
     return await get_first_element(session, statement)
 
 
-async def get_major(session: AsyncSession, id: int) -> Optional[Major]:
+async def get_major_by_id(session: AsyncSession, id: int) -> Optional[Major]:
     return await session.get(Major, id)
 
 
@@ -90,12 +90,12 @@ async def get_major_by_name(session: AsyncSession, name: str) -> Optional[Major]
     return await get_first_element(session, statement)
 
 
-async def get_student(session: AsyncSession, id: int) -> Optional[StudentAccount]:
+async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentAccount]:
     return await session.get(StudentAccount, id)
 
 
-async def get_students_by_department(session: AsyncSession, id: int) -> List[StudentAccount]:
-    statement = select(StudentAccount).join(Department).filter(Department.id == id)
+async def get_students_by_department_id(session: AsyncSession, id: int) -> List[StudentAccount]:
+    statement = select(StudentAccount).filter_by(department_id=id)
     return await get_first_element_of_all_rows(session, statement)
 
 
@@ -104,12 +104,16 @@ async def get_students_by_department_name(session: AsyncSession, name: str) -> L
     return await get_first_element_of_all_rows(session, statement)
 
 
-async def get_faculty(session: AsyncSession, id: int) -> Optional[FacultyAccount]:
+async def get_faculty(session: AsyncSession) -> List[FacultyAccount]:
+    return await session.scalars(select(FacultyAccount)).all()
+
+
+async def get_faculty_by_id(session: AsyncSession, id: int) -> Optional[FacultyAccount]:
     return await session.get(FacultyAccount, id)
 
 
-async def get_faculty_by_department(session: AsyncSession, id: int) -> List[FacultyAccount]:
-    statement = select(FacultyAccount).join(Department).filter(Department.id == id)
+async def get_faculty_by_department_id(session: AsyncSession, id: int) -> List[FacultyAccount]:
+    statement = select(FacultyAccount).filter_by(department_id=id)
     return await get_first_element(session, statement)
 
 
@@ -118,7 +122,7 @@ async def get_faculty_by_department_name(session: AsyncSession, name: str) -> Li
     return await get_first_element(session, statement)
 
 
-async def get_internship(session: AsyncSession, id: int) -> Optional[Internship]:
+async def get_internship_by_id(session: AsyncSession, id: int) -> Optional[Internship]:
     return await session.get(Internship, id)
 
 
@@ -156,7 +160,7 @@ async def get_internship_preferred_skills(session: AsyncSession, internship_id: 
     return await get_first_element_of_all_rows(session, statement)
 
 
-async def get_skill(session: AsyncSession, id: int) -> Optional[Skill]:
+async def get_skill_by_id(session: AsyncSession, id: int) -> Optional[Skill]:
     return await session.get(Skill, id)
 
 
@@ -165,7 +169,7 @@ async def get_skill_by_name(session: AsyncSession, name: str) -> Optional[Skill]
     return await get_first_element(session, statement)
 
 
-async def get_application(session: AsyncSession, id: int) -> Optional[InternshipApplication]:
+async def get_application_by_id(session: AsyncSession, id: int) -> Optional[InternshipApplication]:
     return await session.get(InternshipApplication, id)
 
 
@@ -178,7 +182,7 @@ async def get_application_from_internship(
     return await get_first_element(session, statement)
 
 
-async def get_summary(session: AsyncSession, id: int) -> Optional[InternshipSummary]:
+async def get_summary_by_id(session: AsyncSession, id: int) -> Optional[InternshipSummary]:
     return await session.get(InternshipSummary, id)
 
 
