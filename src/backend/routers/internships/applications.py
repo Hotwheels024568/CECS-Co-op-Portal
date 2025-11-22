@@ -19,6 +19,7 @@ Students
 Employers
     get apps to postings
     select candidates
+        automatically create internship summaries
     update status
 """
 
