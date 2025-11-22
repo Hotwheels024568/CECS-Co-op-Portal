@@ -6,7 +6,7 @@ from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
-from src.database.record_retrieval import get_student, get_faculty_by_department
+from src.database.record_retrieval import get_student
 
 router = APIRouter()
 
@@ -171,41 +171,4 @@ async def update_profile(
     return {
         "success": True,
         "message": msg or "Student profile updated successfully.",
-    }
-
-
-@router.get("/faculty", response_model=dict)
-async def get_students(
-    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
-    """
-    __
-    """
-    assert_user_type(session_data, UserType.FACULTY)
-
-    account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
-        profile = await get_student(db_session, account_id)
-        faculty = await get_faculty_by_department(db_session, profile.department)
-
-        faculty_list = []
-        for staff in faculty:
-            contact = staff.contact
-
-            faculty_list.append(
-                {
-                    "contact": {
-                        "first_name": contact.first,
-                        "middle_name": contact.middle,
-                        "last_name": contact.last,
-                        "email": contact.email,
-                        "phone": contact.phone,
-                    },
-                    "profile": {"department": staff.department.name},
-                }
-            )
-
-    return {
-        "success": True,
-        "students": faculty_list,
     }

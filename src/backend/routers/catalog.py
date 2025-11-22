@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
@@ -7,11 +7,8 @@ from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 router = APIRouter()
 
 """
-Employers:
-    create
-    update
-    delete
-
-Students & Faculty:
-    get (search?)
+get addresses (maybe)
+get departments
+get majors
+get skills
 """
