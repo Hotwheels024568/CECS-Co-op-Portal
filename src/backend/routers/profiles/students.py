@@ -1,32 +1,33 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, NonNegativeFloat, NonNegativeInt, StringConstraints
+from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
 from src.database.record_retrieval import get_student_by_id
+from src.utils.academics import Semester
 
 router = APIRouter()
 
 
 class StudentProfileCreateRequest(BaseModel):
     # Contact
-    first_name: str
-    middle_name: Optional[str] = None
-    last_name: str
-    email: EmailStr
-    phone: Optional[str] = None
+    first_name: Annotated[str, StringConstraints(max_length=50)]
+    middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    last_name: Annotated[str, StringConstraints(max_length=50)]
+    email: Annotated[EmailStr, StringConstraints(max_length=254)]
+    phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     # Profile
-    department_name: str
-    major_name: str
-    credit_hours: int
-    gpa: float
-    start_semester: str
-    start_year: int
+    department_name: Annotated[str, StringConstraints(max_length=100)]
+    major_name: Annotated[str, StringConstraints(max_length=100)]
+    credit_hours: Annotated[int, NonNegativeInt]
+    gpa: Annotated[int, NonNegativeFloat]
+    start_semester: Semester
+    start_year: Annotated[int, NonNegativeInt]
     transfer: bool
-    resume_link: Optional[str] = None
+    resume_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
 
 
 @router.post("/create", response_model=dict)
@@ -38,10 +39,8 @@ async def create_profile(
     Create a student profile (contact info + department).
     Only callable by authenticated student users who haven't yet created their profile.
     """
-    # 1. Auth check
     assert_user_type(session_data, UserType.STUDENT)
 
-    # 2. Create profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile, msg = await create_student_profile(
@@ -78,10 +77,8 @@ async def get_profile(
     """
     __
     """
-    # 1. Auth check
     assert_user_type(session_data, UserType.STUDENT)
 
-    # 2. Get profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
@@ -110,20 +107,20 @@ async def get_profile(
 
 class StudentProfileUpdateRequest(BaseModel):
     # Contact
-    first_name: Optional[str] = None
-    middle_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
+    first_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    last_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    email: Optional[Annotated[EmailStr, StringConstraints(max_length=254)]] = None
+    phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     # Profile
-    department_name: Optional[str] = None
-    major_name: Optional[str] = None
-    credit_hours: Optional[int] = None
-    gpa: Optional[float] = None
-    start_semester: Optional[str] = None
-    start_year: Optional[int] = None
+    department_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
+    major_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
+    credit_hours: Optional[Annotated[int, NonNegativeInt]] = None
+    gpa: Optional[Annotated[int, NonNegativeFloat]] = None
+    start_semester: Optional[Semester] = None
+    start_year: Optional[Annotated[int, NonNegativeInt]] = None
     transfer: Optional[bool] = None
-    resume_link: Optional[str] = None
+    resume_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
 
 
 @router.patch("/update", response_model=dict)
@@ -134,10 +131,8 @@ async def update_profile(
     """
     __
     """
-    # 1. Auth check
     assert_user_type(session_data, UserType.STUDENT)
 
-    # 2. Update profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile, msg = await update_student_profile(

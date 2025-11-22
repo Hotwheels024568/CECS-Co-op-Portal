@@ -1,12 +1,19 @@
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, StringConstraints
+from typing import Annotated, Optional
 import secrets
 import hmac
 import time
 
-from src.backend.globals import DB_MANAGER, SESSION_STORE, SESSION_EXPIRE_SECONDS, PEPPER, UserType
-from src.backend.routers.utils import hash_password
+from src.backend.globals import (
+    DB_MANAGER,
+    SESSION_STORE,
+    SESSION_EXPIRE_SECONDS,
+    PEPPER,
+    AccountInfo,
+    UserType,
+)
+from src.backend.routers.utils import get_current_session, hash_password
 from src.database.record_insertion import add_account
 from src.database.record_retrieval import get_account_by_username
 
@@ -14,8 +21,8 @@ router = APIRouter()
 
 
 class AuthRequest(BaseModel):
-    username: str
-    password: str
+    username: Annotated[str, StringConstraints(max_length=150)]
+    password: Annotated[str, StringConstraints(min_length=8, max_length=128)]
 
 
 class LoginResponse(BaseModel):
@@ -61,8 +68,8 @@ async def register(request: AuthRequest) -> LoginResponse:
     pw_hash = hash_password(request.password, salt, PEPPER)
 
     # 2. Insert into DB
-    async with DB_MANAGER.session() as session:
-        account = await add_account(session, request.username, pw_hash, salt, commit=True)
+    async with DB_MANAGER.session() as db_session:
+        account = await add_account(db_session, request.username, pw_hash, salt, commit=True)
         if account is not None:
             # Instant login: create session
             session_id = secrets.token_urlsafe(32)
@@ -112,8 +119,8 @@ async def login(request: AuthRequest) -> LoginResponse:
         HTTPException (401): If credentials are invalid.
     """
     # 1. Look up user by username
-    async with DB_MANAGER.session() as session:
-        account = await get_account_by_username(session, request.username)
+    async with DB_MANAGER.session() as db_session:
+        account = await get_account_by_username(db_session, request.username)
 
     # 2. Prepare for timing-attack-resistant check
     salt = secrets.token_bytes(16)
@@ -141,12 +148,9 @@ async def login(request: AuthRequest) -> LoginResponse:
         return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password"
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password",
     )
-
-
-class LogoutRequest(BaseModel):
-    session_id: str
 
 
 @router.post(
@@ -159,7 +163,7 @@ class LogoutRequest(BaseModel):
     ),
     response_model=dict,
 )
-async def logout(request: LogoutRequest) -> dict:
+async def logout(session_data: tuple[str, AccountInfo] = Depends(get_current_session)) -> dict:
     """
     Log out a user by invalidating their session.
 
@@ -175,7 +179,7 @@ async def logout(request: LogoutRequest) -> dict:
     Raises:
         HTTPException (401): If the session_id does not exist or has already been invalidated.
     """
-    session_id = request.session_id
+    session_id = session_data[0]
     removed = SESSION_STORE.pop(session_id, None)
     if removed is not None:
         return {"success": True}

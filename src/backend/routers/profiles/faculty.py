@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, StringConstraints
+from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.utils import assert_user_type, get_current_session
@@ -13,13 +13,13 @@ router = APIRouter()
 
 class FacultyProfileCreateRequest(BaseModel):
     # Contact
-    first_name: str
-    middle_name: Optional[str] = None
-    last_name: str
-    email: EmailStr
-    phone: Optional[str] = None
+    first_name: Annotated[str, StringConstraints(max_length=50)]
+    middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    last_name: Annotated[str, StringConstraints(max_length=50)]
+    email: Annotated[EmailStr, StringConstraints(max_length=254)]
+    phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     # Profile
-    department_name: str
+    department_name: Annotated[str, StringConstraints(max_length=100)]
 
 
 @router.post("/create", response_model=dict)
@@ -31,10 +31,8 @@ async def create_profile(
     Create a faculty profile (contact info + department).
     Only callable by authenticated faculty users who haven't yet created their profile.
     """
-    # 1. Auth check
     assert_user_type(session_data, UserType.FACULTY)
 
-    # 2. Create profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile, msg = await create_faculty_profile(
@@ -64,10 +62,8 @@ async def get_profile(
     """
     __
     """
-    # 1. Auth check
     assert_user_type(session_data, UserType.FACULTY)
 
-    # 2. Get profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
@@ -88,13 +84,13 @@ async def get_profile(
 
 class FacultyProfileUpdateRequest(BaseModel):
     # Contact
-    first_name: Optional[str] = None
-    middle_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
+    first_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    last_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+    email: Optional[Annotated[EmailStr, StringConstraints(max_length=254)]] = None
+    phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     # Profile
-    department_name: Optional[str] = None
+    department_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
 
 
 @router.patch("/update", response_model=dict)
@@ -105,10 +101,8 @@ async def update_profile(
     """
     __
     """
-    # 1. Auth check
     assert_user_type(session_data, UserType.FACULTY)
 
-    # 2. Update profile
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile, msg = await update_faculty_profile(

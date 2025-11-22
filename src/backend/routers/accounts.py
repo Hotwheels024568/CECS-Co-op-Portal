@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, StringConstraints
+from typing import Annotated
 import secrets
 
 from src.backend.globals import DB_MANAGER, PEPPER, SESSION_STORE, AccountInfo, UserType
@@ -12,7 +13,7 @@ router = APIRouter()
 
 
 class UsernameUpdateRequest(BaseModel):
-    username: str = Field(..., max_length=150)
+    username: Annotated[str, StringConstraints(max_length=150)]
 
 
 @router.patch(
@@ -23,7 +24,8 @@ class UsernameUpdateRequest(BaseModel):
     response_model=dict,
 )
 async def change_username(
-    data: UsernameUpdateRequest, session: tuple[str, AccountInfo] = Depends(get_current_session)
+    data: UsernameUpdateRequest,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> dict[str, bool]:
     """
     Change the current user's username.
@@ -39,7 +41,7 @@ async def change_username(
         HTTPException 409: If the requested username is already taken.
         HTTPException 400: If the update operation fails for other reasons.
     """
-    account_id = session[1]["account_id"]
+    account_id = session_data[1]["account_id"]
 
     async with DB_MANAGER.session() as db_session:
         updated_account = await update_account(
@@ -66,7 +68,7 @@ async def change_username(
 
 
 class PasswordUpdateRequest(BaseModel):
-    password: str = Field(..., min_length=8, max_length=128)
+    password: Annotated[str, StringConstraints(min_length=8, max_length=128)]
 
 
 @router.patch(
@@ -184,7 +186,7 @@ async def set_user_type(
 from src.database.record_retrieval import get_account_by_username
 
 class ForgotPWRequest(BaseModel):
-    username: str
+    username: Annotated[str, StringConstraints(max_length=150)]
 
 
 @router.post("/forgot-password")
@@ -210,7 +212,7 @@ async def forgot_password(data: ForgotPWRequest) -> dict:
 
 class CompleteResetRequest(BaseModel):
     token: str
-    new_password: str
+    new_password: Annotated[str, StringConstraints(min_length=8, max_length=128)]
 
 
 @router.post("/reset-password")
