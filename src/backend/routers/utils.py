@@ -1,4 +1,5 @@
 from fastapi import HTTPException, Header, status
+from typing import Collection, Union
 import hashlib
 import time
 
@@ -55,19 +56,35 @@ def get_current_session(
     return session_id, session
 
 
-def assert_user_type(session_data: tuple[str, AccountInfo], required_type: UserType) -> None:
+def assert_user_type(
+    session_data: tuple[str, AccountInfo], allowed_types: Union[UserType, Collection[UserType]]
+) -> None:
     """
     Validates the current user's session user type.
 
     Args:
         session_data (tuple[str, AccountInfo]): The session info.
-        required_type (UserType): The endpoints's required user type.
+        allowed_types (Union[UserType, Collection[UserType]]): The endpoint's allowed user types.
 
     Raises:
         HTTPException (403): If the session's user type is invalid.
     """
-    if session_data[1]["user_type"] != required_type:
+    if isinstance(allowed_types, UserType):
+        allowed_types = [allowed_types]
+
+    user_type = session_data[1]["user_type"]
+    if user_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Student accounts may update a student profile.",
+            detail=f"Only {_allowed_types_phrase(allowed_types)} accounts may access this endpoint.",
         )
+
+
+def _allowed_types_phrase(types) -> str:
+    names = [type.value if hasattr(type, "value") else str(type) for type in types]
+    if len(names) == 1:
+        return names[0]
+    elif len(names) == 2:
+        return f"{names[0]} or {names[1]}"
+    else:
+        return f"{', '.join(names[:-1])} or {names[-1]}"

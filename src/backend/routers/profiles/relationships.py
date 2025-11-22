@@ -7,15 +7,13 @@ from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.record_retrieval import (
     get_faculty,
     get_faculty_by_id,
-    get_faculty_by_department_id,
     get_student_by_id,
-    get_students_by_department_id,
 )
 
 router = APIRouter()
 
 
-@router.get("/students", response_model=dict)
+@router.get("/department-students", response_model=dict)
 async def get_dept_students(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> dict:
@@ -27,13 +25,13 @@ async def get_dept_students(
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
-        students = await get_students_by_department_id(db_session, profile.department)
+        students = profile.department.students
 
-        student_list = []
+        list = []
         for student in students:
             contact = student.contact
 
-            student_list.append(
+            list.append(
                 {
                     "contact": {
                         "first_name": contact.first,
@@ -55,31 +53,28 @@ async def get_dept_students(
                 }
             )
 
-    return {
-        "success": True,
-        "students": student_list,
-    }
+    return {"students": list}
 
 
-@router.get("/faculty", response_model=dict)
+@router.get("/department-faculty", response_model=dict)
 async def get_dept_faculty(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> dict:
     """
     __
     """
-    assert_user_type(session_data, UserType.FACULTY)
+    assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
-        faculty = await get_faculty_by_department_id(db_session, profile.department)
+        faculty = profile.department.faculty
 
-        faculty_list = []
+        list = []
         for staff in faculty:
             contact = staff.contact
 
-            faculty_list.append(
+            list.append(
                 {
                     "contact": {
                         "first_name": contact.first,
@@ -92,10 +87,7 @@ async def get_dept_faculty(
                 }
             )
 
-    return {
-        "success": True,
-        "students": faculty_list,
-    }
+    return {"faculty": list}
 
 
 @router.get("/faculty", response_model=dict)
@@ -110,11 +102,11 @@ async def get_all_faculty(
     async with DB_MANAGER.session() as db_session:
         faculty = await get_faculty(db_session)
 
-        faculty_list = []
+        list = []
         for staff in faculty:
             contact = staff.contact
 
-            faculty_list.append(
+            list.append(
                 {
                     "contact": {
                         "first_name": contact.first,
@@ -127,7 +119,4 @@ async def get_all_faculty(
                 }
             )
 
-    return {
-        "success": True,
-        "students": faculty_list,
-    }
+    return {"faculty": list}

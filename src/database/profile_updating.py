@@ -42,7 +42,7 @@ async def update_employer_profile(
         employer = await update_employer(session, account_id, None)
 
         await session.commit()
-        return employer, "Profile updated successfully."
+        return employer, "Employer profile updated."
 
     except Exception as e:
         await session.rollback()
@@ -89,7 +89,7 @@ async def update_company_profile(
         )
 
         await session.commit()
-        return company, "Profile updated successfully."
+        return company, "Company profile updated."
 
     except IntegrityError as e:
         await session.rollback()
@@ -162,7 +162,7 @@ async def update_student_profile(
 
         # 4. Commit all
         await session.commit()
-        return student, "Profile updated successfully."
+        return student, "Student profile updated."
 
     except IntegrityError as e:
         await session.rollback()
@@ -218,7 +218,7 @@ async def update_faculty_profile(
 
         # 4. Commit all
         await session.commit()
-        return faculty, "Profile updated successfully."
+        return faculty, "Faculty profile updated."
 
     except IntegrityError as e:
         await session.rollback()

@@ -54,10 +54,7 @@ async def create_profile(
             detail=f"Profile could not be created. Reason: {msg}",
         )
 
-    return {
-        "success": True,
-        "message": msg or "Faculty profile created successfully.",
-    }
+    return {"success": True, "message": msg}
 
 
 @router.get("/profile", response_model=dict)
@@ -78,7 +75,6 @@ async def get_profile(
         department = profile.department.name
 
     return {
-        "success": True,
         "contact": {
             "first_name": contact.first,
             "middle_name": contact.middle,
@@ -132,7 +128,4 @@ async def update_profile(
             detail=f"Profile could not be updated. Reason: {msg}",
         )
 
-    return {
-        "success": True,
-        "message": msg or "Faculty profile updated successfully.",
-    }
+    return {"success": True, "message": msg}

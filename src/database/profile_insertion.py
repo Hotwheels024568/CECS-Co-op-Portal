@@ -162,7 +162,7 @@ async def create_employer_profile_select_company(
 
         # 3. Commit all changes
         await session.commit()
-        return employer, "Profile created successfully."
+        return employer, "Employer profile created."
 
     except IntegrityError as e:
         await session.rollback()
@@ -262,7 +262,7 @@ async def create_employer_profile_create_company(
 
         # 5. Commit all changes
         await session.commit()
-        return employer, "Profile created successfully."
+        return employer, "Employer profile created."
 
     except IntegrityError as e:
         await session.rollback()
@@ -368,7 +368,7 @@ async def create_student_profile(
 
         # 4. Commit all
         await session.commit()
-        return student, "Profile created successfully."
+        return student, "Student profile created."
 
     except IntegrityError as e:
         await session.rollback()
@@ -446,7 +446,7 @@ async def create_faculty_profile(
 
         # 4. Commit all
         await session.commit()
-        return faculty, "Profile created successfully."
+        return faculty, "Faculty profile created."
 
     except IntegrityError as e:
         await session.rollback()
