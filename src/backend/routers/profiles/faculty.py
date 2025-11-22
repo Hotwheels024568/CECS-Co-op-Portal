@@ -2,55 +2,53 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo
-from src.backend.routers.utils import get_current_session
+from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_faculty_profile
 from src.database.profile_updating import update_faculty_profile
+from src.database.record_retrieval import get_faculty, get_students_by_department
 
 router = APIRouter()
 
 
-class FacultyProfileUpdateRequest(BaseModel):
+class FacultyProfileCreateRequest(BaseModel):
+    # Contact
     first_name: str
     middle_name: Optional[str] = None
     last_name: str
     email: EmailStr
     phone: Optional[str] = None
+    # Profile
     department_name: str
 
 
-@router.post("/create_profile", response_model=dict)
-async def create_faculty_profile_endpoint(
-    data: FacultyProfileUpdateRequest,
-    session: tuple[str, AccountInfo] = Depends(get_current_session),
-):
+@router.post("/create", response_model=dict)
+async def create_profile(
+    data: FacultyProfileCreateRequest,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> dict:
     """
     Create a faculty profile (contact info + department).
     Only callable by authenticated faculty users who haven't yet created their profile.
     """
-    user_type = session[1]["user_type"]
     # 1. Auth check
-    if user_type != "Faculty":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Faculty accounts may create a faculty profile.",
-        )
+    assert_user_type(session_data, UserType.FACULTY)
 
     # 2. Create profile
-    account_id = session[1]["account_id"]
-    async with DB_MANAGER.session() as session:
-        faculty, msg = await create_faculty_profile(
-            session=session,
-            account_id=account_id,
-            first_name=data.first_name,
-            middle_name=data.middle_name,
-            last_name=data.last_name,
-            email=data.email,
-            phone=data.phone,
-            department_name=data.department_name,
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile, msg = await create_faculty_profile(
+            db_session,
+            account_id,
+            data.first_name,
+            data.middle_name,
+            data.last_name,
+            data.email,
+            data.phone,
+            data.department_name,
         )
 
-    if not faculty:
+    if not profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Profile could not be created. Reason: {msg}",
@@ -58,60 +56,129 @@ async def create_faculty_profile_endpoint(
 
     return {
         "success": True,
-        "faculty_id": faculty.id,
-        "department": faculty.department.name,
         "message": msg or "Faculty profile created successfully.",
     }
 
 
+@router.get("/profile", response_model=dict)
+async def get_profile(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> dict:
+    """
+    __
+    """
+    # 1. Auth check
+    assert_user_type(session_data, UserType.FACULTY)
+
+    # 2. Get profile
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile = await get_faculty(db_session, account_id)
+        contact = profile.contact
+        department = profile.department.name
+
+    return {
+        "success": True,
+        "contact": {
+            "first_name": contact.first,
+            "middle_name": contact.middle,
+            "last_name": contact.last,
+            "email": contact.email,
+            "phone": contact.phone,
+        },
+        "profile": {"department": department},
+    }
+
+
 class FacultyProfileUpdateRequest(BaseModel):
+    # Contact
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    # Profile
     department_name: Optional[str] = None
 
 
-@router.post("/update_profile", response_model=dict)
-async def update_faculty_profile_endpoint(
+@router.patch("/update", response_model=dict)
+async def update_profile(
     data: FacultyProfileUpdateRequest,
-    session: tuple[str, AccountInfo] = Depends(get_current_session),
-):
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> dict:
     """
     __
     """
-    user_type = session[1]["user_type"]
     # 1. Auth check
-    if user_type != "Faculty":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Faculty accounts may create a faculty profile.",
+    assert_user_type(session_data, UserType.FACULTY)
+
+    # 2. Update profile
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile, msg = await update_faculty_profile(
+            db_session,
+            account_id,
+            data.first_name,
+            data.middle_name,
+            data.last_name,
+            data.email,
+            data.phone,
+            data.department_name,
         )
 
-    # 2. Create profile
-    account_id = session[1]["account_id"]
-    async with DB_MANAGER.session() as session:
-        faculty, msg = await update_faculty_profile(
-            session=session,
-            account_id=account_id,
-            first_name=data.first_name,
-            middle_name=data.middle_name,
-            last_name=data.last_name,
-            email=data.email,
-            phone=data.phone,
-            department_name=data.department_name,
-        )
-
-    if not faculty:
+    if not profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Profile could not be created. Reason: {msg}",
+            detail=f"Profile could not be updated. Reason: {msg}",
         )
 
     return {
         "success": True,
-        "faculty_id": faculty.id,
-        "department": faculty.department.name,
-        "message": msg or "Faculty profile created successfully.",
+        "message": msg or "Faculty profile updated successfully.",
+    }
+
+
+@router.get("/students", response_model=dict)
+async def get_students(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> dict:
+    """
+    __
+    """
+    assert_user_type(session_data, UserType.FACULTY)
+
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile = await get_faculty(db_session, account_id)
+        students = await get_students_by_department(db_session, profile.department)
+
+        student_list = []
+        for student in students:
+            contact = student.contact
+
+            student_list.append(
+                {
+                    "contact": {
+                        "first_name": contact.first,
+                        "middle_name": contact.middle,
+                        "last_name": contact.last,
+                        "email": contact.email,
+                        "phone": contact.phone,
+                    },
+                    "profile": {
+                        "department": student.department.name,
+                        "major": student.major.name,
+                        "credit_hours": student.credit_hours,
+                        "gpa": student.gpa,
+                        "start_semester": student.start_semester,
+                        "start_year": student.start_year,
+                        "transfer": student.transfer,
+                        "resume_link": student.resume_link,
+                    },
+                }
+            )
+
+    return {
+        "success": True,
+        "students": student_list,
     }

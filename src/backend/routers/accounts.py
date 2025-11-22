@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from typing import Optional
 import secrets
 
 from src.backend.globals import DB_MANAGER, PEPPER, SESSION_STORE, AccountInfo, UserType
@@ -8,8 +7,6 @@ from src.backend.routers.utils import get_current_session
 from src.backend.routers.utils import hash_password
 from src.database.record_updating import update_account
 from src.database.record_retrieval import get_account
-
-# from src.database.record_retrieval import get_account_by_username, get_contact
 
 router = APIRouter()
 
@@ -171,7 +168,7 @@ async def set_user_type(
             )
 
         result = await update_account(
-            session=session, id=account_id, user_type=data.user_type.value, commit=True
+            session, account_id, user_type=data.user_type.value, commit=True
         )
 
         if not result:
@@ -184,6 +181,8 @@ async def set_user_type(
 
 
 """
+from src.database.record_retrieval import get_account_by_username
+
 class ForgotPWRequest(BaseModel):
     username: str
 
@@ -197,7 +196,7 @@ async def forgot_password(data: ForgotPWRequest) -> dict:
     account = await get_account_by_username(data.username)
     if account:
         # Lookup contact info
-        contact = await get_contact(account.id)
+        contact = account.contact
         if contact and contact.email:
             reset_token = await create_password_reset_token(account.id)
             await send_password_reset_email(contact.email, reset_token)
@@ -234,6 +233,7 @@ async def reset_password(data: CompleteResetRequest) -> dict:
             raise HTTPException(500, "Password reset failed.")
         await invalidate_password_reset_token(data.token)
     return {"success": True}
+
 
 You may want a password_reset_tokens table:
     class PasswordResetToken(Base):

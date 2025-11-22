@@ -28,7 +28,7 @@ from src.backend.routers.references.skills import router as skills_router
 async def lifespan(app: FastAPI):
     # Startup code
     global DB_MANAGER
-    DB_MANAGER = await AsyncDBManager.create()
+    DB_MANAGER = await AsyncDBManager.create(rebuild=True, seed=True)
 
     yield  # <-- App runs while you wait here
 
@@ -58,10 +58,10 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(accounts_router, prefix="/accounts")
 app.include_router(notifications_router, prefix="/notifications")
 
-app.include_router(students_router, prefix="/students")
+app.include_router(companies_router, prefix="/companies")
 app.include_router(employers_router, prefix="/employers")
 app.include_router(faculty_router, prefix="/faculty")
-app.include_router(companies_router, prefix="/companies")
+app.include_router(students_router, prefix="/students")
 
 app.include_router(internships_router, prefix="/internships")
 app.include_router(applications_router, prefix="/applications")

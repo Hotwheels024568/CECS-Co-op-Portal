@@ -94,8 +94,12 @@ async def get_student(session: AsyncSession, id: int) -> Optional[StudentAccount
     return await session.get(StudentAccount, id)
 
 
-# TODO: Paginate
-async def get_students_by_department(session: AsyncSession, name: str) -> List[StudentAccount]:
+async def get_students_by_department(session: AsyncSession, id: int) -> List[StudentAccount]:
+    statement = select(StudentAccount).join(Department).filter(Department.id == id)
+    return await get_first_element_of_all_rows(session, statement)
+
+
+async def get_students_by_department_name(session: AsyncSession, name: str) -> List[StudentAccount]:
     statement = select(StudentAccount).join(Department).filter(Department.name == name)
     return await get_first_element_of_all_rows(session, statement)
 
@@ -104,7 +108,12 @@ async def get_faculty(session: AsyncSession, id: int) -> Optional[FacultyAccount
     return await session.get(FacultyAccount, id)
 
 
-async def get_faculty_by_department(session: AsyncSession, name: str) -> List[FacultyAccount]:
+async def get_faculty_by_department(session: AsyncSession, id: int) -> List[FacultyAccount]:
+    statement = select(FacultyAccount).join(Department).filter(Department.id == id)
+    return await get_first_element(session, statement)
+
+
+async def get_faculty_by_department_name(session: AsyncSession, name: str) -> List[FacultyAccount]:
     statement = select(FacultyAccount).join(Department).filter(Department.name == name)
     return await get_first_element(session, statement)
 
