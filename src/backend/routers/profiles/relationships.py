@@ -14,11 +14,6 @@ from src.database.record_retrieval import (
 
 router = APIRouter()
 
-"""
-Employers:
-    get list of all faculty
-"""
-
 
 @router.get("/students", response_model=dict)
 async def get_dept_students(
@@ -102,3 +97,37 @@ async def get_dept_faculty(
         "students": faculty_list,
     }
 
+
+@router.get("/faculty", response_model=dict)
+async def get_all_faculty(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> dict:
+    """
+    __
+    """
+    assert_user_type(session_data, UserType.EMPLOYER)
+
+    async with DB_MANAGER.session() as db_session:
+        faculty = await get_faculty(db_session)
+
+        faculty_list = []
+        for staff in faculty:
+            contact = staff.contact
+
+            faculty_list.append(
+                {
+                    "contact": {
+                        "first_name": contact.first,
+                        "middle_name": contact.middle,
+                        "last_name": contact.last,
+                        "email": contact.email,
+                        "phone": contact.phone,
+                    },
+                    "profile": {"department": staff.department.name},
+                }
+            )
+
+    return {
+        "success": True,
+        "students": faculty_list,
+    }

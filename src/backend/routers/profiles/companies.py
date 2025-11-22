@@ -13,5 +13,5 @@ Employers:
     delete
 
 Students & Faculty:
-    get (search?)
+    get (search?) + attach employer list
 """
