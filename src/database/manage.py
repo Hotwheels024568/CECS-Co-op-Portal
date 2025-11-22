@@ -248,7 +248,7 @@ async def main(recreate: bool = False) -> None:
         InternshipApplication,
         InternshipSummary,
     )
-    from src.database.session_utils import count
+    from src.database.utils import count
 
     manager = await AsyncDBManager.create()
     async with manager.session() as session:
