@@ -508,6 +508,7 @@ class InternshipApplication(Base):
         resume_link (str, optional): Link to the student's application specific resume. Defaults to None.
         cover_letter_link (str, optional): Link to the student's application specific cover letter. Defaults to None.
         selected (bool): Indicates if this application was chosen/hired by the employer for the internship. Defaults to False.
+        company (Company): Associated Company.
         internship (Internship): Associated Internship.
         student (StudentAccount): Associated Student.
         summary (InternshipSummary): Associated summary for the application (one-to-one).
@@ -539,6 +540,7 @@ class InternshipApplication(Base):
         Boolean, nullable=False, default=False, server_default=text("FALSE")
     )
 
+    company: "Company" = association_proxy("internship", "company")
     internship: Mapped["Internship"] = relationship("Internship", back_populates="applications")
     student: Mapped["StudentAccount"] = relationship(
         "StudentAccount", back_populates="applications"
