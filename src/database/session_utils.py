@@ -17,6 +17,23 @@ Method                  Returns if 0 rows	If 1 row	            If >1 row	       
 """
 
 
+async def count(session: AsyncSession, model) -> int:
+    """
+    Returns the count of records in a SQLAlchemy model (table class)
+
+    Args:
+        session (AsyncSession): The SQLAlchemy asynchronous database session.
+        model (Any): The SQLAlchemy model (table class).
+
+    Returns:
+        int: Count of the table records
+    """
+    from sqlalchemy import func, select
+
+    result = await session.scalar(select(func.count()).select_from(model))
+    return result if result is not None else 0  # return result or 0
+
+
 async def exists(
     session: AsyncSession, statement: Select, parameters: Optional[Dict] = None
 ) -> bool:

@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.schema import EmployerAccount, FacultyAccount, StudentAccount
-from src.database.manage import get_constraint_name_from_integrity_error
+from src.database.utils import get_constraint_name_from_integrity_error
 from src.database.record_updating import (
     update_address,
     update_company,

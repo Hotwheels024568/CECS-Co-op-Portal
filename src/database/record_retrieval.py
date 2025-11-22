@@ -21,7 +21,7 @@ from src.database.schema import (
     InternshipSummary,
 )
 
-from src.database.functions import (
+from src.database.session_utils import (
     get_first_element,
     get_first_element_of_all_rows,
 )

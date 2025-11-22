@@ -3,7 +3,8 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.schema import EmployerAccount, FacultyAccount, StudentAccount
-from src.database.manage import get_constraint_name_from_integrity_error
+from src.database.utils import get_constraint_name_from_integrity_error
+from src.database.record_retrieval import get_company_by_name
 from src.database.record_insertion import (
     add_address,
     add_company,
@@ -12,7 +13,6 @@ from src.database.record_insertion import (
     add_student,
     add_faculty,
 )
-from src.database.record_retrieval import get_company_by_name
 from src.database.record_get_or_create import (
     get_or_create_department,
     get_or_create_major,

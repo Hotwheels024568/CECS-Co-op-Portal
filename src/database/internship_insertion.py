@@ -2,10 +2,8 @@ from typing import List, Optional, Tuple
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from datetime import datetime
-
-from src.database.manage import get_constraint_name_from_integrity_error
-from src.database.record_get_or_create import get_or_create_major, get_or_create_skill
+from src.database.schema import Internship, InternshipApplication, InternshipSummary
+from src.database.utils import get_constraint_name_from_integrity_error
 from src.database.record_insertion import (
     add_address,
     add_application,
@@ -24,11 +22,11 @@ from src.database.record_retrieval import (
     get_internship,
     get_student,
 )
-from src.database.schema import (
-    Internship,
-    InternshipApplication,
-    InternshipSummary,
+from src.database.record_get_or_create import (
+    get_or_create_major,
+    get_or_create_skill,
 )
+
 from src.utils.academics import semesters_since_enrollment
 
 
