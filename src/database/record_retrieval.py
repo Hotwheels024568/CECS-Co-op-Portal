@@ -22,6 +22,7 @@ from src.database.schema import (
 )
 
 from src.database.utils import (
+    get_all_rows,
     get_first_column_element,
     get_first_column_element_of_all_rows,
 )
@@ -50,6 +51,10 @@ async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]
     return await session.get(Address, id)
 
 
+async def get_companies(session: AsyncSession) -> List[Company]:
+    return await get_first_column_element_of_all_rows(session, select(Company))
+
+
 async def get_company_by_id(session: AsyncSession, id: int) -> Optional[Company]:
     return await session.get(Company, id)
 
@@ -72,6 +77,10 @@ async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[Employe
     return await session.get(EmployerAccount, id)
 
 
+async def get_departments(session: AsyncSession) -> List[Department]:
+    return await get_first_column_element_of_all_rows(session, select(Department))
+
+
 async def get_department_by_id(session: AsyncSession, id: int) -> Optional[Department]:
     return await session.get(Department, id)
 
@@ -79,6 +88,10 @@ async def get_department_by_id(session: AsyncSession, id: int) -> Optional[Depar
 async def get_department_by_name(session: AsyncSession, name: str) -> Optional[Department]:
     statement = select(Department).filter_by(name=name)
     return await get_first_column_element(session, statement)
+
+
+async def get_majors(session: AsyncSession) -> List[Major]:
+    return await get_first_column_element_of_all_rows(session, select(Major))
 
 
 async def get_major_by_id(session: AsyncSession, id: int) -> Optional[Major]:
@@ -94,16 +107,6 @@ async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentA
     return await session.get(StudentAccount, id)
 
 
-async def get_students_by_department_id(session: AsyncSession, id: int) -> List[StudentAccount]:
-    statement = select(StudentAccount).filter_by(department_id=id)
-    return await get_first_column_element_of_all_rows(session, statement)
-
-
-async def get_students_by_department_name(session: AsyncSession, name: str) -> List[StudentAccount]:
-    statement = select(StudentAccount).join(Department).filter(Department.name == name)
-    return await get_first_column_element_of_all_rows(session, statement)
-
-
 async def get_faculty(session: AsyncSession) -> List[FacultyAccount]:
     return await get_first_column_element_of_all_rows(session, select(FacultyAccount))
 
@@ -112,52 +115,12 @@ async def get_faculty_by_id(session: AsyncSession, id: int) -> Optional[FacultyA
     return await session.get(FacultyAccount, id)
 
 
-async def get_faculty_by_department_id(session: AsyncSession, id: int) -> List[FacultyAccount]:
-    statement = select(FacultyAccount).filter_by(department_id=id)
-    return await get_first_column_element(session, statement)
-
-
-async def get_faculty_by_department_name(session: AsyncSession, name: str) -> List[FacultyAccount]:
-    statement = select(FacultyAccount).join(Department).filter(Department.name == name)
-    return await get_first_column_element(session, statement)
-
-
 async def get_internship_by_id(session: AsyncSession, id: int) -> Optional[Internship]:
     return await session.get(Internship, id)
 
 
-async def get_internship_majors(session: AsyncSession, internship_id: int) -> List[str]:
-    statement = (
-        select(Major.name)
-        .join(InternshipMajor)
-        .filter(InternshipMajor.internship_id == internship_id)
-    )
-    return await get_first_column_element_of_all_rows(session, statement)
-
-
-async def get_major_internships(session: AsyncSession, major_id: int) -> List[Internship]:
-    statement = (
-        select(Internship).join(InternshipMajor).filter(InternshipMajor.major_id == major_id)
-    )
-    return await get_first_column_element_of_all_rows(session, statement)
-
-
-async def get_internship_required_skills(session: AsyncSession, internship_id: int) -> List[str]:
-    statement = (
-        select(Skill.name)
-        .join(InternshipReqSkill)
-        .filter(InternshipReqSkill.internship_id == internship_id)
-    )
-    return await get_first_column_element_of_all_rows(session, statement)
-
-
-async def get_internship_preferred_skills(session: AsyncSession, internship_id: int) -> List[str]:
-    statement = (
-        select(Skill.name)
-        .join(InternshipPrefSkill)
-        .filter(InternshipPrefSkill.internship_id == internship_id)
-    )
-    return await get_first_column_element_of_all_rows(session, statement)
+async def get_skills(session: AsyncSession) -> List[Skill]:
+    return await get_first_column_element_of_all_rows(session, select(Skill))
 
 
 async def get_skill_by_id(session: AsyncSession, id: int) -> Optional[Skill]:
@@ -173,7 +136,7 @@ async def get_application_by_id(session: AsyncSession, id: int) -> Optional[Inte
     return await session.get(InternshipApplication, id)
 
 
-async def get_application_from_internship(
+async def get_application_from_ids(
     session: AsyncSession, internship_id: int, student_id: int
 ) -> Optional[InternshipApplication]:
     statement = select(InternshipApplication).filter_by(
@@ -182,14 +145,28 @@ async def get_application_from_internship(
     return await get_first_column_element(session, statement)
 
 
+async def get_department_applications(
+    session: AsyncSession, department_id: int
+) -> List[tuple[StudentAccount, InternshipApplication]]:
+    statement = (
+        select(StudentAccount, InternshipApplication)
+        .join(InternshipApplication.student)
+        .filter(StudentAccount.department_id == department_id)
+    )
+    return await get_all_rows(session, statement)
+
+
 async def get_summary_by_id(session: AsyncSession, id: int) -> Optional[InternshipSummary]:
     return await session.get(InternshipSummary, id)
 
 
-async def get_summary_from_internship(
-    session: AsyncSession, internship_id: int, student_id: int
-) -> Optional[InternshipSummary]:
-    application = await get_application_from_internship(session, internship_id, student_id)
-    if application is None:
-        return None
-    return application.summary
+async def get_department_summaries(
+    session: AsyncSession, department_id: int
+) -> List[InternshipSummary]:
+    statement = (
+        select(InternshipSummary)
+        .join(InternshipSummary.application)
+        .join(InternshipApplication.student)
+        .filter(StudentAccount.department_id == department_id)
+    )
+    return await get_first_column_element_of_all_rows(session, statement)

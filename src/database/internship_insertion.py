@@ -16,7 +16,7 @@ from src.database.record_insertion import (
 from src.database.record_retrieval import (
     get_address_by_id,
     get_application_by_id,
-    get_application_from_internship,
+    get_application_from_ids,
     get_company_by_id,
     get_employer_by_id,
     get_internship_by_id,
@@ -329,7 +329,7 @@ async def create_summary_from_internship(
             (InternshipSummary, "Internship summary created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
-    application = await get_application_from_internship(session, internship_id, student_id)
+    application = await get_application_from_ids(session, internship_id, student_id)
     if not application:
         return None, "Internship application not found for this internship/student."
 

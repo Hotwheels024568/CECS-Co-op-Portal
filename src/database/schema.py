@@ -13,6 +13,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.sql import func
 
@@ -235,6 +236,7 @@ class StudentAccount(Account):
         department (Department): Associated Department.
         major (Major): Associated Major.
         applications (list[InternshipApplication]): Internship applications submitted by the Student.
+        summaries (list[InternshipSummary]): The Student's internship application summary.
     """
 
     __tablename__ = "student_accounts"
@@ -259,6 +261,7 @@ class StudentAccount(Account):
     applications: Mapped[list["InternshipApplication"]] = relationship(
         "InternshipApplication", back_populates="student"
     )
+    summaries: list["InternshipSummary"] = association_proxy("applications", "summary")
 
     __table_args__ = (
         CheckConstraint("credit_hours >= 0", name="_check_credit_hours_non_negative"),
@@ -315,6 +318,7 @@ class Internship(Base):
         required_skills (list[InternshipReqSkill]): Association objects linking required Skills to the internship.
         preferred_skills (list[InternshipPrefSkill]): Association objects linking preferred Skills to the internship.
         applications (list[InternshipApplication]): Applications submitted for this internship.
+        summaries (list[InternshipSummary]): Application summaries.
 
     Notes:
         - To access related Major objects: [imajor.major for imajor in internship.majors]
@@ -372,6 +376,7 @@ class Internship(Base):
     applications: Mapped[list["InternshipApplication"]] = relationship(
         "InternshipApplication", back_populates="internship"
     )
+    summaries: list["InternshipSummary"] = association_proxy("applications", "summary")
 
     __table_args__ = (
         CheckConstraint("duration_weeks >= 0", name="_check_duration_weeks_non_negative"),
@@ -562,6 +567,8 @@ class InternshipSummary(Base):
             Defaults to ""
         employer_approval (bool): Employer approval status (False = Not Approved by default; True = Approved).
         letter_grade (str, optional): Letter grade (e.g., "A+", "A", "B"). Defaults to None.
+        student (StudentAccount): Associated StudentAccount.
+        internship (Internship): Associated Internship.
         application (InternshipApplication): Associated InternshipApplication (one-to-one).
 
     Notes:
@@ -581,6 +588,8 @@ class InternshipSummary(Base):
     # Nullable, e.g., "A", "B", "C"
     letter_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)
 
+    student: "StudentAccount" = association_proxy("application", "student")
+    internship: "Internship" = association_proxy("application", "internship")
     # 1-to-1 with InternshipApplication
     application: Mapped["InternshipApplication"] = relationship(
         "InternshipApplication", back_populates="summary", uselist=False
