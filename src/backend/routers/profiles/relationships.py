@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
-from src.backend.routers.models import ContactResponse
-from src.backend.routers.profiles.faculty import FacultyProfileDetails, FacultyProfileResponse
-from src.backend.routers.profiles.students import StudentProfileDetails, StudentProfileResponse
+from src.backend.routers.models import Contact, FacultyProfile, StudentProfile
+from src.backend.routers.profiles.faculty import FacultyProfileResponse
+from src.backend.routers.profiles.students import StudentProfileResponse
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
 
@@ -57,14 +57,14 @@ async def get_dept_students(
             contact = student.contact
             list.append(
                 StudentProfileResponse(
-                    contact=ContactResponse(
+                    contact=Contact(
                         first_name=contact.first,
                         middle_name=contact.middle,
                         last_name=contact.last,
                         email=contact.email,
                         phone=contact.phone,
                     ),
-                    profile=StudentProfileDetails(
+                    profile=StudentProfile(
                         department=student.department.name,
                         major_name=student.major.name,
                         credit_hours=student.credit_hours,
@@ -125,14 +125,14 @@ async def get_dept_faculty(
             contact = staff.contact
             list.append(
                 FacultyProfileResponse(
-                    contact=ContactResponse(
+                    contact=Contact(
                         first_name=contact.first,
                         middle_name=contact.middle,
                         last_name=contact.last,
                         email=contact.email,
                         phone=contact.phone,
                     ),
-                    profile=FacultyProfileDetails(department=staff.department.name),
+                    profile=FacultyProfile(department=staff.department.name),
                 )
             )
     return FacultyListResponse(faculty=list)
@@ -178,14 +178,14 @@ async def get_all_faculty(
             contact = staff.contact
             list.append(
                 FacultyProfileResponse(
-                    contact=ContactResponse(
+                    contact=Contact(
                         first_name=contact.first,
                         middle_name=contact.middle,
                         last_name=contact.last,
                         email=contact.email,
                         phone=contact.phone,
                     ),
-                    profile=FacultyProfileDetails(department=staff.department.name),
+                    profile=FacultyProfile(department=staff.department.name),
                 )
             )
     return FacultyListResponse(faculty=list)

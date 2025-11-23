@@ -1,5 +1,9 @@
+from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
-from pydantic import BaseModel, StringConstraints  # , EmailStr
+from datetime import datetime
+from enum import Enum
+
+from src.utils.semesters import Semester  # , EmailStr
 
 
 class GeneralRequestResponse(BaseModel):
@@ -7,12 +11,27 @@ class GeneralRequestResponse(BaseModel):
     message: str
 
 
-class ContactResponse(BaseModel):
+class Address(BaseModel):
+    address_line1: str
+    address_line2: Optional[str]
+    city: str
+    state_province: str
+    zip_postal: str
+    country: str
+
+
+class Company(BaseModel):
+    name: str
+    address: Address
+    website_link: Optional[str]
+
+
+class Contact(BaseModel):
     first_name: str
-    middle_name: Optional[str] = None
+    middle_name: Optional[str]
     last_name: str
     email: str
-    phone: Optional[str] = None
+    phone: Optional[str]
 
 
 class ContactCreationRequest(BaseModel):
@@ -31,3 +50,72 @@ class ContactUpdateRequest(BaseModel):
     email: Optional[Annotated[str, StringConstraints(max_length=254)]] = None
     # email: Optional[Annotated[EmailStr, StringConstraints(max_length=254)]] = None
     phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
+
+
+class Employer(BaseModel):
+    contact: Contact
+
+
+class FacultyProfile(BaseModel):
+    department: str
+
+
+class StudentProfile(BaseModel):
+    department_name: str
+    major_name: str
+    credit_hours: int
+    gpa: float
+    start_semester: Semester
+    start_year: int
+    transfer: bool
+    resume_link: Optional[str]
+
+
+class LocationType(Enum):
+    REMOTE = "Remote"
+    COMPANY = "Company"
+    OTHER = "Other"
+
+
+class InternshipStatus(Enum):
+    OPEN = "Open"
+    CLOSED = "Closed"
+    PENDING_START = "PendingStart"
+    IN_PROGRESS = "InProgress"
+    PENDING_SUMMARY = "WaitingSummary"
+    PENDING_GRADE = "WaitingGrade"
+    COMPLETED = "Completed"
+
+
+class Internship(BaseModel):
+    company: Company
+    title: str
+    description: str
+    location_type: LocationType
+    address: Address
+    duration_weeks: int
+    weekly_hours: int
+    total_work_hours: int
+    salary_info: Optional[str]
+    status: InternshipStatus
+    majors: list[str]
+    required_skills: list[str]
+    preferred_skills: list[str]
+
+
+class Application(BaseModel):
+    student: StudentProfile
+    internship: Internship
+    application_date: datetime
+    coop_credit_eligibility: bool
+    note: Optional[str]
+    resume_link: Optional[str]
+    cover_letter_link: Optional[str]
+    selected: bool
+
+
+class Summary(BaseModel):
+    summary: str
+    file_link: Optional[str]
+    employer_approval: bool
+    letter_grade: Optional[str]

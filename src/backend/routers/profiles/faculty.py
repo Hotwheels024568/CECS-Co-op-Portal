@@ -4,11 +4,12 @@ from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import (
+    Contact,
     ContactCreationRequest,
-    ContactResponse,
     ContactUpdateRequest,
     GeneralRequestResponse,
 )
+from src.backend.routers.models import FacultyProfile
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_faculty_profile
 from src.database.profile_updating import update_faculty_profile
@@ -17,13 +18,13 @@ from src.database.record_retrieval import get_faculty_by_id
 router = APIRouter()
 
 
-class FacultyProfileCreateDetails(BaseModel):
+class FacultyProfileCreationDetails(BaseModel):
     department_name: Annotated[str, StringConstraints(max_length=100)]
 
 
-class FacultyProfileCreateRequest(BaseModel):
+class FacultyProfileCreationRequest(BaseModel):
     contact: ContactCreationRequest
-    profile: FacultyProfileCreateDetails
+    profile: FacultyProfileCreationDetails
 
 
 @router.post(
@@ -37,7 +38,7 @@ class FacultyProfileCreateRequest(BaseModel):
     response_model=GeneralRequestResponse,
 )
 async def create_profile(
-    data: FacultyProfileCreateRequest,
+    data: FacultyProfileCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
@@ -81,13 +82,9 @@ async def create_profile(
     return GeneralRequestResponse(success=True, message=msg)
 
 
-class FacultyProfileDetails(BaseModel):
-    department: str
-
-
 class FacultyProfileResponse(BaseModel):
-    contact: ContactResponse
-    profile: FacultyProfileDetails
+    contact: Contact
+    profile: FacultyProfile
 
 
 @router.get(
@@ -131,14 +128,14 @@ async def get_profile(
         contact = profile.contact
 
     return FacultyProfileResponse(
-        contact=ContactResponse(
+        contact=Contact(
             first_name=contact.first,
             middle_name=contact.middle,
             last_name=contact.last,
             email=contact.email,
             phone=contact.phone,
         ),
-        profile=FacultyProfileDetails(department=profile.department.name),
+        profile=FacultyProfile(department=profile.department.name),
     )
 
 

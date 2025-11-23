@@ -3,6 +3,7 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.routers.models import Application, Summary
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.record_retrieval import (
     get_department_summaries,

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.routers.models import Internship
 
 router = APIRouter()
 

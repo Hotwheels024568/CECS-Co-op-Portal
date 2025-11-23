@@ -7,8 +7,13 @@ from src.database.record_retrieval import get_departments, get_majors, get_skill
 router = APIRouter()
 
 
+class CatalogItem(BaseModel):
+    id: int
+    name: str
+
+
 class DepartmentsResponse(BaseModel):
-    departments: list[str]
+    departments: list[CatalogItem]
 
 
 @router.get(
@@ -30,12 +35,12 @@ async def get_all_departments() -> DepartmentsResponse:
     """
     async with DB_MANAGER.session() as db_session:
         departments = await get_departments(db_session)
-        names = [department.name for department in departments]
-    return DepartmentsResponse(departments=names)
+        list = [CatalogItem(id=department.id, name=department.name) for department in departments]
+    return DepartmentsResponse(departments=list)
 
 
 class MajorsResponse(BaseModel):
-    majors: list[str]
+    majors: list[CatalogItem]
 
 
 @router.get(
@@ -57,12 +62,12 @@ async def get_all_majors() -> MajorsResponse:
     """
     async with DB_MANAGER.session() as db_session:
         majors = await get_majors(db_session)
-        names = [major.name for major in majors]
-    return MajorsResponse(majors=names)
+        list = [CatalogItem(id=major.id, name=major.name) for major in majors]
+    return MajorsResponse(majors=list)
 
 
 class SkillsResponse(BaseModel):
-    skills: list[str]
+    skills: list[CatalogItem]
 
 
 @router.get(
@@ -84,5 +89,5 @@ async def get_all_skills() -> SkillsResponse:
     """
     async with DB_MANAGER.session() as db_session:
         skills = await get_skills(db_session)
-        names = [skill.name for skill in skills]
-    return SkillsResponse(skills=names)
+        list = [CatalogItem(id=skill.id, name=skill.name) for skill in skills]
+    return SkillsResponse(skills=list)

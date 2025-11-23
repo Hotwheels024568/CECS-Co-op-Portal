@@ -4,11 +4,12 @@ from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import (
+    Contact,
     ContactCreationRequest,
-    ContactResponse,
     ContactUpdateRequest,
     GeneralRequestResponse,
 )
+from src.backend.routers.models import StudentProfile
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
@@ -29,7 +30,7 @@ class StudentProfileCreationDetails(BaseModel):
     resume_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
 
 
-class StudentProfileCreateRequest(BaseModel):
+class StudentProfileCreationRequest(BaseModel):
     contact: ContactCreationRequest
     profile: StudentProfileCreationDetails
 
@@ -45,7 +46,7 @@ class StudentProfileCreateRequest(BaseModel):
     response_model=GeneralRequestResponse,
 )
 async def create_profile(
-    data: StudentProfileCreateRequest,
+    data: StudentProfileCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
@@ -96,20 +97,9 @@ async def create_profile(
     return GeneralRequestResponse(success=True, message=msg)
 
 
-class StudentProfileDetails(BaseModel):
-    department_name: str
-    major_name: str
-    credit_hours: int
-    gpa: float
-    start_semester: Semester
-    start_year: int
-    transfer: bool
-    resume_link: Optional[str]
-
-
 class StudentProfileResponse(BaseModel):
-    contact: ContactResponse
-    profile: StudentProfileDetails
+    contact: Contact
+    profile: StudentProfile
 
 
 @router.get(
@@ -154,14 +144,14 @@ async def get_profile(
         contact = profile.contact
 
     return StudentProfileResponse(
-        contact=ContactResponse(
+        contact=Contact(
             first_name=contact.first,
             middle_name=contact.middle,
             last_name=contact.last,
             email=contact.email,
             phone=contact.phone,
         ),
-        profile=StudentProfileDetails(
+        profile=StudentProfile(
             department=profile.department.name,
             major_name=profile.major.name,
             credit_hours=profile.credit_hours,

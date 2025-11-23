@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.routers.models import Employer
 
 router = APIRouter()
+
 
 """
 Employers:
