@@ -27,7 +27,7 @@ from src.database.record_get_or_create import (
     get_or_create_skill,
 )
 
-from src.utils.academics import semesters_since_enrollment
+from src.utils.semesters import semesters_since_enrollment
 
 
 async def create_internship(
