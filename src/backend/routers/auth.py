@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
-import secrets
-import hmac
-import time
+import hmac, secrets, time
 
 from src.backend.globals import (
     DB_MANAGER,
@@ -13,6 +11,7 @@ from src.backend.globals import (
     AccountInfo,
     UserType,
 )
+from src.backend.routers.models import GeneralRequestResponse
 from src.backend.routers.utils import get_current_session, hash_password
 from src.database.record_insertion import add_account
 from src.database.record_retrieval import get_account_by_username
@@ -33,7 +32,7 @@ class LoginResponse(BaseModel):
 
 @router.post(
     "/register",
-    tags=["Auth"],
+    tags=["Authentication"],
     summary="Register a new user and log them in.",
     description=(
         "Registers a new user account and immediately logs the user in. "
@@ -83,18 +82,18 @@ async def register(request: AuthRequest) -> LoginResponse:
             return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Username already exists or registration failed",
+        status.HTTP_400_BAD_REQUEST,
+        "Username already exists or registration failed",
     )
 
 
 @router.post(
     "/login",
-    tags=["Auth"],
+    tags=["Authentication"],
     summary="Authenticate and obtain a session token.",
     description=(
-        "Logs a user in using username and password. If credentials are valid, "
-        "returns a secure session token for use in authenticated requests."
+        "Logs a user in using their username and password. If credentials are valid, "
+        "a secure session token for use in authenticated requests is returned."
     ),
     response_model=LoginResponse,
 )
@@ -148,43 +147,44 @@ async def login(request: AuthRequest) -> LoginResponse:
         return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Incorrect username or password",
+        status.HTTP_401_UNAUTHORIZED,
+        "Incorrect username or password",
     )
 
 
 @router.post(
     "/logout",
-    tags=["Auth"],
+    tags=["Authentication"],
     summary="Logout and invalidate session.",
     description=(
         "Logs out the current user by invalidating the session token. "
         "Session token must be supplied in the request body."
     ),
-    response_model=dict,
+    response_model=GeneralRequestResponse,
 )
-async def logout(session_data: tuple[str, AccountInfo] = Depends(get_current_session)) -> dict:
+async def logout(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> GeneralRequestResponse:
     """
     Log out a user by invalidating their session.
 
     Removes the specified session_id from the session store, ending the user's authenticated session.
-    This endpoint requires the session_id (typically sent in JSON, but may also be provided via header/cookie).
 
     Args:
-        request (LogoutRequest): Contains the 'session_id' field to be invalidated.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        dict: {"success": True} if logout was successful.
+        GeneralRequestResponse: {"success": True, "message": "Logged out"} if logout was successful.
 
     Raises:
-        HTTPException (401): If the session_id does not exist or has already been invalidated.
+        HTTPException (401): If the session is invalid or already expired.
     """
     session_id = session_data[0]
     removed = SESSION_STORE.pop(session_id, None)
     if removed is not None:
-        return {"success": True}
+        return GeneralRequestResponse(success=True, message="Logged out")
 
     raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Session not found or already logged out",
+        status.HTTP_401_UNAUTHORIZED,
+        "Session not found or already logged out",
     )

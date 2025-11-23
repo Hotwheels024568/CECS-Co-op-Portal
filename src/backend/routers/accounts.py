@@ -4,6 +4,7 @@ from typing import Annotated
 import secrets
 
 from src.backend.globals import DB_MANAGER, PEPPER, SESSION_STORE, AccountInfo, UserType
+from src.backend.routers.models import GeneralRequestResponse
 from src.backend.routers.utils import get_current_session
 from src.backend.routers.utils import hash_password
 from src.database.record_updating import update_account
@@ -20,34 +21,35 @@ class UsernameUpdateRequest(BaseModel):
     "/username",
     tags=["Account"],
     summary="Change your account username",
-    description="Update the username for the authenticated user. Fails if the username is taken.",
-    response_model=dict,
+    description="Update the username for the authenticated user. Fails if the username is already taken.",
+    response_model=GeneralRequestResponse,
 )
 async def change_username(
     data: UsernameUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict[str, bool]:
+) -> GeneralRequestResponse:
     """
     Change the current user's username.
 
     Args:
         data (UsernameUpdateRequest): Contains the 'username' field.
-        session (tuple): Session information from get_current_session.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        dict: {"success": True} if the username was updated successfully.
+        GeneralRequestResponse: {"success": True, "message": "Username changed"} if the username was updated successfully.
 
     Raises:
-        HTTPException 409: If the requested username is already taken.
-        HTTPException 400: If the update operation fails for other reasons.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (409): If the requested username is already taken.
+        HTTPException (500): If the operation fails.
     """
     account_id = session_data[1]["account_id"]
 
     async with DB_MANAGER.session() as db_session:
-        updated_account = await update_account(
-            session=db_session,
-            id=account_id,
-            username=data.username,
+        result = await update_account(
+            db_session,
+            account_id,
+            data.username,
             commit=True,
         )
 
@@ -59,12 +61,10 @@ async def change_username(
         )
     """
 
-    if updated_account is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to update username."
-        )
+    if result is None:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update username.")
 
-    return {"success": True}
+    return GeneralRequestResponse(success=True, message="Username changed")
 
 
 class PasswordUpdateRequest(BaseModel):
@@ -75,12 +75,12 @@ class PasswordUpdateRequest(BaseModel):
     "/password",
     tags=["Account"],
     summary="Change your account password",
-    description="Updates the password for the authenticated account. Requires a strong password.",
-    response_model=dict,
+    description="Updates the password for the authenticated account.",
+    response_model=GeneralRequestResponse,
 )
 async def change_password(
-    data: PasswordUpdateRequest, session: tuple[str, dict] = Depends(get_current_session)
-) -> dict:
+    data: PasswordUpdateRequest, session_data: tuple[str, dict] = Depends(get_current_session)
+) -> GeneralRequestResponse:
     """
     Change the current user's password.
 
@@ -95,34 +95,32 @@ async def change_password(
 
     Args:
         data (PasswordUpdateRequest): Contains the 'password' field.
-        session (tuple): Session information from get_current_session.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        dict: {"success": True} if the password was updated successfully.
+        GeneralRequestResponse: {"success": True, "message": "Password changed"} if the password was updated successfully.
 
     Raises:
-        HTTPException 500: If the password update operation fails.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (500): If the operation fails.
     """
-    account_id = session[1]["account_id"]
+    account_id = session_data[1]["account_id"]
     salt = secrets.token_bytes(16)
     hashed_pw = hash_password(data.password, salt, PEPPER)
 
     async with DB_MANAGER.session() as db_session:
-        updated_account = await update_account(
-            session=db_session,
-            id=account_id,
-            password=hashed_pw,
-            salt=salt,
+        result = await update_account(
+            db_session,
+            account_id,
+            hashed_pw,
+            salt,
             commit=True,
         )
 
-    if updated_account is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update password.",
-        )
+    if result is None:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update password.")
 
-    return {"success": True}
+    return GeneralRequestResponse(success=True, message="Password changed")
 
 
 class UpdateUserTypeRequest(BaseModel):
@@ -131,55 +129,60 @@ class UpdateUserTypeRequest(BaseModel):
 
 @router.put(
     "/user_type",
-    response_model=dict,
     tags=["Account"],
     summary="Set user type for an account.",
     description=(
         "Sets the user_type for an existing account. User type must be one of: Employer, Student, or Faculty. "
         "Cannot be changed by the user once set (contact support to change)."
     ),
+    response_model=GeneralRequestResponse,
 )
 async def set_user_type(
-    data: UpdateUserTypeRequest, session: tuple[str, AccountInfo] = Depends(get_current_session)
-) -> dict[str, bool]:
+    data: UpdateUserTypeRequest,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> GeneralRequestResponse:
     """
     Set the user_type for an existing account.
 
     Args:
         data (UpdateUserTypeRequest): Contains new `user_type` ("Employer", "Student", "Faculty").
-        session (tuple): Session information from get_current_session.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        dict: {"success": True} if the user_type update succeeded.
+        GeneralRequestResponse: {"success": True, "message": "User type set"} if the user_type update succeeded.
 
     Raises:
-        HTTPException (400): If user_type is invalid or already set.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (404): If the account is not found.
+        HTTPException (409): If user_type is already set.
+        HTTPException (500): If the operation fails.
     """
-    session_id, session_data = session
-    account_id = session_data["account_id"]
+    session_id = session_data[0]
+    account_id = session_data[1]["account_id"]
 
-    async with DB_MANAGER.session() as session:
-        account = await get_account_by_id(session, account_id)
+    async with DB_MANAGER.session() as db_session:
+        account = await get_account_by_id(db_session, account_id)
 
         if not account:
-            raise HTTPException(status_code=404, detail="Account not found")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Account not found")
 
-        if account.user_type:
+        if account.user_type is not None:
             raise HTTPException(
-                status_code=409, detail="User type already set. Contact support to change."
+                status.HTTP_409_CONFLICT, "User type already set. Contact support to change."
             )
 
         result = await update_account(
-            session, account_id, user_type=data.user_type.value, commit=True
+            db_session, account_id, user_type=data.user_type.value, commit=True
         )
 
         if not result:
             raise HTTPException(
-                status_code=500, detail="Failed to update user type due to server/database error."
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "Failed to update user type due to server/database error.",
             )
 
     SESSION_STORE[session_id]["user_type"] = data.user_type
-    return {"success": True}
+    return GeneralRequestResponse(success=True, message="User type set")
 
 
 """

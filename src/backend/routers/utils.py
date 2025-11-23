@@ -50,7 +50,7 @@ def get_current_session(
     now = time.time()
     if not session or session["expires_at"] < now:
         SESSION_STORE.pop(session_id, None)
-        raise HTTPException(status_code=401, detail="Session expired or invalid")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session expired or invalid")
 
     session["expires_at"] = now + SESSION_EXPIRE_SECONDS
     return session_id, session
@@ -75,8 +75,8 @@ def assert_user_type(
     user_type = session_data[1]["user_type"]
     if user_type not in allowed_types:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Only {_allowed_types_phrase(allowed_types)} accounts may access this endpoint.",
+            status.HTTP_403_FORBIDDEN,
+            f"Only {_allowed_types_phrase(allowed_types)} accounts may access this endpoint.",
         )
 
 

@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, StringConstraints
+from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.routers.models import (
+    ContactCreationRequest,
+    ContactResponse,
+    ContactUpdateRequest,
+    GeneralRequestResponse,
+)
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_faculty_profile
 from src.database.profile_updating import update_faculty_profile
@@ -12,24 +18,40 @@ router = APIRouter()
 
 
 class FacultyProfileCreateRequest(BaseModel):
-    # Contact
-    first_name: Annotated[str, StringConstraints(max_length=50)]
-    middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
-    last_name: Annotated[str, StringConstraints(max_length=50)]
-    email: Annotated[EmailStr, StringConstraints(max_length=254)]
-    phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
-    # Profile
+    contact: ContactCreationRequest
     department_name: Annotated[str, StringConstraints(max_length=100)]
 
 
-@router.post("/create", response_model=dict)
+@router.post(
+    "/create",
+    tags=["Faculty"],
+    summary="Create a new faculty profile",
+    description=(
+        "Submit a new faculty profile, including contact information and profile details. "
+        "Requires authentication. Returns a confirmation of successful profile creation or an error message."
+    ),
+    response_model=GeneralRequestResponse,
+)
 async def create_profile(
     data: FacultyProfileCreateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> GeneralRequestResponse:
     """
-    Create a faculty profile (contact info + department).
-    Only callable by authenticated faculty users who haven't yet created their profile.
+    Create a new faculty profile with contact information and profile detail assignment.
+
+    This endpoint can only be called by authenticated faculty users who have not already created a profile.
+
+    Args:
+        data (FacultyProfileCreateRequest): An object containing the faculty member's contact information and profile details.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        GeneralRequestResponse: {"success": True, "message": "..."} if the profile was created successfully.
+
+    Raises:
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
+        HTTPException (500): If the operation fails.
     """
     assert_user_type(session_data, UserType.FACULTY)
 
@@ -38,68 +60,114 @@ async def create_profile(
         profile, msg = await create_faculty_profile(
             db_session,
             account_id,
-            data.first_name,
-            data.middle_name,
-            data.last_name,
-            data.email,
-            data.phone,
+            data.contact.first_name,
+            data.contact.middle_name,
+            data.contact.last_name,
+            data.contact.email,
+            data.contact.phone,
             data.department_name,
         )
 
     if not profile:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Profile could not be created. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Profile could not be created. Reason: {msg}",
         )
 
-    return {"success": True, "message": msg}
+    return GeneralRequestResponse(success=True, message=msg)
 
 
-@router.get("/profile", response_model=dict)
+class FacultyProfileResponse(BaseModel):
+    contact: ContactResponse
+    department: str
+
+
+@router.get(
+    "/profile",
+    tags=["Faculty"],
+    summary="Retrieve your faculty profile",
+    description="Fetch the authenticated faculty member's contact information and profile details.",
+    response_model=FacultyProfileResponse,
+)
 async def get_profile(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> FacultyProfileResponse:
     """
-    __
+    Retrieve the authenticated faculty member's profile information.
+
+    This endpoint returns the faculty member's contact information and profile details.
+    Only callable by authenticated faculty users who have an existing profile.
+
+    Args:
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        FacultyProfileResponse: Contains contact information and department name.
+
+    Raises:
+        HTTPException (400): If the profile does not exist or the operation fails.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
     """
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
-        contact = profile.contact
-        department = profile.department.name
+        if not profile:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Faculty profile does not exist. Please create a profile first.",
+            )
 
-    return {
-        "contact": {
-            "first_name": contact.first,
-            "middle_name": contact.middle,
-            "last_name": contact.last,
-            "email": contact.email,
-            "phone": contact.phone,
-        },
-        "profile": {"department": department},
-    }
+        contact = profile.contact
+        response = ContactResponse(
+            first_name=contact.first,
+            middle_name=contact.middle,
+            last_name=contact.last,
+            email=contact.email,
+            phone=contact.phone,
+        )
+
+    return FacultyProfileResponse(contact=response, department=profile.department.name)
 
 
 class FacultyProfileUpdateRequest(BaseModel):
-    # Contact
-    first_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
-    middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
-    last_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
-    email: Optional[Annotated[EmailStr, StringConstraints(max_length=254)]] = None
-    phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
-    # Profile
+    contact: ContactUpdateRequest
     department_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
 
 
-@router.patch("/update", response_model=dict)
+@router.patch(
+    "/update",
+    tags=["Faculty"],
+    summary="Update your faculty profile",
+    description=(
+        "Modify existing faculty profile information, such as department and contact info. "
+        "Returns a confirmation of the update status. Authentication required."
+    ),
+    response_model=GeneralRequestResponse,
+)
 async def update_profile(
     data: FacultyProfileUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> GeneralRequestResponse:
     """
-    __
+    Update the authenticated faculty member's profile information.
+
+    This endpoint allows faculty users to modify their contact details or department.
+    Only callable by authenticated faculty users who have an existing profile.
+
+    Args:
+        data (FacultyProfileUpdateRequest): An object containing the updated contact details or department name.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        GeneralRequestResponse: {"success": True, "message": "..."} if the profile was updated successfully.
+
+    Raises:
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
+        HTTPException (500): If the operation fails.
     """
     assert_user_type(session_data, UserType.FACULTY)
 
@@ -108,18 +176,18 @@ async def update_profile(
         profile, msg = await update_faculty_profile(
             db_session,
             account_id,
-            data.first_name,
-            data.middle_name,
-            data.last_name,
-            data.email,
-            data.phone,
+            data.contact.first_name,
+            data.contact.middle_name,
+            data.contact.last_name,
+            data.contact.email,
+            data.contact.phone,
             data.department_name,
         )
 
     if not profile:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Profile could not be updated. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Profile could not be updated. Reason: {msg}",
         )
 
-    return {"success": True, "message": msg}
+    return GeneralRequestResponse(success=True, message=msg)
