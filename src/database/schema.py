@@ -195,6 +195,29 @@ class Department(Base):
     )
 
 
+class FacultyAccount(Account):
+    """
+    Faculty user account.
+
+    Attributes:
+        id (int): Primary key and foreign key to the Account (one-to-one).
+        department_id (int): Foreign key to the Department.
+        department (Department): Associated Department.
+    """
+
+    __tablename__ = "faculty_accounts"
+
+    id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
+    # Should be Unique according to assignment directions
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), nullable=False)
+
+    department: Mapped["Department"] = relationship("Department", back_populates="faculty")
+    # 1-to-1 with Department
+    # department: Mapped["Department"] = relationship("Department", back_populates="faculty", uselist=False)
+
+    __mapper_args__ = {"polymorphic_identity": "Faculty"}
+
+
 class Major(Base):
     """
     Represents a Major (field of study).
@@ -272,29 +295,6 @@ class StudentAccount(Account):
     __mapper_args__ = {"polymorphic_identity": "Student"}
 
 
-class FacultyAccount(Account):
-    """
-    Faculty user account.
-
-    Attributes:
-        id (int): Primary key and foreign key to the Account (one-to-one).
-        department_id (int): Foreign key to the Department.
-        department (Department): Associated Department.
-    """
-
-    __tablename__ = "faculty_accounts"
-
-    id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
-    # Should be Unique according to assignment directions
-    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), nullable=False)
-
-    department: Mapped["Department"] = relationship("Department", back_populates="faculty")
-    # 1-to-1 with Department
-    # department: Mapped["Department"] = relationship("Department", back_populates="faculty", uselist=False)
-
-    __mapper_args__ = {"polymorphic_identity": "Faculty"}
-
-
 class Internship(Base):
     """
     Internship opportunity posted by a Company.
@@ -352,8 +352,8 @@ class Internship(Base):
             "Closed",  # Applications Closed
             "PendingStart",  # Student selected, opportunity is filled
             "InProgress",  # Currently ongoing
-            "WaitingSummary",  # Awaiting completion summary
-            "WaitingGrade",  # Awaiting grade input
+            "PendingSummary",  # Awaiting completion summary
+            "PendingGrade",  # Awaiting grade input
             "Completed",  # Finished
             name="internship_status_enum",
         ),
