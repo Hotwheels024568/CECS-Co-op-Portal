@@ -17,9 +17,13 @@ from src.database.record_retrieval import get_faculty_by_id
 router = APIRouter()
 
 
+class FacultyProfileCreateDetails(BaseModel):
+    department_name: Annotated[str, StringConstraints(max_length=100)]
+
+
 class FacultyProfileCreateRequest(BaseModel):
     contact: ContactCreationRequest
-    department_name: Annotated[str, StringConstraints(max_length=100)]
+    profile: FacultyProfileCreateDetails
 
 
 @router.post(
@@ -65,7 +69,7 @@ async def create_profile(
             data.contact.last_name,
             data.contact.email,
             data.contact.phone,
-            data.department_name,
+            data.profile.department_name,
         )
 
     if not profile:
@@ -77,9 +81,13 @@ async def create_profile(
     return GeneralRequestResponse(success=True, message=msg)
 
 
+class FacultyProfileDetails(BaseModel):
+    department: str
+
+
 class FacultyProfileResponse(BaseModel):
     contact: ContactResponse
-    department: str
+    profile: FacultyProfileDetails
 
 
 @router.get(
@@ -121,20 +129,26 @@ async def get_profile(
             )
 
         contact = profile.contact
-        response = ContactResponse(
+
+    return FacultyProfileResponse(
+        contact=ContactResponse(
             first_name=contact.first,
             middle_name=contact.middle,
             last_name=contact.last,
             email=contact.email,
             phone=contact.phone,
-        )
+        ),
+        profile=FacultyProfileDetails(department=profile.department.name),
+    )
 
-    return FacultyProfileResponse(contact=response, department=profile.department.name)
+
+class FacultyProfileUpdateDetails(BaseModel):
+    department_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
 
 
 class FacultyProfileUpdateRequest(BaseModel):
     contact: ContactUpdateRequest
-    department_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
+    profile: FacultyProfileUpdateDetails
 
 
 @router.patch(
@@ -181,7 +195,7 @@ async def update_profile(
             data.contact.last_name,
             data.contact.email,
             data.contact.phone,
-            data.department_name,
+            data.profile.department_name,
         )
 
     if not profile:

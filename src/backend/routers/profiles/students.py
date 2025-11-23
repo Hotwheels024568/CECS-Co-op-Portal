@@ -18,9 +18,7 @@ from src.utils.semesters import Semester
 router = APIRouter()
 
 
-class StudentProfileCreateRequest(BaseModel):
-    contact: ContactCreationRequest
-    # Profile
+class StudentProfileCreationDetails(BaseModel):
     department_name: Annotated[str, StringConstraints(max_length=100)]
     major_name: Annotated[str, StringConstraints(max_length=100)]
     credit_hours: Annotated[int, NonNegativeInt]
@@ -29,6 +27,11 @@ class StudentProfileCreateRequest(BaseModel):
     start_year: Annotated[int, NonNegativeInt]
     transfer: bool
     resume_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
+
+
+class StudentProfileCreateRequest(BaseModel):
+    contact: ContactCreationRequest
+    profile: StudentProfileCreationDetails
 
 
 @router.post(
@@ -74,14 +77,14 @@ async def create_profile(
             data.contact.last_name,
             data.contact.email,
             data.contact.phone,
-            data.department_name,
-            data.major_name,
-            data.credit_hours,
-            data.gpa,
-            data.start_semester,
-            data.start_year,
-            data.transfer,
-            data.resume_link,
+            data.profile.department_name,
+            data.profile.major_name,
+            data.profile.credit_hours,
+            data.profile.gpa,
+            data.profile.start_semester,
+            data.profile.start_year,
+            data.profile.transfer,
+            data.profile.resume_link,
         )
 
     if not profile:
@@ -93,8 +96,7 @@ async def create_profile(
     return GeneralRequestResponse(success=True, message=msg)
 
 
-class StudentProfileResponse(BaseModel):
-    contact: ContactResponse
+class StudentProfileDetails(BaseModel):
     department_name: str
     major_name: str
     credit_hours: int
@@ -103,6 +105,11 @@ class StudentProfileResponse(BaseModel):
     start_year: int
     transfer: bool
     resume_link: Optional[str]
+
+
+class StudentProfileResponse(BaseModel):
+    contact: ContactResponse
+    profile: StudentProfileDetails
 
 
 @router.get(
@@ -114,7 +121,7 @@ class StudentProfileResponse(BaseModel):
 )
 async def get_profile(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> StudentProfileResponse:
     """
     Retrieve the authenticated students's profile information.
 
@@ -125,8 +132,8 @@ async def get_profile(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        StudentProfileResponse: Contains contact information, department name, major name, credit hours,
-            gpa, start semester & year, transfer student indication and an optional resume link.
+        StudentProfileResponse: Contains contact information, and profile details
+            (e.g., department name, major, credit hours, GPA, semester/year started, transfer status, resume link).
 
     Raises:
         HTTPException (400): If the profile does not exist or the operation fails.
@@ -145,30 +152,29 @@ async def get_profile(
             )
 
         contact = profile.contact
-        response = ContactResponse(
+
+    return StudentProfileResponse(
+        contact=ContactResponse(
             first_name=contact.first,
             middle_name=contact.middle,
             last_name=contact.last,
             email=contact.email,
             phone=contact.phone,
-        )
-
-    return StudentProfileResponse(
-        contact=response,
-        department=profile.department.name,
-        major_name=profile.major.name,
-        credit_hours=profile.credit_hours,
-        gpa=profile.gpa,
-        start_semester=profile.start_semester,
-        start_year=profile.start_year,
-        transfer=profile.transfer,
-        resume_link=profile.resume_link,
+        ),
+        profile=StudentProfileDetails(
+            department=profile.department.name,
+            major_name=profile.major.name,
+            credit_hours=profile.credit_hours,
+            gpa=profile.gpa,
+            start_semester=profile.start_semester,
+            start_year=profile.start_year,
+            transfer=profile.transfer,
+            resume_link=profile.resume_link,
+        ),
     )
 
 
-class StudentProfileUpdateRequest(BaseModel):
-    contact: ContactUpdateRequest
-    # Profile
+class StudentProfileUpdateDetails(BaseModel):
     department_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
     major_name: Optional[Annotated[str, StringConstraints(max_length=100)]] = None
     credit_hours: Optional[Annotated[int, NonNegativeInt]] = None
@@ -177,6 +183,11 @@ class StudentProfileUpdateRequest(BaseModel):
     start_year: Optional[Annotated[int, NonNegativeInt]] = None
     transfer: Optional[bool] = None
     resume_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
+
+
+class StudentProfileUpdateRequest(BaseModel):
+    contact: ContactUpdateRequest
+    profile: StudentProfileUpdateDetails
 
 
 @router.patch(
@@ -189,7 +200,7 @@ class StudentProfileUpdateRequest(BaseModel):
     ),
     response_model=GeneralRequestResponse,
 )
-@router.patch("/update", response_model=dict)
+@router.patch("/update", response_model=GeneralRequestResponse)
 async def update_profile(
     data: StudentProfileUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
@@ -224,14 +235,14 @@ async def update_profile(
             data.contact.last_name,
             data.contact.email,
             data.contact.phone,
-            data.department_name,
-            data.major_name,
-            data.credit_hours,
-            data.gpa,
-            data.start_semester,
-            data.start_year,
-            data.transfer,
-            data.resume_link,
+            data.profile.department_name,
+            data.profile.major_name,
+            data.profile.credit_hours,
+            data.profile.gpa,
+            data.profile.start_semester,
+            data.profile.start_year,
+            data.profile.transfer,
+            data.profile.resume_link,
         )
 
     if not profile:

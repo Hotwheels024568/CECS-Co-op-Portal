@@ -79,7 +79,8 @@ class PasswordUpdateRequest(BaseModel):
     response_model=GeneralRequestResponse,
 )
 async def change_password(
-    data: PasswordUpdateRequest, session_data: tuple[str, dict] = Depends(get_current_session)
+    data: PasswordUpdateRequest,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
     Change the current user's password.

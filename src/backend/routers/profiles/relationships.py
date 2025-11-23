@@ -1,24 +1,49 @@
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
-from src.backend.routers.profiles.faculty import router
-from src.backend.routers.profiles.students import router
+from src.backend.routers.models import ContactResponse
+from src.backend.routers.profiles.faculty import FacultyProfileDetails, FacultyProfileResponse
+from src.backend.routers.profiles.students import StudentProfileDetails, StudentProfileResponse
 from src.backend.routers.utils import assert_user_type, get_current_session
-from src.database.record_retrieval import (
-    get_faculty,
-    get_faculty_by_id,
-    get_student_by_id,
-)
+from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
 
 router = APIRouter()
 
 
-@router.get("/department-students", response_model=dict)
+class StudentListResponse(BaseModel):
+    students: list[StudentProfileResponse]
+
+
+@router.get(
+    "/department-students",
+    tags=["Faculty"],
+    summary="Retrieve all students in the faculty's department",
+    description=(
+        "Fetch a list of all student profiles associated with the authenticated faculty member's department. "
+        "Only callable by authenticated faculty users."
+    ),
+    response_model=StudentListResponse,
+)
 async def get_dept_students(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> StudentListResponse:
     """
-    __
+    Retrieve all students within the authenticated faculty member's department.
+
+    This endpoint fetches a list of student profiles for the faculty member's department.
+    Only callable by authenticated faculty users.
+
+    Args:
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        DepartmentStudentsResponse: Contains a list of students' contact information and profile details
+            (e.g., department name, major, credit hours, GPA, semester/year started, transfer status, resume link).
+
+    Raises:
+        HTTPException (401): If session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
     """
     assert_user_type(session_data, UserType.FACULTY)
 
@@ -30,38 +55,63 @@ async def get_dept_students(
         list = []
         for student in students:
             contact = student.contact
-
             list.append(
-                {
-                    "contact": {
-                        "first_name": contact.first,
-                        "middle_name": contact.middle,
-                        "last_name": contact.last,
-                        "email": contact.email,
-                        "phone": contact.phone,
-                    },
-                    "profile": {
-                        "department": student.department.name,
-                        "major": student.major.name,
-                        "credit_hours": student.credit_hours,
-                        "gpa": student.gpa,
-                        "start_semester": student.start_semester,
-                        "start_year": student.start_year,
-                        "transfer": student.transfer,
-                        "resume_link": student.resume_link,
-                    },
-                }
+                StudentProfileResponse(
+                    contact=ContactResponse(
+                        first_name=contact.first,
+                        middle_name=contact.middle,
+                        last_name=contact.last,
+                        email=contact.email,
+                        phone=contact.phone,
+                    ),
+                    profile=StudentProfileDetails(
+                        department=student.department.name,
+                        major_name=student.major.name,
+                        credit_hours=student.credit_hours,
+                        gpa=student.gpa,
+                        start_semester=student.start_semester,
+                        start_year=student.start_year,
+                        transfer=student.transfer,
+                        resume_link=student.resume_link,
+                    ),
+                )
             )
+    return StudentListResponse(students=list)
 
-    return {"students": list}
+
+class FacultyListResponse(BaseModel):
+    faculty: list[FacultyProfileResponse]
 
 
-@router.get("/department-faculty", response_model=dict)
+@router.get(
+    "/department-faculty",
+    tags=["Students"],
+    summary="Retrieve all faculty in the student's department",
+    description=(
+        "Fetch a list of all faculty profiles associated with the authenticated student's department. "
+        "Only callable by authenticated student users."
+    ),
+    response_model=FacultyListResponse,
+)
 async def get_dept_faculty(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> FacultyListResponse:
     """
-    __
+    Retrieve all faculty in the authenticated student's department.
+
+    This endpoint returns a list of faculty profiles for the student's department.
+    Only callable by authenticated student users.
+
+    Args:
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        DepartmentFacultyResponse: Contains a list of faculty contact information and profile details
+            (e.g., department name).
+
+    Raises:
+        HTTPException (401): If session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
     """
     assert_user_type(session_data, UserType.STUDENT)
 
@@ -73,29 +123,50 @@ async def get_dept_faculty(
         list = []
         for staff in faculty:
             contact = staff.contact
-
             list.append(
-                {
-                    "contact": {
-                        "first_name": contact.first,
-                        "middle_name": contact.middle,
-                        "last_name": contact.last,
-                        "email": contact.email,
-                        "phone": contact.phone,
-                    },
-                    "profile": {"department": staff.department.name},
-                }
+                FacultyProfileResponse(
+                    contact=ContactResponse(
+                        first_name=contact.first,
+                        middle_name=contact.middle,
+                        last_name=contact.last,
+                        email=contact.email,
+                        phone=contact.phone,
+                    ),
+                    profile=FacultyProfileDetails(department=staff.department.name),
+                )
             )
+    return FacultyListResponse(faculty=list)
 
-    return {"faculty": list}
 
-
-@router.get("/faculty", response_model=dict)
+@router.get(
+    "/faculty",
+    tags=["Employers"],
+    summary="Retrieve all faculty across all departments",
+    description=(
+        "Fetch a list of all faculty profiles across the university. "
+        "Only callable by authenticated employer users."
+    ),
+    response_model=FacultyListResponse,
+)
 async def get_all_faculty(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> dict:
+) -> FacultyListResponse:
     """
-    __
+    Retrieve all faculty across all departments.
+
+    This endpoint returns a list of all faculty profiles within the university,
+    accessible only to authenticated employer users.
+
+    Args:
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        DepartmentFacultyResponse: Contains a list of faculty contact information and profile details
+            (e.g., department name).
+
+    Raises:
+        HTTPException (401): If session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
     """
     assert_user_type(session_data, UserType.EMPLOYER)
 
@@ -105,18 +176,16 @@ async def get_all_faculty(
         list = []
         for staff in faculty:
             contact = staff.contact
-
             list.append(
-                {
-                    "contact": {
-                        "first_name": contact.first,
-                        "middle_name": contact.middle,
-                        "last_name": contact.last,
-                        "email": contact.email,
-                        "phone": contact.phone,
-                    },
-                    "profile": {"department": staff.department.name},
-                }
+                FacultyProfileResponse(
+                    contact=ContactResponse(
+                        first_name=contact.first,
+                        middle_name=contact.middle,
+                        last_name=contact.last,
+                        email=contact.email,
+                        phone=contact.phone,
+                    ),
+                    profile=FacultyProfileDetails(department=staff.department.name),
+                )
             )
-
-    return {"faculty": list}
+    return FacultyListResponse(faculty=list)
