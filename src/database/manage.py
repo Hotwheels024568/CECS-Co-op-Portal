@@ -258,22 +258,22 @@ async def main(recreate: bool = False) -> None:
         print(
             f"""
             Counts:
-            \tAccount                  {await count(session,Account)}
-            \tAddress                  {await count(session,Address)}
-            \tCompany                  {await count(session,Company)}
-            \tContactInfo              {await count(session,ContactInfo)}
-            \tEmployerAccount          {await count(session,EmployerAccount)}
-            \tDepartment               {await count(session,Department)}
-            \tMajor                    {await count(session,Major)}
-            \tStudentAccount           {await count(session,StudentAccount)}
-            \tFacultyAccount           {await count(session,FacultyAccount)}
-            \tInternship               {await count(session,Internship)}
-            \tInternshipMajor          {await count(session,InternshipMajor)}
-            \tSkill                    {await count(session,Skill)}
-            \tInternshipReqSkill       {await count(session,InternshipReqSkill)}
-            \tInternshipPrefSkill      {await count(session,InternshipPrefSkill)}
-            \tInternshipApplication    {await count(session,InternshipApplication)}
-            \tInternshipSummary        {await count(session,InternshipSummary)}
+            \tAccount                  {await count(session, Account)}
+            \tAddress                  {await count(session, Address)}
+            \tCompany                  {await count(session, Company)}
+            \tContactInfo              {await count(session, ContactInfo)}
+            \tEmployerAccount          {await count(session, EmployerAccount)}
+            \tDepartment               {await count(session, Department)}
+            \tMajor                    {await count(session, Major)}
+            \tStudentAccount           {await count(session, StudentAccount)}
+            \tFacultyAccount           {await count(session, FacultyAccount)}
+            \tInternship               {await count(session, Internship)}
+            \tInternshipMajor          {await count(session, InternshipMajor)}
+            \tSkill                    {await count(session, Skill)}
+            \tInternshipReqSkill       {await count(session, InternshipReqSkill)}
+            \tInternshipPrefSkill      {await count(session, InternshipPrefSkill)}
+            \tInternshipApplication    {await count(session, InternshipApplication)}
+            \tInternshipSummary        {await count(session, InternshipSummary)}
             """.strip()
         )
 
