@@ -1,0 +1,24 @@
+Show the UI
+    login
+    register
+    show how the UI changes depending on user type
+    view user profile information
+    view other's profile information
+    internship creation page
+    internship searching
+    application creation page
+    internship updating/selecting applications
+    internship summary updating
+    internship summary approval
+    internship summary grading
+
+Show the endpoint docs
+    HTTP protocols
+    tag grouping
+
+    specifics
+        password hashing is timing attack resistant
+
+Show the DB setup
+    manager
+    seed data
