@@ -1,9 +1,9 @@
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, StringConstraints  # , EmailStr
 from typing import Annotated, Optional
 from datetime import datetime
 from enum import Enum
 
-from src.utils.semesters import Semester  # , EmailStr
+from src.utils.semesters import Semester
 
 
 class GeneralRequestResponse(BaseModel):
@@ -53,7 +53,8 @@ class ContactUpdateRequest(BaseModel):
 
 
 class Employer(BaseModel):
-    contact: Contact
+    # contact: Contact
+    pass
 
 
 class FacultyProfile(BaseModel):
@@ -92,7 +93,7 @@ class Internship(BaseModel):
     title: str
     description: str
     location_type: LocationType
-    address: Address
+    address: Optional[Address]
     duration_weeks: int
     weekly_hours: int
     total_work_hours: int
@@ -104,8 +105,6 @@ class Internship(BaseModel):
 
 
 class Application(BaseModel):
-    student: StudentProfile
-    internship: Internship
     application_date: datetime
     coop_credit_eligibility: bool
     note: Optional[str]

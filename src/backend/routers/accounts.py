@@ -3,7 +3,7 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated
 import secrets
 
-from src.backend.globals import DB_MANAGER, PEPPER, SESSION_STORE, AccountInfo, UserType
+from src.backend.globals import DB_MANAGER, SESSION_STORE, AccountInfo, UserType
 from src.backend.routers.models import GeneralRequestResponse
 from src.backend.routers.utils import get_current_session
 from src.backend.routers.utils import hash_password
@@ -107,7 +107,7 @@ async def change_password(
     """
     account_id = session_data[1]["account_id"]
     salt = secrets.token_bytes(16)
-    hashed_pw = hash_password(data.password, salt, PEPPER)
+    hashed_pw = hash_password(data.password, salt)
 
     async with DB_MANAGER.session() as db_session:
         result = await update_account(

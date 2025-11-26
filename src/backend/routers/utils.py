@@ -1,16 +1,16 @@
 from fastapi import HTTPException, Header, status
-from typing import Collection, Union
+from typing import Collection, Optional, Union
 import hashlib
 import time
 
-from src.backend.globals import SESSION_EXPIRE_SECONDS, SESSION_STORE, AccountInfo, UserType
+from src.backend.globals import PEPPER, SESSION_EXPIRE_SECONDS, SESSION_STORE, AccountInfo, UserType
 
 
 # --- Helper: hash_and_pepper Example (You can use bcrypt/scrypt/argon2, but here's a basic PBKDF2 example) ---
 def hash_password(
     password: str,
     salt: bytes,
-    pepper: str = "",
+    pepper: Optional[str] = None,
     iterations: int = 100_000,  # adjustable iterations
     algorithm: str = "sha256",
 ) -> bytes:
@@ -27,6 +27,8 @@ def hash_password(
     Returns:
         hash: bytes suitable for storage in a BLOB field.
     """
+    if pepper is None:
+        pepper = PEPPER
     pwd_bytes = (password + pepper).encode()
     return hashlib.pbkdf2_hmac(algorithm, pwd_bytes, salt, iterations)
 

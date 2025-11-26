@@ -7,7 +7,6 @@ from src.backend.globals import (
     DB_MANAGER,
     SESSION_STORE,
     SESSION_EXPIRE_SECONDS,
-    PEPPER,
     AccountInfo,
     UserType,
 )
@@ -64,7 +63,7 @@ async def register(request: AuthRequest) -> LoginResponse:
     """
     # 1. Generate salt and hash
     salt = secrets.token_bytes(16)
-    pw_hash = hash_password(request.password, salt, PEPPER)
+    pw_hash = hash_password(request.password, salt)
 
     # 2. Insert into DB
     async with DB_MANAGER.session() as db_session:
@@ -132,7 +131,7 @@ async def login(request: AuthRequest) -> LoginResponse:
         user_type = account.user_type
 
     # 3. Hash the given password + pepper + salt
-    password_match = hmac.compare_digest(hash_password(request.password, salt, PEPPER), stored_hash)
+    password_match = hmac.compare_digest(hash_password(request.password, salt), stored_hash)
 
     # 4. Constant-time comparison
     if account is not None and password_match:
