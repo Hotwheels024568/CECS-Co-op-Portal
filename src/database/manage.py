@@ -147,7 +147,9 @@ class AsyncDBManager:
                 await conn.execute(text("DROP SCHEMA public CASCADE"))
                 await conn.execute(text("CREATE SCHEMA public"))
 
-    async def _seed(self, json_path: Path = Path("seed_data.json")) -> None:
+    async def _seed(
+        self, json_path: Path = Path(__file__).parent.parent / "seed_data.json"
+    ) -> None:
         """
         Seed the database tables with initial data from a JSON file.
 
@@ -156,8 +158,10 @@ class AsyncDBManager:
         Args:
             json_path (Path): File path to the seed JSON data.
         """
-        from sqlalchemy import select, func
-        import json
+        from src.backend.routers.utils import hash_password
+        from src.database.schema import Account
+        from src.database.utils import count
+        import json, secrets
 
         tables = {table.name: table for table in self.metadata.sorted_tables}
         with open(json_path) as file:
@@ -170,12 +174,24 @@ class AsyncDBManager:
                     continue
 
                 # Check if table is empty
-                count_query = select(func.count()).select_from(table)
-                result = await conn.execute(count_query)
-                table_count = result.scalar()
+                table_count = await count(conn, table)
 
                 if table_count == 0:
-                    await conn.execute(table.insert(), records)
+                    if table.name == Account.__tablename__:
+                        # Hash passwords for account records
+                        processed_records = []
+                        for record in records:
+                            current_record = record.copy()
+                            password = current_record.get("password")
+                            if password is not None:
+                                salt = secrets.token_bytes(16)
+                                hashed_pw = hash_password(password, salt)
+                                current_record["password"] = hashed_pw
+                                current_record["salt"] = salt
+                            processed_records.append(current_record)
+                        await conn.execute(table.insert(), processed_records)
+                    else:
+                        await conn.execute(table.insert(), records)
 
     # --- context manager (manager.session())
     @asynccontextmanager

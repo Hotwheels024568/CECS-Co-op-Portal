@@ -244,6 +244,7 @@ repository-root/
 |   |   |   |   ├── companies.py                  # Endpoints for company profiles
 |   |   |   |   ├── employers.py                  # Endpoints for employer profiles
 |   |   |   |   ├── faculty.py                    # Endpoints for faculty profiles
+|   |   |   |   ├── relationships.py              # Endpoints for browsing profiles
 |   |   |   |   └── students.py                   # Endpoints for student profiles
 |   |   |   ├── __init__.py                   # Package marker
 |   |   |   ├── accounts.py                   # Endpoints for user account actions (change username, password, or user type)
@@ -258,7 +259,6 @@ repository-root/
 |   |
 |   ├── database/                     # Database management and logic
 |   |   ├── __init__.py                   # Package marker
-|   |   ├── functions.py                  # Core DB utility functions
 |   |   ├── internship_insertion.py       # Functions for inserting internship-related records
 |   |   ├── internship_retrieval.py       # Functions for retrieving internship-related records
 |   |   ├── manage.py                     # Asynchronous singleton DB engine/session manager & schema control
@@ -269,7 +269,8 @@ repository-root/
 |   |   ├── record_insertion.py           # Generic insertion logic for DB records
 |   |   ├── record_retrieval.py           # Generic retrieval logic for DB records
 |   |   ├── record_updating.py            # Generic updating logic for DB records
-|   |   └── schema.py                     # Database table and ORM schema definitions
+|   |   ├── schema.py                     # Database table and ORM schema definitions
+|   |   └── utils.py                      # Core DB utility functions
 |   |
 |   ├── frontend/                     # React frontend
 |   |   ├── .react_router/...             # React router configuration files
@@ -294,7 +295,8 @@ repository-root/
 |   ├── utils/                    # Shared utility functions
 |   |   ├── __init__.py               # Package marker
 |   |   └── semesters.py              # Academic data manipulation/util functions
-|   └── __init__.py               # Package marker for src
+|   ├── __init__.py               # Package marker
+|   └── seed_data.json            # DB seed data
 |
 ├── venv/...                  # Python virtual environment
 ├── .gitattributes            # Git attributes configuration

@@ -1,0 +1,475 @@
+{
+    "addresses": [
+        {
+            "id": 1,
+            "address_line1": "100 Tech Ave",
+            "city": "Ann Arbor",
+            "state_province": "MI",
+            "zip_postal": "48109",
+            "country": "USA"
+        },
+        {
+            "id": 2,
+            "address_line1": "500 Innovation Rd",
+            "city": "Detroit",
+            "state_province": "MI",
+            "zip_postal": "48201",
+            "country": "USA",
+            "address_line2": "Suite 200"
+        },
+        {
+            "id": 3,
+            "address_line1": "123 College St",
+            "city": "Dearborn",
+            "state_province": "MI",
+            "zip_postal": "48120",
+            "country": "USA"
+        },
+        {
+            "id": 4,
+            "address_line1": "456 Startup Blvd",
+            "city": "Ypsilanti",
+            "state_province": "MI",
+            "zip_postal": "48197",
+            "country": "USA"
+        },
+        {
+            "id": 5,
+            "address_line1": "678 Research Pkwy",
+            "city": "Ann Arbor",
+            "state_province": "MI",
+            "zip_postal": "48105",
+            "country": "USA"
+        }
+    ],
+    "companies": [
+        {
+            "id": 1,
+            "name": "Tech Dynamics",
+            "address_id": 1,
+            "website_link": "https://techdynamics.com"
+        },
+        {
+            "id": 2,
+            "name": "InnovateX",
+            "address_id": 2,
+            "website_link": "https://innovatex.com"
+        },
+        {
+            "id": 3,
+            "name": "Green Solutions",
+            "address_id": 3,
+            "website_link": "https://greensolutions.com"
+        },
+        {
+            "id": 4,
+            "name": "Future Minds",
+            "address_id": 4,
+            "website_link": "https://futureminds.com"
+        },
+        {
+            "id": 5,
+            "name": "AI Labs",
+            "address_id": 5,
+            "website_link": "https://ailabs.com"
+        }
+    ],
+    "departments": [
+        {
+            "id": 1,
+            "name": "Computer Science"
+        },
+        {
+            "id": 2,
+            "name": "Mechanical Engineering"
+        },
+        {
+            "id": 3,
+            "name": "Physics"
+        },
+        {
+            "id": 4,
+            "name": "Mathematics"
+        },
+        {
+            "id": 5,
+            "name": "Business"
+        }
+    ],
+    "majors": [
+        {
+            "id": 1,
+            "name": "Software Engineering"
+        },
+        {
+            "id": 2,
+            "name": "Robotics"
+        },
+        {
+            "id": 3,
+            "name": "Applied Physics"
+        },
+        {
+            "id": 4,
+            "name": "Data Science"
+        },
+        {
+            "id": 5,
+            "name": "Finance"
+        }
+    ],
+    "skills": [
+        {
+            "id": 1,
+            "name": "Python"
+        },
+        {
+            "id": 2,
+            "name": "Machine Learning"
+        },
+        {
+            "id": 3,
+            "name": "Robotics"
+        },
+        {
+            "id": 4,
+            "name": "CAD"
+        },
+        {
+            "id": 5,
+            "name": "Business Analytics"
+        },
+        {
+            "id": 6,
+            "name": "Statistics"
+        },
+        {
+            "id": 7,
+            "name": "Team Management"
+        },
+        {
+            "id": 8,
+            "name": "Public Speaking"
+        },
+        {
+            "id": 9,
+            "name": "C++"
+        },
+        {
+            "id": 10,
+            "name": "Research Skills"
+        }
+    ],
+    "accounts": [
+        {
+            "id": 1,
+            "username": "alice",
+            "password": "password1",
+            "user_type": "Student"
+        },
+        {
+            "id": 2,
+            "username": "bob",
+            "password": "password2",
+            "user_type": "Employer"
+        },
+        {
+            "id": 3,
+            "username": "carol",
+            "password": "password3",
+            "user_type": "Faculty"
+        },
+        {
+            "id": 4,
+            "username": "dave",
+            "password": "password4",
+            "user_type": "Student"
+        },
+        {
+            "id": 5,
+            "username": "eve",
+            "password": "password5",
+            "user_type": "Employer"
+        },
+        {
+            "id": 6,
+            "username": "frank",
+            "password": "password6",
+            "user_type": "Student"
+        }
+    ],
+    "contact_info": [
+        {
+            "id": 1,
+            "first": "Alice",
+            "last": "Anderson",
+            "email": "alice@example.com",
+            "phone": "734-555-1001"
+        },
+        {
+            "id": 2,
+            "first": "Bob",
+            "last": "Baker",
+            "email": "bob@techdynamics.com"
+        },
+        {
+            "id": 3,
+            "first": "Carol",
+            "last": "Clark",
+            "email": "carol@university.edu"
+        },
+        {
+            "id": 4,
+            "first": "Dave",
+            "last": "Dawson",
+            "email": "dave@example.com"
+        },
+        {
+            "id": 5,
+            "first": "Eve",
+            "last": "Evans",
+            "email": "eve@innovatex.com",
+            "phone": "734-555-9876"
+        },
+        {
+            "id": 6,
+            "first": "Frank",
+            "last": "Foster",
+            "email": "frank@example.com"
+        }
+    ],
+    "employer_accounts": [
+        {
+            "id": 2,
+            "company_id": 1
+        },
+        {
+            "id": 5,
+            "company_id": 2
+        }
+    ],
+    "faculty_accounts": [
+        {
+            "id": 3,
+            "department_id": 1
+        }
+    ],
+    "student_accounts": [
+        {
+            "id": 1,
+            "department_id": 1,
+            "major_id": 1,
+            "credit_hours": 85,
+            "gpa": 3.789,
+            "start_semester": "Fall",
+            "start_year": 2021,
+            "transfer": false
+        },
+        {
+            "id": 4,
+            "department_id": 3,
+            "major_id": 3,
+            "credit_hours": 64,
+            "gpa": 3.5432,
+            "start_semester": "Winter",
+            "start_year": 2022,
+            "transfer": true,
+            "resume_link": "https://resume.com/dave"
+        },
+        {
+            "id": 6,
+            "department_id": 4,
+            "major_id": 4,
+            "credit_hours": 92,
+            "gpa": 3.9987,
+            "start_semester": "Summer",
+            "start_year": 2020,
+            "transfer": false
+        }
+    ],
+    "internships": [
+        {
+            "id": 1,
+            "company_id": 1,
+            "title": "Software Intern",
+            "description": "Join our backend team working on real Python projects and APIs.",
+            "location_type": "Company",
+            "address_id": 1,
+            "duration_weeks": 12,
+            "weekly_hours": 20,
+            "total_work_hours": 240,
+            "salary_info": "$20/hour",
+            "status": "Open"
+        },
+        {
+            "id": 2,
+            "company_id": 2,
+            "title": "Robotics Intern",
+            "description": "Robotics research and CAD design for new automation solutions.",
+            "location_type": "Company",
+            "address_id": 2,
+            "duration_weeks": 10,
+            "weekly_hours": 15,
+            "total_work_hours": 150,
+            "salary_info": "$25/hour",
+            "status": "Open"
+        },
+        {
+            "id": 3,
+            "company_id": 3,
+            "title": "Physics Research Intern",
+            "description": "Data analysis and simulation in experimental physics lab.",
+            "location_type": "Remote",
+            "duration_weeks": 8,
+            "weekly_hours": 10,
+            "total_work_hours": 80,
+            "salary_info": "$18/hour",
+            "status": "Open"
+        },
+        {
+            "id": 4,
+            "company_id": 4,
+            "title": "Business Analyst",
+            "description": "Assist in financial analysis and business modeling.",
+            "location_type": "Company",
+            "address_id": 4,
+            "duration_weeks": 14,
+            "weekly_hours": 25,
+            "total_work_hours": 350,
+            "salary_info": "$22/hour",
+            "status": "Open"
+        },
+        {
+            "id": 5,
+            "company_id": 5,
+            "title": "AI Research Intern",
+            "description": "Work with state-of-the-art machine learning models.",
+            "location_type": "Remote",
+            "duration_weeks": 16,
+            "weekly_hours": 10,
+            "total_work_hours": 160,
+            "salary_info": "$30/hour",
+            "status": "Open"
+        }
+    ],
+    "internship_majors": [
+        {
+            "internship_id": 1,
+            "major_id": 1
+        },
+        {
+            "internship_id": 1,
+            "major_id": 4
+        },
+        {
+            "internship_id": 2,
+            "major_id": 2
+        },
+        {
+            "internship_id": 3,
+            "major_id": 3
+        },
+        {
+            "internship_id": 4,
+            "major_id": 5
+        },
+        {
+            "internship_id": 5,
+            "major_id": 4
+        }
+    ],
+    "internship_required_skills": [
+        {
+            "internship_id": 1,
+            "skill_id": 1
+        },
+        {
+            "internship_id": 1,
+            "skill_id": 2
+        },
+        {
+            "internship_id": 2,
+            "skill_id": 3
+        },
+        {
+            "internship_id": 2,
+            "skill_id": 4
+        },
+        {
+            "internship_id": 3,
+            "skill_id": 6
+        },
+        {
+            "internship_id": 4,
+            "skill_id": 5
+        },
+        {
+            "internship_id": 5,
+            "skill_id": 2
+        }
+    ],
+    "internship_preferred_skills": [
+        {
+            "internship_id": 1,
+            "skill_id": 6
+        },
+        {
+            "internship_id": 2,
+            "skill_id": 9
+        },
+        {
+            "internship_id": 3,
+            "skill_id": 10
+        },
+        {
+            "internship_id": 4,
+            "skill_id": 7
+        },
+        {
+            "internship_id": 5,
+            "skill_id": 8
+        }
+    ],
+    "internship_applications": [
+        {
+            "id": 1,
+            "student_id": 1,
+            "internship_id": 1,
+            "application_date": "2024-05-01T09:00:00Z",
+            "coop_credit_eligibility": true,
+            "note": "Excited to join your team!",
+            "resume_link": "https://resume.com/alice",
+            "cover_letter_link": "https://coverletter.com/alice",
+            "selected": false
+        },
+        {
+            "id": 2,
+            "student_id": 4,
+            "internship_id": 3,
+            "application_date": "2024-05-03T11:30:00Z",
+            "coop_credit_eligibility": false,
+            "note": "I have relevant lab experience.",
+            "selected": true
+        },
+        {
+            "id": 3,
+            "student_id": 6,
+            "internship_id": 5,
+            "application_date": "2024-05-07T13:15:00Z",
+            "coop_credit_eligibility": true,
+            "note": "Passionate about ML!",
+            "resume_link": "https://resume.com/frank",
+            "cover_letter_link": "https://coverletter.com/frank",
+            "selected": false
+        }
+    ],
+    "internship_summaries": [
+        {
+            "id": 2,
+            "summary": "Completed simulation work with excellent results.",
+            "file_link": "https://files.com/dave_summary.pdf",
+            "employer_approval": true,
+            "letter_grade": "A"
+        }
+    ]
+}
