@@ -21,6 +21,7 @@ class Address(BaseModel):
 
 
 class Company(BaseModel):
+    id: int
     name: str
     address: Address
     website_link: Optional[str]
