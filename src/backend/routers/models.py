@@ -26,6 +26,10 @@ class Company(BaseModel):
     website_link: Optional[str]
 
 
+class CompanyName(BaseModel):
+    name: str
+
+
 class Contact(BaseModel):
     first_name: str
     middle_name: Optional[str]
@@ -52,9 +56,8 @@ class ContactUpdateRequest(BaseModel):
     phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
 
 
-class Employer(BaseModel):
-    # contact: Contact
-    pass
+class EmployerProfile(BaseModel):
+    company_id: int
 
 
 class FacultyProfile(BaseModel):
@@ -70,6 +73,12 @@ class StudentProfile(BaseModel):
     start_year: int
     transfer: bool
     resume_link: Optional[str]
+
+
+class BriefStudentProfile(BaseModel):
+    contact: Contact
+    department_name: str
+    major_name: str
 
 
 class LocationType(Enum):
@@ -104,6 +113,15 @@ class Internship(BaseModel):
     preferred_skills: list[str]
 
 
+class BriefInternship(BaseModel):
+    company: CompanyName
+    title: str
+    description: str
+    duration_weeks: int
+    weekly_hours: int
+    total_work_hours: int
+
+
 class Application(BaseModel):
     application_date: datetime
     coop_credit_eligibility: bool
@@ -111,6 +129,12 @@ class Application(BaseModel):
     resume_link: Optional[str]
     cover_letter_link: Optional[str]
     selected: bool
+
+
+class BriefApplication(BaseModel):
+    student: BriefStudentProfile
+    internship: BriefInternship
+    coop_credit_eligibility: bool
 
 
 class Summary(BaseModel):

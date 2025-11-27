@@ -28,6 +28,8 @@ async def update_employer_profile(
     last_name: Optional[str] = None,
     email: Optional[str] = None,
     phone: Optional[str] = None,
+    # Profile
+    company_id: Optional[int] = None,
 ) -> Tuple[Optional[EmployerAccount], str]:
     """
     __
@@ -37,10 +39,16 @@ async def update_employer_profile(
         contact = await update_contact(
             session, account_id, first_name, middle_name, last_name, email, phone
         )
-        # TODO: either update or create a new company
 
-        employer = await update_employer(session, account_id, None)
+        # 2. Check Company ID
+        company = await get_company_by_id(session, company_id)
+        if company is None:
+            return None, "Company does not exist."
 
+        # 3. Update EmployerAccount
+        employer = await update_employer(session, account_id, company_id)
+
+        # 4. Commit all changes
         await session.commit()
         return employer, "Employer profile updated."
 

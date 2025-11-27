@@ -148,7 +148,7 @@ async def create_employer_profile(
         # 3. Create EmployerAccount
         employer = await add_employer(session, account_id, company_id)
 
-        # 2. Commit all changes
+        # 4. Commit all changes
         await session.commit()
         return employer, "Employer profile created."
 

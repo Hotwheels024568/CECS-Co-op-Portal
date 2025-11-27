@@ -3,7 +3,15 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
-from src.backend.routers.models import Contact, GeneralRequestResponse, Summary
+from src.backend.routers.models import (
+    BriefApplication,
+    BriefInternship,
+    BriefStudentProfile,
+    CompanyName,
+    Contact,
+    GeneralRequestResponse,
+    Summary,
+)
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.record_retrieval import (
     get_department_summaries,
@@ -28,34 +36,9 @@ You can always add these later if user feedback calls for it—your current sepa
 """
 
 
-class SummaryStudentProfile(BaseModel):
-    contact: Contact
-    department_name: str
-    major_name: str
-
-
-class SummaryCompany(BaseModel):
-    name: str
-
-
-class FacultySummaryInternship(BaseModel):
-    company: SummaryCompany
-    title: str
-    description: str
-    duration_weeks: int
-    weekly_hours: int
-    total_work_hours: int
-
-
-class FacultySummaryApplication(BaseModel):
-    student: SummaryStudentProfile
-    internship: FacultySummaryInternship
-    coop_credit_eligibility: bool
-
-
 class FacultySummaryResponse(BaseModel):
     summary_id: int
-    application: FacultySummaryApplication
+    application: BriefApplication
     summary: Summary
 
 
@@ -109,8 +92,8 @@ async def get_department_summaries_endpoint(
             list.append(
                 FacultySummaryResponse(
                     summary_id=summary.id,
-                    application=FacultySummaryApplication(
-                        student=SummaryStudentProfile(
+                    application=BriefApplication(
+                        student=BriefStudentProfile(
                             contact=Contact(
                                 first_name=contact.first,
                                 middle_name=contact.middle,
@@ -121,8 +104,8 @@ async def get_department_summaries_endpoint(
                             department_name=student.department.name,
                             major_name=student.major.name,
                         ),
-                        internship=FacultySummaryInternship(
-                            company=SummaryCompany(name=internship.company.name),
+                        internship=BriefInternship(
+                            company=CompanyName(name=internship.company.name),
                             title=internship.title,
                             description=internship.description,
                             duration_weeks=internship.duration_weeks,
@@ -205,7 +188,7 @@ async def update_summary_grade(
 
 
 class StudentSummaryApplication(BaseModel):
-    internship: FacultySummaryInternship
+    internship: BriefInternship
     coop_credit_eligibility: bool
 
 
@@ -260,8 +243,8 @@ async def get_student_summaries(
                 StudentSummaryListResponse(
                     summary_id=summary.id,
                     application=StudentSummaryApplication(
-                        internship=FacultySummaryInternship(
-                            company=SummaryCompany(name=internship.company.name),
+                        internship=BriefInternship(
+                            company=CompanyName(name=internship.company.name),
                             title=internship.title,
                             description=internship.description,
                             duration_weeks=internship.duration_weeks,
@@ -348,7 +331,7 @@ class EmployerSummaryInternship(BaseModel):
 
 
 class EmployerSummaryApplication(BaseModel):
-    student: SummaryStudentProfile
+    student: BriefStudentProfile
     internship: EmployerSummaryInternship
 
 
@@ -412,7 +395,7 @@ async def get_internship_summaries(
                     EmployerSummaryResponse(
                         summary_id=summary.id,
                         application=EmployerSummaryApplication(
-                            student=SummaryStudentProfile(
+                            student=BriefStudentProfile(
                                 contact=Contact(
                                     first_name=contact.first,
                                     middle_name=contact.middle,
@@ -446,7 +429,7 @@ class EmployerSpecificSummaryRequest(BaseModel):
 
 
 class EmployerSpecificSummaryApplication(BaseModel):
-    student: SummaryStudentProfile
+    student: BriefStudentProfile
 
 
 class EmployerSpecificSummaryResponse(BaseModel):
@@ -508,7 +491,7 @@ async def get_internship_summaries(
                 EmployerSpecificSummaryResponse(
                     summary_id=summary.id,
                     application=EmployerSpecificSummaryApplication(
-                        student=SummaryStudentProfile(
+                        student=BriefStudentProfile(
                             contact=Contact(
                                 first_name=contact.first,
                                 middle_name=contact.middle,

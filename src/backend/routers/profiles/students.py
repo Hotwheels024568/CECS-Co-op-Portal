@@ -93,7 +93,6 @@ async def create_profile(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             f"Profile could not be created. Reason: {msg}",
         )
-
     return GeneralRequestResponse(success=True, message=msg)
 
 
@@ -138,7 +137,7 @@ async def get_profile(
         if not profile:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                "Faculty profile does not exist. Please create a profile first.",
+                "Profile does not exist. Please create a profile first.",
             )
 
         contact = profile.contact
@@ -176,8 +175,8 @@ class StudentProfileUpdateDetails(BaseModel):
 
 
 class StudentProfileUpdateRequest(BaseModel):
-    contact: ContactUpdateRequest
-    profile: StudentProfileUpdateDetails
+    contact: Optional[ContactUpdateRequest] = None
+    profile: Optional[StudentProfileUpdateDetails] = None
 
 
 @router.patch(
@@ -209,30 +208,52 @@ async def update_profile(
         GeneralRequestResponse: {"success": True, "message": "..."} if the profile was updated successfully.
 
     Raises:
+        HTTPException (400): If no update details are provided.
         HTTPException (401): If the session is invalid or expired.
         HTTPException (403): If the session's user type is invalid.
         HTTPException (500): If the operation fails.
     """
+    if data.contact is None and data.profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must provide either contact information or profile details to update.",
+        )
     assert_user_type(session_data, UserType.STUDENT)
+
+    contact = data.contact
+    first_name = contact.first_name if contact else None
+    middle_name = contact.middle_name if contact else None
+    last_name = contact.last_name if contact else None
+    email = contact.email if contact else None
+    phone = contact.phone if contact else None
+    profile = data.profile
+    department_name = profile.department_name if profile else None
+    major_name = profile.major_name if profile else None
+    credit_hours = profile.credit_hours if profile else None
+    gpa = profile.gpa if profile else None
+    start_semester = profile.start_semester if profile else None
+    start_year = profile.start_year if profile else None
+    transfer = profile.transfer if profile else None
+    resume_link = profile.resume_link if profile else None
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile, msg = await update_student_profile(
             db_session,
             account_id,
-            data.contact.first_name,
-            data.contact.middle_name,
-            data.contact.last_name,
-            data.contact.email,
-            data.contact.phone,
-            data.profile.department_name,
-            data.profile.major_name,
-            data.profile.credit_hours,
-            data.profile.gpa,
-            data.profile.start_semester,
-            data.profile.start_year,
-            data.profile.transfer,
-            data.profile.resume_link,
+            first_name,
+            middle_name,
+            last_name,
+            email,
+            phone,
+            department_name,
+            major_name,
+            credit_hours,
+            gpa,
+            start_semester,
+            start_year,
+            transfer,
+            resume_link,
         )
 
     if not profile:
@@ -240,5 +261,4 @@ async def update_profile(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             f"Profile could not be updated. Reason: {msg}",
         )
-
     return GeneralRequestResponse(success=True, message=msg)
