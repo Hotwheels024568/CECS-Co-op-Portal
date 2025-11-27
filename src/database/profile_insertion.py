@@ -2,9 +2,9 @@ from typing import Optional, Tuple
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from src.database.schema import EmployerAccount, FacultyAccount, StudentAccount
+from src.database.schema import Company, EmployerAccount, FacultyAccount, StudentAccount
 from src.database.utils import get_constraint_name_from_integrity_error
-from src.database.record_retrieval import get_company_by_name
+from src.database.record_retrieval import get_company_by_id
 from src.database.record_insertion import (
     add_address,
     add_company,
@@ -19,88 +19,48 @@ from src.database.record_get_or_create import (
 )
 
 
-async def create_employer_profile(
+async def create_company(
     session: AsyncSession,
-    account_id: int,
-    # Contact
-    first_name: str,
-    middle_name: Optional[str],
-    last_name: str,
-    email: str,
-    phone: Optional[str],
     # Company
     company_name: str,
-    website_link: Optional[str] = None,
+    website_link: Optional[str],
     # Address
-    address_line1: Optional[str] = None,
-    address_line2: Optional[str] = None,
-    city: Optional[str] = None,
-    state_province: Optional[str] = None,
-    zip_postal: Optional[str] = None,
-    country: Optional[str] = None,
-) -> Tuple[Optional[EmployerAccount], str]:
+    address_line1: str,
+    address_line2: Optional[str],
+    city: str,
+    state_province: str,
+    zip_postal: str,
+    country: str,
+) -> Tuple[Optional[Company], str]:
     """
-    Atomically creates an employer profile for the specified account.
-
-    If a company with the given name exists, the profile will link to that company and
-    ignore all address and website information. If not, a new company (and associated
-    address) will be created and linked.
-
-    Uniqueness constraints apply to both contact email and company name.
+    Atomically creates an employer profile for the specified account,
+    including a new company (with address), and a new contact record.
+    Links the created entities together and enforces uniqueness on both
+    contact email and company name.
 
     Args:
         session (AsyncSession): Active SQLAlchemy async session for database access.
-        account_id (int): The ID of the Account row to associate with the employer profile.
-        first_name (str): Employer contact's first name.
-        middle_name (Optional[str]): Employer contact's middle name.
-        last_name (str): Employer contact's last name.
-        email (str): Employer contact's unique email address.
-        phone (Optional[str]): Employer contact's phone number.
-        company_name (str): The name of the employer's company (must be unique if creating).
-        website_link (Optional[str]): The company's website (used only if creating company).
-        address_line1 (Optional[str]): First line of company address (used only if creating company).
-        address_line2 (Optional[str]): Second line of company address (used only if creating company).
-        city (Optional[str]): Company address city (used only if creating company).
-        state_province (Optional[str]): State/Province of company address (used only if creating company).
-        zip_postal (Optional[str]): ZIP/postal code of company address (used only if creating company).
-        country (Optional[str]): Country of company address (used only if creating company).
+        company_name (str): The name of the employer's company (must be unique).
+        website_link (Optional[str]): The company's website.
+        address_line1 (str): First line of company address.
+        address_line2 (Optional[str]): Second line of company address.
+        city (str): City of company address.
+        state_province (str): State or province of company address.
+        zip_postal (str): ZIP/postal code of company address.
+        country (str): Country of company address.
 
     Returns:
         Tuple[Optional[EmployerAccount], str]:
             - (EmployerAccount, "Profile created successfully.") on success.
-            - (None, "Email already in use.") if the contact email already exists.
-            - (None, "Company name already exists.") if company exists and cannot be created.
+            - (None, "Company name already exists.") if the company name already exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
             - (None, "Database API error: [message]") for database-layer errors.
             - (None, "Unexpected error: [message]") for all other failures.
     """
     try:
-        existing_company = await get_company_by_name(session, company_name)
-        if existing_company:
-            return await create_employer_profile_select_company(
-                session,
-                account_id,
-                first_name,
-                middle_name,
-                last_name,
-                email,
-                phone,
-                existing_company.id,
-            )
-
-        if not all([address_line1, city, state_province, zip_postal, country]):
-            return None, "Missing required address fields for new company"
-
-        return await create_employer_profile_create_company(
+        # 1. Create Address
+        address = await add_address(
             session,
-            account_id,
-            first_name,
-            middle_name,
-            last_name,
-            email,
-            phone,
-            company_name,
-            website_link,
             address_line1,
             address_line2,
             city,
@@ -109,12 +69,35 @@ async def create_employer_profile(
             country,
         )
 
+        # 2. Create Company (unique on name)
+        company = await add_company(session, company_name, address.id, website_link)
+
+        # 3. Commit all changes
+        await session.commit()
+        return company, "Company created."
+
+    except IntegrityError as e:
+        await session.rollback()
+        constraint = get_constraint_name_from_integrity_error(e)
+        if "companies_name_key" in constraint:
+            return None, "Company name already exists."
+
+        return (
+            None,
+            f"Unique constraint violated in create_company: {constraint}",
+        )
+
+    except DBAPIError as e:
+        await session.rollback()
+        # These are lower-level errors, can include connection errors, syntax errors, etc.
+        return None, f"Database API error in create_company: {e}"
+
     except Exception as e:
         await session.rollback()
-        return None, f"Unexpected error create_employer_profile: {e}"
+        return None, f"Unexpected error in create_company: {e}"
 
 
-async def create_employer_profile_select_company(
+async def create_employer_profile(
     session: AsyncSession,
     account_id: int,
     # Contact
@@ -141,7 +124,7 @@ async def create_employer_profile_select_company(
         last_name (str): Employer contact's last name.
         email (str): Employer contact's unique email address.
         phone (Optional[str]): Employer contact's phone number.
-        company_id (int): The ID of the (existing) company to associate with this profile.
+        company_id (int): The ID of a company to associate with this profile.
 
     Returns:
         Tuple[Optional[EmployerAccount], str]:
@@ -157,10 +140,15 @@ async def create_employer_profile_select_company(
             session, account_id, first_name, middle_name, last_name, email, phone
         )
 
-        # 2. Create EmployerAccount
+        # 2. Check Company ID
+        company = await get_company_by_id(session, company_id)
+        if company is None:
+            return None, "Company does not exist."
+
+        # 3. Create EmployerAccount
         employer = await add_employer(session, account_id, company_id)
 
-        # 3. Commit all changes
+        # 2. Commit all changes
         await session.commit()
         return employer, "Employer profile created."
 
@@ -172,119 +160,17 @@ async def create_employer_profile_select_company(
 
         return (
             None,
-            f"Unique constraint violated in create_employer_profile_select_company: {constraint}",
+            f"Unique constraint violated in create_employer_profile: {constraint}",
         )
 
     except DBAPIError as e:
         await session.rollback()
         # These are lower-level errors, can include connection errors, syntax errors, etc.
-        return None, f"Database API error in create_employer_profile_select_company: {e}"
+        return None, f"Database API error in create_employer_profile: {e}"
 
     except Exception as e:
         await session.rollback()
-        return None, f"Unexpected error in create_employer_profile_select_company: {e}"
-
-
-async def create_employer_profile_create_company(
-    session: AsyncSession,
-    account_id: int,
-    # Contact
-    first_name: str,
-    middle_name: Optional[str],
-    last_name: str,
-    email: str,
-    phone: Optional[str],
-    # Company
-    company_name: str,
-    website_link: Optional[str],
-    # Address
-    address_line1: str,
-    address_line2: Optional[str],
-    city: str,
-    state_province: str,
-    zip_postal: str,
-    country: str,
-) -> Tuple[Optional[EmployerAccount], str]:
-    """
-    Atomically creates an employer profile for the specified account,
-    including a new company (with address), and a new contact record.
-    Links the created entities together and enforces uniqueness on both
-    contact email and company name.
-
-    Args:
-        session (AsyncSession): Active SQLAlchemy async session for database access.
-        account_id (int): The ID of the Account row to associate with the employer profile.
-        first_name (str): Employer contact's first name.
-        middle_name (Optional[str]): Employer contact's middle name.
-        last_name (str): Employer contact's last name.
-        email (str): Employer contact's unique email address.
-        phone (Optional[str]): Employer contact's phone number.
-        company_name (str): The name of the employer's company (must be unique).
-        website_link (Optional[str]): The company's website.
-        address_line1 (str): First line of company address.
-        address_line2 (Optional[str]): Second line of company address.
-        city (str): City of company address.
-        state_province (str): State or province of company address.
-        zip_postal (str): ZIP/postal code of company address.
-        country (str): Country of company address.
-
-    Returns:
-        Tuple[Optional[EmployerAccount], str]:
-            - (EmployerAccount, "Profile created successfully.") on success.
-            - (None, "Email already in use.") if the contact email already exists.
-            - (None, "Company name already exists.") if the company name already exists.
-            - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
-            - (None, "Database API error: [message]") for database-layer errors.
-            - (None, "Unexpected error: [message]") for all other failures.
-    """
-    try:
-        # 1. Create Address
-        address = await add_address(
-            session,
-            address_line1,
-            address_line2,
-            city,
-            state_province,
-            zip_postal,
-            country,
-        )
-
-        # 2. Create Company (unique on name)
-        company = await add_company(session, company_name, address.id, website_link)
-
-        # 3. Create ContactInfo (unique on email)
-        contact = await add_contact(
-            session, account_id, first_name, middle_name, last_name, email, phone
-        )
-
-        # 4. Create Employer
-        employer = await add_employer(session, account_id, company.id)
-
-        # 5. Commit all changes
-        await session.commit()
-        return employer, "Employer profile created."
-
-    except IntegrityError as e:
-        await session.rollback()
-        constraint = get_constraint_name_from_integrity_error(e)
-        if "contact_info_email_key" in constraint:
-            return None, "Email already in use."
-        elif "companies_name_key" in constraint:
-            return None, "Company name already exists."
-
-        return (
-            None,
-            f"Unique constraint violated in create_employer_profile_create_company: {constraint}",
-        )
-
-    except DBAPIError as e:
-        await session.rollback()
-        # These are lower-level errors, can include connection errors, syntax errors, etc.
-        return None, f"Database API error in create_employer_profile_create_company: {e}"
-
-    except Exception as e:
-        await session.rollback()
-        return None, f"Unexpected error in create_employer_profile_create_company: {e}"
+        return None, f"Unexpected error in create_employer_profile: {e}"
 
 
 async def create_student_profile(

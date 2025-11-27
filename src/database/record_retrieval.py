@@ -147,13 +147,13 @@ async def get_application_from_ids(
 
 async def get_department_applications(
     session: AsyncSession, department_id: int
-) -> List[tuple[StudentAccount, InternshipApplication]]:
+) -> List[InternshipApplication]:
     statement = (
-        select(StudentAccount, InternshipApplication)
+        select(InternshipApplication)
         .join(InternshipApplication.student)
         .filter(StudentAccount.department_id == department_id)
     )
-    return await get_all_rows(session, statement)
+    return await get_first_column_element_of_all_rows(session, statement)
 
 
 async def get_summary_by_id(session: AsyncSession, id: int) -> Optional[InternshipSummary]:
