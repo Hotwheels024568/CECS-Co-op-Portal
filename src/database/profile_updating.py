@@ -19,6 +19,92 @@ from src.database.record_get_or_create import (
 )
 
 
+async def update_company_profile(
+    session: AsyncSession,
+    company_id: int,
+    # Company
+    company_name: Optional[str] = None,
+    website_link: Optional[str] = None,
+    # Address
+    address_line1: Optional[str] = None,
+    address_line2: Optional[str] = None,
+    city: Optional[str] = None,
+    state_province: Optional[str] = None,
+    zip_postal: Optional[str] = None,
+    country: Optional[str] = None,
+) -> Tuple[Optional[Company], str]:
+    """
+    Updates a company's profile details and address information.
+
+    Args:
+        session (AsyncSession): Active SQLAlchemy async session for database access.
+        company_id (int): The ID of the Company to update.
+        company_name (Optional[str]): Updated company company_name.
+        website_link (Optional[str]): Updated company website_link.
+        address_line1 (Optional[str]): Updated company address's address_line1.
+        address_line2 (Optional[str]): Updated company address's address_line2.
+        city (Optional[str]): Updated company address's city.
+        state_province (Optional[str]): Updated company address's state_province.
+        zip_postal (Optional[str]): Updated company address's zip_postal.
+        country (Optional[str]): Updated company address's country.
+
+    Returns:
+        Tuple[Optional[Company], str]:
+            - (Company, "Company details updated.") on success.
+            - (None, "Company does not exist.") if a company with the provided id does not exist.
+            - (None, "Company name already exists.") if the company name already exists.
+            - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
+            - (None, "Database API error: [message]") for database-layer errors.
+            - (None, "Unexpected error: [message]") for all other failures.
+    """
+    try:
+        company = await get_company_by_id(session, company_id)
+        if company is None:
+            return None, "Company does not exist."
+
+        address_id = company.address.id
+        address_id = await update_address(
+            session,
+            address_id.id,
+            address_line1,
+            address_line2,
+            city,
+            state_province,
+            zip_postal,
+            country,
+        )
+
+        company = await update_company(
+            session,
+            company.id,
+            company_name,
+            website_link=website_link,
+        )
+
+        await session.commit()
+        return company, "Company details updated."
+
+    except IntegrityError as e:
+        await session.rollback()
+        constraint = get_constraint_name_from_integrity_error(e)
+        if "companies_name_key" in constraint:
+            return None, "Company name already exists."
+
+        return (
+            None,
+            f"Unique constraint violated in update_company_profile: {constraint}",
+        )
+
+    except DBAPIError as e:
+        await session.rollback()
+        # These are lower-level errors, can include connection errors, syntax errors, etc.
+        return None, f"Database API error in update_company_profile: {e}"
+
+    except Exception as e:
+        await session.rollback()
+        return None, f"Unexpected error in update_company_profile: {e}"
+
+
 async def update_employer_profile(
     session: AsyncSession,
     account_id: int,
@@ -32,7 +118,23 @@ async def update_employer_profile(
     company_id: Optional[int] = None,
 ) -> Tuple[Optional[EmployerAccount], str]:
     """
-    __
+    Updates an employer's profile, including associated contact information and company affiliation.
+
+    Args:
+        session (AsyncSession): Active SQLAlchemy async session for database access.
+        account_id (int): The ID of the Employer account to update.
+        first_name (str): Updated employer contact's first name.
+        middle_name (Optional[str]): Updated employer contact's middle name.
+        last_name (str): Updated employer contact's last name.
+        email (str): Updated employer contact's unique email address.
+        phone (Optional[str]): Updated employer contact's phone number.
+        company_id (int): The updated ID of a company to associate with this profile.
+
+    Returns:
+        Tuple[Optional[EmployerAccount], str]:
+            - (EmployerAccount, "Employer profile updated.") on success.
+            - (None, "Company does not exist.") if a company with the provided id does not exist.
+            - (None, "Unexpected error: [message]") for all other failures.
     """
     try:
         # 1. Update ContactInfo (unique on email)
@@ -57,69 +159,6 @@ async def update_employer_profile(
         return None, f"Unexpected error update_employer_profile: {e}"
 
 
-async def update_company_profile(
-    session: AsyncSession,
-    company_id: int,
-    # Company
-    company_name: Optional[str] = None,
-    website_link: Optional[str] = None,
-    # Address
-    address_line1: Optional[str] = None,
-    address_line2: Optional[str] = None,
-    city: Optional[str] = None,
-    state_province: Optional[str] = None,
-    zip_postal: Optional[str] = None,
-    country: Optional[str] = None,
-) -> Tuple[Optional[Company], str]:
-    """
-    __
-    """
-    try:
-        company = await get_company_by_id(session, company_id)
-        address = company.address
-
-        address = await update_address(
-            session,
-            address.id,
-            address_line1,
-            address_line2,
-            city,
-            state_province,
-            zip_postal,
-            country,
-        )
-
-        company = await update_company(
-            session,
-            company.id,
-            company_name,
-            website_link=website_link,
-        )
-
-        await session.commit()
-        return company, "Company profile updated."
-
-    except IntegrityError as e:
-        await session.rollback()
-        constraint = get_constraint_name_from_integrity_error(e)
-        if "companies_name_key" in constraint:
-            return None, "Company name already exists."
-
-        return (
-            None,
-            f"Unique constraint violated in update_company_profile: {constraint}",
-        )
-
-    except DBAPIError as e:
-        await session.rollback()
-        # These are lower-level errors, can include connection errors, syntax errors, etc.
-        return None, f"Database API error in update_company_profile: {e}"
-
-    except Exception as e:
-        await session.rollback()
-        return None, f"Unexpected error in update_company_profile: {e}"
-
-
 async def update_student_profile(
     session: AsyncSession,
     account_id: int,
@@ -140,7 +179,32 @@ async def update_student_profile(
     resume_link: Optional[str] = None,
 ) -> Tuple[Optional[StudentAccount], str]:
     """
-    __
+    Updates a student's profile, including contact, department, major, and academic details.
+
+    Args:
+        session (AsyncSession): Active SQLAlchemy async session for database access.
+        account_id (int): The ID of the Student account to update.
+        first_name (str): Updated student contact's first name.
+        middle_name (Optional[str]): Updated student contact's middle name.
+        last_name (str): Updated student contact's last name.
+        email (str): Updated student contact's unique email address.
+        phone (Optional[str]): Updated student contact's phone number.
+        department_name (Optional[str]): Updated student's department_name.
+        major_name (Optional[str]): Updated student's major_name.
+        credit_hours (Optional[int]): Updated student's credit_hours.
+        gpa (Optional[float]): Updated student's gpa.
+        start_semester (Optional[str]): Updated student's start_semester.
+        start_year (Optional[int]): Updated student's start_year.
+        transfer (Optional[bool]): Updated student's transfer.
+        resume_link (Optional[str]): Updated student's resume_link.
+
+    Returns:
+        Tuple[Optional[StudentAccount], str]:
+            - (StudentAccount, "Student profile updated.") on success.
+            - (None, "Email already in use.") if the email already exists.
+            - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
+            - (None, "Database API error: [message]") for database-layer errors.
+            - (None, "Unexpected error: [message]") for all other failures.
     """
     try:
         # 1. Update ContactInfo (unique on email)
@@ -206,7 +270,25 @@ async def update_faculty_profile(
     department_name: Optional[str] = None,
 ) -> Tuple[Optional[FacultyAccount], str]:
     """
-    __
+    Updates a faculty member's profile, including contact information and department affiliation.
+
+    Args:
+        session (AsyncSession): Active SQLAlchemy async session for database access.
+        account_id (int): The ID of the Faculty account to update.
+        first_name (str): Updated faculty contact's first name.
+        middle_name (Optional[str]): Updated faculty contact's middle name.
+        last_name (str): Updated faculty contact's last name.
+        email (str): Updated faculty contact's unique email address.
+        phone (Optional[str]): Updated faculty contact's phone number.
+        department_name (Optional[str]): Updated faculty's department_name.
+
+    Returns:
+        Tuple[Optional[FacultyAccount], str]:
+            - (FacultyAccount, "Faculty profile updated.") on success.
+            - (None, "Email already in use.") if the email already exists.
+            - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
+            - (None, "Database API error: [message]") for database-layer errors.
+            - (None, "Unexpected error: [message]") for all other failures.
     """
     try:
         # 1. Update ContactInfo (unique on email)
