@@ -178,12 +178,12 @@ async def update_summary_grade(
         result = await update_summary(
             db_session, data.summary_id, letter_grade=data.letter_grade, commit=True
         )
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Summary grade could not be updated due to a server or database error.",
-            )
 
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Summary grade could not be updated due to a server or database error.",
+        )
     return GeneralRequestResponse(success=True, message="")
 
 
@@ -313,12 +313,12 @@ async def update_summary_text(
         result = await update_summary(
             db_session, data.summary_id, data.summary_text, data.file_link, commit=True
         )
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Summary could not be updated due to a server or database error.",
-            )
 
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Summary could not be updated due to a server or database error.",
+        )
     return GeneralRequestResponse(success=True, message="")
 
 
@@ -565,10 +565,10 @@ async def update_summary_approval(
         result = await update_summary(
             db_session, data.summary_id, employer_approval=data.approval, commit=True
         )
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Employer approval status could not be updated due to a server or database error.",
-            )
 
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Employer approval status could not be updated due to a server or database error.",
+        )
     return GeneralRequestResponse(success=True, message="")

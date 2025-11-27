@@ -198,6 +198,7 @@ async def update_profile(
     Update the authenticated students's profile information.
 
     This endpoint allows student users to modify their contact details or department.
+    At least one field must be provided to update.
     Only callable by authenticated student users who have an existing profile.
 
     Args:
