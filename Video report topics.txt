@@ -1,8 +1,12 @@
 Show the UI
     login
     register
-    show how the UI changes depending on user type
+        Company -> Employer
+        Faculty
+        Student
+    user type dependant UI
     view user profile information
+        show you can update info
     view other's profile information
     internship creation page
     internship searching

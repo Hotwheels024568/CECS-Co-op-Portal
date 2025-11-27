@@ -165,6 +165,7 @@ class EmployerAccount(Account):
     company_id: Mapped[int] = mapped_column(
         ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
     )
+    # Could add a employee title (str) field
 
     company: Mapped["Company"] = relationship("Company", back_populates="employees")
 
