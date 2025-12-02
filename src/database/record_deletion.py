@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 
-async def delete_instance(
+async def delete_record(
     session: AsyncSession, instance: Optional[Any], commit: bool = False
 ) -> bool:
     """

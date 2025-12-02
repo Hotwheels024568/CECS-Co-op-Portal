@@ -27,7 +27,7 @@ from src.database.record_get_or_create import (
     get_or_create_skill,
 )
 
-from src.utils.semesters import semesters_since_enrollment
+from src.utils_semesters import semesters_since_enrollment
 
 
 async def create_internship(
@@ -242,9 +242,9 @@ async def create_application(
             student_id,
             internship_id,
             coop_credit_eligibility,
-            note=note,
-            resume_link=resume_link,
-            cover_letter_link=cover_letter_link,
+            note,
+            resume_link,
+            cover_letter_link,
             commit=True,
         )
         if not application:

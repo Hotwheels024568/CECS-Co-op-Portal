@@ -39,11 +39,16 @@ A collaborative project for the CIS 425 course designed to streamline the connec
 
 # 2. Set up Python virtual environment (recommended 3.12)
     python -m venv venv
-    source venv/bin/activate  # (Linux/macOS) OR venv\Scripts\activate.bat (Windows)
+    
+    # Linux/macOS:
+    source venv/bin/activate
+    # Windows:
+    venv\Scripts\activate.bat 
+
     pip install -r min_requirements.txt
 
 # 3. Set up Node.js frontend dependencies
-    cd src/rcp/frontend
+    cd src/frontend
     npm install
 
 # 4. Make shell scripts executable (Linux/macOS only)
@@ -75,7 +80,6 @@ Download and navigate to the repository:
 git clone https://github.com/Hotwheels024568/CECS-Co-op-Portal
 cd CECS-Co-op-Portal
 ~~~
-
 ### 2. Python Virtual Environment & Dependencies
 
 Recommended: Use Python 3.12 for best compatibility.
@@ -88,17 +92,17 @@ Recommended: Use Python 3.12 for best compatibility.
     ~~~
   - Edit the activation scripts to set `PYTHONPATH`:
     - Use a program such as Notepad++, VS Code, or Sublime Text (**Notepad may corrupt line endings**).
-    - In `venv\Scripts\activate.bat` (**before** `:END`), add:
+    - In `venv\Scripts\activate.bat`, add the following at the end of the file (**before** `:END`):
       ~~~bat
       rem Enforces Python to see the src folder and run code as a module
       set PYTHONPATH=%VIRTUAL_ENV%\..\src;%PYTHONPATH%
       ~~~
-    - In `venv\Scripts\Activate.ps1` **before** the signature block:
+    - In `venv\Scripts\Activate.ps1`, add the following at the end of the file (**before** the signature block, if any):
       ~~~powershell
       # Enforces Python to see the src folder and run code as a module
       $env:PYTHONPATH = "$env:VIRTUAL_ENV\..\src;$env:PYTHONPATH"
       ~~~
-    - Once finished editing, exit your text editor and return to the terminal.
+    - Save both files and return to the project root.
   - Activate the virtual environment and install project dependencies:
     ~~~bat
     venv\Scripts\activate.bat
@@ -195,7 +199,7 @@ Database = db
     # Start the Python venv
     source venv/bin/activate    # (Linux/macOS) OR venv\Scripts\activate.bat (Windows)
     # Start the FastAPI Backend using uvicorn
-    uvicorn src.rcp.backend.main:app --reload --port 8000   # --no-use-colors (Windows)
+    uvicorn src.backend.main:app --reload --port 8000   # --no-use-colors (Windows)
     ~~~
 
 ### 3. Frontend
@@ -207,7 +211,7 @@ Database = db
   - Run `./scripts/start_frontend.sh`
 - The script executes the following:
     ~~~sh
-    cd src/rcp/frontend
+    cd src/frontend
     npm run dev
     ~~~
 
@@ -292,11 +296,9 @@ repository-root/
 |   |   ├── tsconfig.json                 # TypeScript config
 |   |   └── vite.config.ts                # Vite build tool config
 |   |
-|   ├── utils/                    # Shared utility functions
-|   |   ├── __init__.py               # Package marker
-|   |   └── semesters.py              # Academic data manipulation/util functions
 |   ├── __init__.py               # Package marker
-|   └── seed_data.json            # DB seed data
+|   ├── seed_data.json            # DB seed data
+|   └── utils_semesters.json      # Semester util functions
 |
 ├── venv/...                  # Python virtual environment
 ├── .gitattributes            # Git attributes configuration
@@ -312,7 +314,7 @@ repository-root/
 ## Other Notes
 
 - Only re-run `pip install -r requirements.txt` if `requirements.txt` changes.
-- Only re-run `npm install` if `package.json` or `package-lock.json` in `src/rcp/frontend` changes.
+- Only re-run `npm install` if `package.json` or `package-lock.json` in `src/frontend` changes.
 - Backend and frontend both support live-reload during development.
 - For development, passwords are visible in config.ini/docker-compose.yml for simplicity; for production, these should use Docker secrets/env vars.
 

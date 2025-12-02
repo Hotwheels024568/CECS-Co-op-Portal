@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from datetime import datetime
 from enum import Enum
 
-from src.utils.semesters import Semester
+from src.utils_semesters import Semester
 
 
 class GeneralRequestResponse(BaseModel):
