@@ -8,7 +8,7 @@ from src.utils_semesters import Semester
 
 class GeneralRequestResponse(BaseModel):
     success: bool
-    message: str
+    message: Optional[str]
 
 
 class Address(BaseModel):
@@ -18,6 +18,24 @@ class Address(BaseModel):
     state_province: str
     zip_postal: str
     country: str
+
+
+class AddressCreationDetails(BaseModel):
+    address_line1: Annotated[str, StringConstraints(min_length=5, max_length=100)]
+    address_line2: Optional[Annotated[str, StringConstraints(min_length=5, max_length=100)]] = None
+    city: Annotated[str, StringConstraints(min_length=2, max_length=50)]
+    state_province: Annotated[str, StringConstraints(min_length=2, max_length=50)]
+    zip_postal: Annotated[str, StringConstraints(min_length=2, max_length=50)]
+    country: Annotated[str, StringConstraints(min_length=2, max_length=50)]
+
+
+class AddressUpdateDetails(BaseModel):
+    address_line1: Optional[Annotated[str, StringConstraints(min_length=5, max_length=100)]] = None
+    address_line2: Optional[Annotated[str, StringConstraints(min_length=5, max_length=100)]] = None
+    city: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
+    state_province: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
+    zip_postal: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
+    country: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
 
 
 class Company(BaseModel):
@@ -39,7 +57,7 @@ class Contact(BaseModel):
     phone: Optional[str]
 
 
-class ContactCreationRequest(BaseModel):
+class ContactCreationDetails(BaseModel):
     first_name: Annotated[str, StringConstraints(max_length=50)]
     middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     last_name: Annotated[str, StringConstraints(max_length=50)]
@@ -48,7 +66,7 @@ class ContactCreationRequest(BaseModel):
     phone: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
 
 
-class ContactUpdateRequest(BaseModel):
+class ContactUpdateDetails(BaseModel):
     first_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     middle_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
     last_name: Optional[Annotated[str, StringConstraints(max_length=50)]] = None
@@ -93,8 +111,8 @@ class InternshipStatus(Enum):
     CLOSED = "Closed"
     PENDING_START = "PendingStart"
     IN_PROGRESS = "InProgress"
-    PENDING_SUMMARY = "WaitingSummary"
-    PENDING_GRADE = "WaitingGrade"
+    PENDING_SUMMARY = "PendingSummary"
+    PENDING_GRADE = "PendingGrade"
     COMPLETED = "Completed"
 
 
@@ -132,10 +150,26 @@ class Application(BaseModel):
     selected: bool
 
 
-class BriefApplication(BaseModel):
+class EmployerApplicationInfo(BaseModel):
+    student: BriefStudentProfile
+    note: Optional[str]
+    resume_link: Optional[str]
+    cover_letter_link: Optional[str]
+    selected: bool
+
+
+class FacultyApplicationInfo(BaseModel):
     student: BriefStudentProfile
     internship: BriefInternship
     coop_credit_eligibility: bool
+
+
+class StudentApplicationInfo(BaseModel):
+    internship: BriefInternship
+    coop_credit_eligibility: bool
+    note: Optional[str]
+    resume_link: Optional[str]
+    cover_letter_link: Optional[str]
 
 
 class Summary(BaseModel):

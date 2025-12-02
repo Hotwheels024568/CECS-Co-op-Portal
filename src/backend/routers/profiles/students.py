@@ -5,11 +5,11 @@ from typing import Annotated, Optional
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import (
     Contact,
-    ContactCreationRequest,
-    ContactUpdateRequest,
+    ContactCreationDetails,
+    ContactUpdateDetails,
     GeneralRequestResponse,
+    StudentProfile,
 )
-from src.backend.routers.models import StudentProfile
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
@@ -31,7 +31,7 @@ class StudentProfileCreationDetails(BaseModel):
 
 
 class StudentProfileCreationRequest(BaseModel):
-    contact: ContactCreationRequest
+    contact: ContactCreationDetails
     profile: StudentProfileCreationDetails
 
 
@@ -125,7 +125,7 @@ async def get_profile(
             (e.g., department name, major, credit hours, GPA, semester/year started, transfer status, resume link).
 
     Raises:
-        HTTPException (400): If the profile does not exist or the operation fails.
+        HTTPException (400): If the profile does not exist.
         HTTPException (401): If the session is invalid or expired.
         HTTPException (403): If the session's user type is invalid.
     """
@@ -175,7 +175,7 @@ class StudentProfileUpdateDetails(BaseModel):
 
 
 class StudentProfileUpdateRequest(BaseModel):
-    contact: Optional[ContactUpdateRequest] = None
+    contact: Optional[ContactUpdateDetails] = None
     profile: Optional[StudentProfileUpdateDetails] = None
 
 

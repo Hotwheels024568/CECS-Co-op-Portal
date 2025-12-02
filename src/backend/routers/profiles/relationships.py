@@ -3,9 +3,9 @@ from pydantic import BaseModel
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import Contact, FacultyProfile, StudentProfile
+from src.backend.routers.utils import assert_user_type, get_current_session
 from src.backend.routers.profiles.faculty import FacultyProfileResponse
 from src.backend.routers.profiles.students import StudentProfileResponse
-from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
 
 router = APIRouter()

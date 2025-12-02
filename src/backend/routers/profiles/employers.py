@@ -7,13 +7,13 @@ from src.backend.routers.models import (
     Address,
     Company,
     Contact,
-    ContactCreationRequest,
-    ContactUpdateRequest,
+    ContactCreationDetails,
+    ContactUpdateDetails,
     EmployerProfile,
     GeneralRequestResponse,
 )
 from src.backend.routers.utils import assert_user_type, get_current_session
-from src.database.profile_insertion import create_employer_profile_select_company
+from src.database.profile_insertion import create_employer_profile
 from src.database.profile_updating import update_employer_profile
 from src.database.record_retrieval import get_employer_by_id
 
@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 class EmployerProfileCreationRequest(BaseModel):
-    contact: ContactCreationRequest
+    contact: ContactCreationDetails
     profile: EmployerProfile
 
 
@@ -60,7 +60,7 @@ async def create_profile(
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
-        profile, msg = await create_employer_profile_select_company(
+        profile, msg = await create_employer_profile(
             db_session,
             account_id,
             data.contact.first_name,
@@ -111,7 +111,7 @@ async def get_profile(
         EmployerProfileResponse: Contains contact information, and profile details.
 
     Raises:
-        HTTPException (400): If the profile does not exist or the operation fails.
+        HTTPException (400): If the profile does not exist.
         HTTPException (401): If the session is invalid or expired.
         HTTPException (403): If the session's user type is invalid.
     """
@@ -160,7 +160,7 @@ class EmployerProfileUpdateDetails(BaseModel):
 
 
 class EmployerProfileUpdateRequest(BaseModel):
-    contact: Optional[ContactUpdateRequest] = None
+    contact: Optional[ContactUpdateDetails] = None
     profile: Optional[EmployerProfileUpdateDetails] = None
 
 

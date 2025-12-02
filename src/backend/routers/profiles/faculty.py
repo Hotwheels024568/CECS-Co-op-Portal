@@ -5,8 +5,8 @@ from typing import Annotated, Optional
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import (
     Contact,
-    ContactCreationRequest,
-    ContactUpdateRequest,
+    ContactCreationDetails,
+    ContactUpdateDetails,
     GeneralRequestResponse,
 )
 from src.backend.routers.models import FacultyProfile
@@ -23,7 +23,7 @@ class FacultyProfileCreationDetails(BaseModel):
 
 
 class FacultyProfileCreationRequest(BaseModel):
-    contact: ContactCreationRequest
+    contact: ContactCreationDetails
     profile: FacultyProfileCreationDetails
 
 
@@ -109,7 +109,7 @@ async def get_profile(
         FacultyProfileResponse: Contains contact information and department name.
 
     Raises:
-        HTTPException (400): If the profile does not exist or the operation fails.
+        HTTPException (400): If the profile does not exist.
         HTTPException (401): If the session is invalid or expired.
         HTTPException (403): If the session's user type is invalid.
     """
@@ -143,7 +143,7 @@ class FacultyProfileUpdateDetails(BaseModel):
 
 
 class FacultyProfileUpdateRequest(BaseModel):
-    contact: Optional[ContactUpdateRequest] = None
+    contact: Optional[ContactUpdateDetails] = None
     profile: Optional[FacultyProfileUpdateDetails] = None
 
 

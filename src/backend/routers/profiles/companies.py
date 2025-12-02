@@ -3,22 +3,19 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
-from src.backend.routers.models import Address, Company, GeneralRequestResponse
+from src.backend.routers.models import (
+    Address,
+    AddressCreationDetails,
+    AddressUpdateDetails,
+    Company,
+    GeneralRequestResponse,
+)
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
 from src.database.record_retrieval import get_companies, get_employer_by_id
 
 router = APIRouter()
-
-
-class AddressCreationDetails(BaseModel):
-    address_line1: Annotated[str, StringConstraints(min_length=5, max_length=100)]
-    address_line2: Optional[Annotated[str, StringConstraints(min_length=5, max_length=100)]] = None
-    city: Annotated[str, StringConstraints(min_length=2, max_length=50)]
-    state_province: Annotated[str, StringConstraints(min_length=2, max_length=50)]
-    zip_postal: Annotated[str, StringConstraints(min_length=2, max_length=50)]
-    country: Annotated[str, StringConstraints(min_length=2, max_length=50)]
 
 
 class CompanyCreationDetails(BaseModel):
@@ -134,15 +131,6 @@ async def get_company_list(
                 )
             )
     return CompanyListResponse(companies=list)
-
-
-class AddressUpdateDetails(BaseModel):
-    address_line1: Optional[Annotated[str, StringConstraints(min_length=5, max_length=100)]] = None
-    address_line2: Optional[Annotated[str, StringConstraints(min_length=5, max_length=100)]] = None
-    city: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
-    state_province: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
-    zip_postal: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
-    country: Optional[Annotated[str, StringConstraints(min_length=2, max_length=50)]] = None
 
 
 class CompanyUpdateDetails(BaseModel):
