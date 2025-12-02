@@ -73,8 +73,7 @@ async def create_profile(
 
     if not profile:
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            f"Profile could not be created. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"Profile could not be created. Reason: {msg}"
         )
     return GeneralRequestResponse(success=True, message=msg)
 
@@ -229,7 +228,6 @@ async def update_profile(
 
     if not profile:
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            f"Profile could not be updated. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"Profile could not be updated. Reason: {msg}"
         )
     return GeneralRequestResponse(success=True, message=msg)

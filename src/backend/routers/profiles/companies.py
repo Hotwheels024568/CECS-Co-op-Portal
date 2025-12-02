@@ -76,8 +76,7 @@ async def create_profile(
 
     if not profile:
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            f"Profile could not be created. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"Profile could not be created. Reason: {msg}"
         )
     return GeneralRequestResponse(success=True, message=msg)
 
@@ -179,8 +178,8 @@ async def update_profile(
     """
     if data.company is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You must provide either contact information or profile details to update.",
+            status.HTTP_400_BAD_REQUEST,
+            "You must provide either contact information or profile details to update.",
         )
     assert_user_type(session_data, UserType.EMPLOYER)
 
@@ -214,8 +213,7 @@ async def update_profile(
 
     if not company:
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            f"Profile could not be updated. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"Profile could not be updated. Reason: {msg}"
         )
     return GeneralRequestResponse(success=True, message=msg)
 
