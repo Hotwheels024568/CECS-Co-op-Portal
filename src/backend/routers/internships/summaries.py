@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import (
-    BriefApplication,
+    FacultyApplicationInfo,
     BriefInternship,
     BriefStudentProfile,
     CompanyName,
@@ -38,7 +38,7 @@ You can always add these later if user feedback calls for it—your current sepa
 
 class FacultySummaryResponse(BaseModel):
     summary_id: int
-    application: BriefApplication
+    application: FacultyApplicationInfo
     summary: Summary
 
 
@@ -52,7 +52,7 @@ class FacultySummaryListResponse(BaseModel):
     summary="List all internship summaries for your department",
     description=(
         "Returns a list of internship summaries submitted by students in your department for review and grading. "
-        "Each summary includes relevant application details. Only accessible by authenticated faculty."
+        "Each summary includes relevant details. Only accessible by authenticated faculty."
     ),
     response_model=FacultySummaryListResponse,
 )
@@ -92,7 +92,7 @@ async def get_department_summaries_endpoint(
             list.append(
                 FacultySummaryResponse(
                     summary_id=summary.id,
-                    application=BriefApplication(
+                    application=FacultyApplicationInfo(
                         student=BriefStudentProfile(
                             contact=Contact(
                                 first_name=contact.first,
@@ -131,6 +131,7 @@ class UpdateSummaryGradeRequest(BaseModel):
     letter_grade: Annotated[str, StringConstraints(min_length=1, max_length=2)]
 
 
+# NOTE: make /{id}
 @router.patch(
     "/grade",
     tags=["Faculty"],
@@ -264,12 +265,13 @@ async def get_student_summaries(
     return StudentSummaryListResponse(summaries=list)
 
 
-class UpdateSummaryApprovalRequest(BaseModel):
+class UpdateSummaryRequest(BaseModel):
     summary_id: int
     summary_text: str
     file_link: Optional[Annotated[str, StringConstraints(max_length=255)]]
 
 
+# NOTE: make /{id}
 @router.patch(
     "/update",
     tags=["Students"],
@@ -281,14 +283,14 @@ class UpdateSummaryApprovalRequest(BaseModel):
     response_model=GeneralRequestResponse,
 )
 async def update_summary_text(
-    data: UpdateSummaryApprovalRequest,
+    data: UpdateSummaryRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
     Update the text and/or file attachment for a student's internship summary.
 
     Args:
-        data (UpdateSummaryApprovalRequest): Summary ID, new summary text, new file link (optional).
+        data (UpdateSummaryRequest): Summary ID, new summary text, new file link (optional).
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
@@ -352,7 +354,7 @@ class EmployerSummaryListResponse(BaseModel):
 
 
 @router.get(
-    "/internship-summaries",
+    "/company-internship-summaries",
     tags=["Employers"],
     summary="Retrieve all internship summaries for the employer's company",
     description=(
@@ -361,7 +363,7 @@ class EmployerSummaryListResponse(BaseModel):
     ),
     response_model=EmployerSummaryListResponse,
 )
-async def get_internship_summaries(
+async def get_company_internship_summaries(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> EmployerSummaryListResponse:
     """
@@ -569,6 +571,6 @@ async def update_summary_approval(
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Employer approval status could not be updated due to a server or database error.",
+            detail="Employer approval status could not be updated.",
         )
-    return GeneralRequestResponse(success=True, message="")
+    return GeneralRequestResponse(success=True, message="Employer approval status updated")

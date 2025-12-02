@@ -1,6 +1,6 @@
-from typing import List, Optional, Tuple
-from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy import func, select, and_
+from typing import Optional
 
 from src.database.schema import (
     Internship,
@@ -15,18 +15,18 @@ from src.database.schema import (
 
 async def search_internships(
     session: AsyncSession,
-    employer_id: Optional[int] = None,
+    company_id: Optional[int] = None,
     title: Optional[str] = None,
     location_type: Optional[str] = None,
     duration_weeks: Optional[int] = None,
     weekly_hours: Optional[int] = None,
-    majors_of_interest: Optional[List[str]] = None,
-    required_skills: Optional[List[str]] = None,
-    preferred_skills: Optional[List[str]] = None,
     status: Optional[str] = None,
+    majors: Optional[list[str]] = None,
+    required_skills: Optional[list[str]] = None,
+    preferred_skills: Optional[list[str]] = None,
     page: int = 1,  # Starts at 1
     page_size: int = 20,
-) -> Tuple[List[Internship], int]:
+) -> tuple[list[Internship], int]:
     """
     Search internships with filters and pagination, also returning total count.
 
@@ -37,23 +37,23 @@ async def search_internships(
         location_type (Optional[str]): Location type.
         duration_weeks (Optional[int]): Minimum duration in weeks.
         weekly_hours (Optional[int]): Minimum weekly hours.
-        majors_of_interest (Optional[List[str]]): Majors.
-        required_skills (Optional[List[str]]): Required skills (must have all).
-        preferred_skills (Optional[List[str]]): Preferred skills (must have all).
+        majors_of_interest (Optional[list[str]]): Majors.
+        required_skills (Optional[list[str]]): Required skills (must have all).
+        preferred_skills (Optional[list[str]]): Preferred skills (must have all).
         status (Optional[str]): Status filter.
         page (int): 1-based page number (Starts at 1).
         page_size (int): Items per page.
 
     Returns:
-        List[Internship]: List of matching objects for the requested page.
+        list[Internship]: list of matching objects for the requested page.
         int: Total number of results matching the search (ignoring pagination).
     """
     statement = select(Internship).distinct()
     filters = []
 
-    if employer_id is not None:
+    if company_id is not None:
         statement = statement.join(Company, Internship.company_id == Company.id)
-        filters.append(Company.id == employer_id)
+        filters.append(Company.id == company_id)
 
     if title:
         filters.append(Internship.title.ilike(f"%{title}%"))
@@ -66,10 +66,10 @@ async def search_internships(
     if status is not None:
         filters.append(Internship.status == status)
 
-    if majors_of_interest:
+    if majors:
         statement = statement.join(InternshipMajor, Internship.id == InternshipMajor.internship_id)
         statement = statement.join(Major, InternshipMajor.major_id == Major.id)
-        filters.append(Major.name.in_(majors_of_interest))
+        filters.append(Major.name.in_(majors))
 
     if required_skills:
         for skill in required_skills:
