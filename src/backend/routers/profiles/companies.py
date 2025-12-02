@@ -145,7 +145,7 @@ class CompanyUpdateRequest(BaseModel):
 
 @router.patch(
     "/update",
-    tags=["Companies"],
+    tags=["Employers"],
     summary="Update company information",
     description=(
         "Modify existing company information, such as name, website, and address details. "
