@@ -153,7 +153,6 @@ class CompanyUpdateRequest(BaseModel):
     ),
     response_model=GeneralRequestResponse,
 )
-@router.patch("/update", response_model=GeneralRequestResponse)
 async def update_profile(
     data: CompanyUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
