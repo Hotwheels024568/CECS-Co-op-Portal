@@ -60,7 +60,7 @@ app.include_router(companies_router, prefix="/companies")
 app.include_router(employers_router, prefix="/employers")
 app.include_router(faculty_router, prefix="/faculty")
 app.include_router(students_router, prefix="/students")
-app.include_router(relationships_router, prefix="/relationships")
+app.include_router(relationships_router)
 
 app.include_router(internships_router, prefix="/internships")
 app.include_router(applications_router, prefix="/applications")

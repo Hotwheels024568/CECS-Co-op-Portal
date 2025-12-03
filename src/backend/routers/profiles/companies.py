@@ -7,13 +7,16 @@ from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
     AddressUpdateDetails,
+    BriefStudentProfile,
     Company,
+    Contact,
     GeneralRequestResponse,
 )
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
 from src.database.record_retrieval import get_companies, get_employer_by_id
+from src.database.schema import StudentAccount
 
 router = APIRouter()
 
@@ -86,7 +89,7 @@ class CompanyListResponse(BaseModel):
 
 
 @router.get(
-    "/companies",
+    "/list",
     tags=["Companies"],
     summary="Get a list of companies",
     description="Fetch the list of companies registered in the system.",
@@ -109,12 +112,12 @@ async def get_company_list(
     Raises:
         HTTPException (401): If the session is invalid or expired.
     """
-    list = []
+    results = []
     async with DB_MANAGER.session() as db_session:
         companies = await get_companies(db_session)
         for company in companies:
             address = company.address
-            list.append(
+            results.append(
                 Company(
                     id=company.id,
                     name=company.name,
@@ -129,7 +132,7 @@ async def get_company_list(
                     website_link=company.website_link,
                 )
             )
-    return CompanyListResponse(companies=list)
+    return CompanyListResponse(companies=results)
 
 
 class CompanyUpdateDetails(BaseModel):
@@ -220,3 +223,105 @@ async def update_profile(
 
 # Could make a delete_company endpoint (Employer's company)
 #   Would have to handle dangling FKs and prevent if the company is linked to other employers
+
+
+class EmployerSummaryInternship(BaseModel):
+    title: str
+    description: str
+    duration_weeks: int
+    weekly_hours: int
+    total_work_hours: int
+
+
+class EmployerSummaryApplication(BaseModel):
+    student: BriefStudentProfile
+    internship: EmployerSummaryInternship
+
+
+class EmployerSummary(BaseModel):
+    summary: str
+    file_link: Optional[str]
+    employer_approval: bool
+
+
+class EmployerSummaryResponse(BaseModel):
+    summary_id: int
+    application: EmployerSummaryApplication
+    summary: EmployerSummary
+
+
+class EmployerSummaryListResponse(BaseModel):
+    summaries: list[EmployerSummaryResponse]
+
+
+@router.get(
+    "/me/internships/summaries",
+    tags=["Employers"],
+    summary="Retrieve all internship summaries for the employer's company",
+    description=(
+        "Returns internship summaries submitted by students associated with any internships at the employer's company. "
+        "Only accessible by authenticated employers."
+    ),
+    response_model=EmployerSummaryListResponse,
+)
+async def get_company_internship_summaries(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> EmployerSummaryListResponse:
+    """
+    Retrieve all internship summaries across all internships owned by this employer.
+
+    Args:
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        EmployerSummaryListResponse: List of summaries with basic student/internship context.
+
+    Raises:
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
+    """
+    assert_user_type(session_data, UserType.EMPLOYER)
+
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile = await get_employer_by_id(db_session, account_id)
+        company = profile.company
+        internships = company.internships
+
+        results = []
+        for internship in internships:
+            summaries = internship.summaries
+            for summary in summaries:
+                student: StudentAccount = summary.student
+                contact = student.contact
+                results.append(
+                    EmployerSummaryResponse(
+                        summary_id=summary.id,
+                        application=EmployerSummaryApplication(
+                            student=BriefStudentProfile(
+                                contact=Contact(
+                                    first_name=contact.first,
+                                    middle_name=contact.middle,
+                                    last_name=contact.last,
+                                    email=contact.email,
+                                    phone=contact.phone,
+                                ),
+                                department_name=student.department.name,
+                                major_name=student.major.name,
+                            ),
+                            internship=EmployerSummaryInternship(
+                                title=internship.title,
+                                description=internship.description,
+                                duration_weeks=internship.duration_weeks,
+                                weekly_hours=internship.weekly_hours,
+                                total_work_hours=internship.total_work_hours,
+                            ),
+                        ),
+                        summary=EmployerSummary(
+                            summary=summary.summary,
+                            file_link=summary.file_link,
+                            employer_approval=summary.employer_approval,
+                        ),
+                    )
+                )
+    return EmployerSummaryListResponse(summaries=results)

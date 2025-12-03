@@ -16,7 +16,7 @@ class StudentListResponse(BaseModel):
 
 
 @router.get(
-    "/department-students",
+    "/departments/me/students",
     tags=["Faculty"],
     summary="Retrieve all students in the faculty's department",
     description=(
@@ -52,10 +52,10 @@ async def get_dept_students(
         profile = await get_faculty_by_id(db_session, account_id)
         students = profile.department.students
 
-        list = []
+        results = []
         for student in students:
             contact = student.contact
-            list.append(
+            results.append(
                 StudentProfileResponse(
                     contact=Contact(
                         first_name=contact.first,
@@ -76,7 +76,7 @@ async def get_dept_students(
                     ),
                 )
             )
-    return StudentListResponse(students=list)
+    return StudentListResponse(students=results)
 
 
 class FacultyListResponse(BaseModel):
@@ -84,7 +84,7 @@ class FacultyListResponse(BaseModel):
 
 
 @router.get(
-    "/department-faculty",
+    "/departments/me/faculty",
     tags=["Students"],
     summary="Retrieve all faculty in the student's department",
     description=(
@@ -120,10 +120,10 @@ async def get_dept_faculty(
         profile = await get_student_by_id(db_session, account_id)
         faculty = profile.department.faculty
 
-        list = []
+        results = []
         for staff in faculty:
             contact = staff.contact
-            list.append(
+            results.append(
                 FacultyProfileResponse(
                     contact=Contact(
                         first_name=contact.first,
@@ -135,7 +135,7 @@ async def get_dept_faculty(
                     profile=FacultyProfile(department=staff.department.name),
                 )
             )
-    return FacultyListResponse(faculty=list)
+    return FacultyListResponse(faculty=results)
 
 
 @router.get(
@@ -173,10 +173,10 @@ async def get_all_faculty(
     async with DB_MANAGER.session() as db_session:
         faculty = await get_faculty(db_session)
 
-        list = []
+        results = []
         for staff in faculty:
             contact = staff.contact
-            list.append(
+            results.append(
                 FacultyProfileResponse(
                     contact=Contact(
                         first_name=contact.first,
@@ -188,4 +188,4 @@ async def get_all_faculty(
                     profile=FacultyProfile(department=staff.department.name),
                 )
             )
-    return FacultyListResponse(faculty=list)
+    return FacultyListResponse(faculty=results)

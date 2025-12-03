@@ -3,10 +3,14 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.routers.internships.summaries import EmployerSummary
 from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
+    BriefStudentProfile,
     Company,
+    Contact,
+    EmployerApplicationInfo,
     GeneralRequestResponse,
     Internship,
     InternshipStatus,
@@ -15,16 +19,14 @@ from src.backend.routers.models import (
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.internship_insertion import create_internship
 from src.database.internship_retrieval import search_internships
-from src.database.record_retrieval import get_employer_by_id, get_internship_by_id
+from src.database.record_retrieval import (
+    get_application_by_id,
+    get_employer_by_id,
+    get_internship_by_id,
+)
+from src.database.schema import StudentAccount
 
 router = APIRouter()
-
-
-"""
-Employers
-    update
-        after setting the status to pending start, create the student summary records for the selected candidates
-"""
 
 
 class InternshipSearchRequest(BaseModel):
@@ -46,11 +48,14 @@ class InternshipSearchResponse(BaseModel):
     count: int
 
 
-@router.get(
+@router.post(
     "/search",
     tags=["Internships"],
-    summary="__",
-    description=("__. " "__."),
+    summary="Search internships by filters and keywords",
+    description=(
+        "Allows faculty and students to search internships using multiple filters such as company, title, "
+        "location type, duration, hours, status, majors, and skills. Returns a paginated list of matching internships."
+    ),
     response_model=InternshipSearchResponse,
 )
 async def search_internships_endpoint(
@@ -58,18 +63,23 @@ async def search_internships_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> InternshipSearchResponse:
     """
-    __
+    Search internships using flexible filters.
+
+    Enables authorized users to perform a filtered search on internships using criteria such as company, title,
+    location type, duration, status, majors, required and preferred skills. Results are paginated.
 
     Args:
-        data (InternshipCreationRequest): __
+        data (InternshipSearchRequest): Search filters for internships.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        InternshipSearchResponse: List and count of filtered internships.
 
     Raises:
-        HTTPException (401): If the session is invalid or expired.
+        HTTPException (401): If session is invalid.
     """
+    assert_user_type(session_data, {UserType.FACULTY, UserType.STUDENT})
+
     async with DB_MANAGER.session() as db_session:
         internships, count = await search_internships(
             db_session,
@@ -86,11 +96,11 @@ async def search_internships_endpoint(
             data.page_size,
         )
 
-        list = []
+        results = []
         for internship in internships:
             company = internship.company
             address = company.address
-            list.append(
+            results.append(
                 Internship(
                     company=Company(
                         id=company.id,
@@ -124,35 +134,44 @@ async def search_internships_endpoint(
                     ],
                 )
             )
-    return InternshipSearchResponse(internships=list, count=count)
+    return InternshipSearchResponse(internships=results, count=count)
 
 
 @router.get(
-    f"/{id}",
+    "/{internship_id}",
     tags=["Internships"],
-    summary="__",
-    description=("__. " "__."),
+    summary="Retrieve internship details by ID",
+    description=(
+        "Fetches complete details for a specific internship, including company information, "
+        "address, required and preferred skills, and majors. "
+        "Accessible by faculty or student users only; ensures proper authorization."
+    ),
     response_model=Internship,
 )
 async def get_internship(
-    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    internship_id: int, session_data: tuple[str, AccountInfo] = Depends(get_current_session)
 ) -> Internship:
     """
-    __
+    Retrieve specific internship details by internship ID.
+
+    Allow authorized users to access internships comprehensive information about a particular
+    internship, including company details, address, skills required/preferred, and eligible majors.
 
     Args:
-        data (InternshipCreationRequest): __
+        internship_id (int): The ID of the internship to be retrieved.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        Internship: The complete internship record if found and authorized.
 
     Raises:
         HTTPException (400): If the internship does not exist.
         HTTPException (401): If the session is invalid or expired.
     """
+    assert_user_type(session_data, {UserType.FACULTY, UserType.STUDENT})
+
     async with DB_MANAGER.session() as db_session:
-        internship = await get_internship_by_id(db_session, id)
+        internship = await get_internship_by_id(db_session, internship_id)
         if not internship:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist")
 
@@ -204,14 +223,16 @@ class InternshipCreationRequest(BaseModel):
     majors: list[Annotated[str, StringConstraints(max_length=100)]]
     required_skills: list[Annotated[str, StringConstraints(max_length=100)]]
     preferred_skills: list[Annotated[str, StringConstraints(max_length=100)]]
-    address: Optional[AddressCreationDetails]
 
 
 @router.post(
     "/create",
     tags=["Employers"],
-    summary="__",
-    description=("__. " "__."),
+    summary="Create a new internship posting",
+    description=(
+        "Allows authorized employers to create a new internship listing with details such as title, description, "
+        "location, duration, majors, and required/preferred skills. Only users with employer accounts can perform this action."
+    ),
     response_model=GeneralRequestResponse,
 )
 async def create_internship_endpoint(
@@ -219,14 +240,17 @@ async def create_internship_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
-    __
+    Create a new internship posting.
+
+    Allows an employer to create a new internship with details on title, description, location,
+    duration, skills, and eligible majors.
 
     Args:
-        data (InternshipCreationRequest): __
+        data (InternshipCreationRequest): Data for the new internship, including title, description, skills, and more.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
@@ -234,6 +258,15 @@ async def create_internship_endpoint(
         HTTPException (500): If the operation fails.
     """
     assert_user_type(session_data, UserType.EMPLOYER)
+
+    address_fields: tuple[Optional[str], ...] = (
+        data.address.address_line1 if data.address else None,
+        data.address.address_line2 if data.address else None,
+        data.address.city if data.address else None,
+        data.address.state_province if data.address else None,
+        data.address.zip_postal if data.address else None,
+        data.address.country if data.address else None,
+    )
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
@@ -251,12 +284,7 @@ async def create_internship_endpoint(
             data.majors,
             data.required_skills,
             data.preferred_skills,
-            data.address.address_line1,
-            data.address.address_line2,
-            data.address.city,
-            data.address.state_province,
-            data.address.zip_postal,
-            data.address.country,
+            *address_fields,
         )
 
     if not result:
@@ -282,15 +310,15 @@ class InternshipUpdateRequest(BaseModel):
     address: Optional[AddressCreationDetails]
 
 
-# NOTE: make /{id}
 @router.patch(
-    f"/update/{id}",
+    "/{internship_id}/update",
     tags=["Employers"],
     summary="__",
     description=("__. " "__."),
     response_model=GeneralRequestResponse,
 )
 async def update_internship_endpoint(
+    internship_id: int,
     data: InternshipUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
@@ -298,11 +326,12 @@ async def update_internship_endpoint(
     __
 
     Args:
+        internship_id (int): The ID of the internship to be updated.
         data (InternshipUpdateRequest): __
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
@@ -317,6 +346,12 @@ async def update_internship_endpoint(
         internship = await get_internship_by_id(db_session, id)
         if internship.company_id != profile.company_id:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Only __")
+
+        """
+        Employers
+            update
+                after setting the status to pending start, create the student summary records for the selected candidates
+        """
     #     result, msg = await update_internship(
     #         db_session,
     #         internship_id,
@@ -348,3 +383,272 @@ async def update_internship_endpoint(
 
 # Could make a delete_internship endpoint
 #   Would have to handle dangling FKs
+
+
+class EmployerSelectedApplicationsUpdateRequest(BaseModel):
+    added: list[int]
+    removed: list[int]
+
+
+@router.patch(
+    "/{internship_id}/update-candidates",
+    tags=["Employers"],
+    summary="Update selected candidates for an internship",
+    description=(
+        "Allows an authenticated employer to update the selection status of applicants to their internship "
+        "by adding or removing application IDs from the 'selected candidates' list. Only employers who own "
+        "the internship may perform this action."
+    ),
+    response_model=GeneralRequestResponse,
+)
+async def update_selected_candidates_for_internship(
+    internship_id: int,
+    data: EmployerSelectedApplicationsUpdateRequest,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> GeneralRequestResponse:
+    """
+    Update the list of selected student candidates for a specific internship.
+
+    Employers may add or remove student applications to/from the selected list for an internship they own.
+    Ownership and application-internship association are strictly validated.
+
+    Args:
+        internship_id (int): The ID of the internship to update.
+        data (EmployerSelectedApplicationsUpdateRequest): Lists of application IDs to add or remove.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
+
+    Raises:
+        HTTPException (400): If the internship does not exist.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid or not allowed to preform the action.
+        HTTPException (500): If the operation fails.
+    """
+    assert_user_type(session_data, UserType.EMPLOYER)
+
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile = await get_employer_by_id(db_session, account_id)
+        internship = await get_internship_by_id(db_session, internship_id)
+        if not internship:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist.")
+        if internship.company_id != profile.company_id:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                "You can only update candidate selection for internships you own.",
+            )
+
+        changed = []
+        # Handle additions
+        for app_id in data.added:
+            application = await get_application_by_id(db_session, app_id)
+            if not application:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST, f"Application {app_id} does not exist."
+                )
+            if application.internship_id != internship_id:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    f"Application {app_id} does not belong to this internship.",
+                )
+            if not application.selected:
+                application.selected = True
+                db_session.add(application)
+                changed.append(app_id)
+
+        # Handle removals
+        for app_id in data.removed:
+            application = await get_application_by_id(db_session, app_id)
+            if not application:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST, f"Application {app_id} does not exist."
+                )
+            if application.internship_id != internship_id:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    f"Application {app_id} does not belong to this internship.",
+                )
+            if application.selected:
+                application.selected = False
+                db_session.add(application)
+                changed.append(app_id)
+
+        await db_session.commit()
+    return GeneralRequestResponse(
+        success=True, message=f"Updated selection status for applications: {changed}"
+    )
+
+
+class EmployerApplicationResponse(BaseModel):
+    application_id: int
+    application: EmployerApplicationInfo
+
+
+class EmployerApplicationListResponse(BaseModel):
+    applications: list[EmployerApplicationResponse]
+
+
+@router.get(
+    "/{internship_id}/applications",
+    tags=["Employers"],
+    summary="List all internship applications for your internship opportunity",
+    description=(
+        "Returns a list of applications submitted by students for a specified internship opportunity owned by the employer. "
+        "Each application includes student profile, contact information, notes, resume and cover letter links. "
+        "Access is restricted to authenticated employers who own the related internship."
+    ),
+    response_model=EmployerApplicationListResponse,
+)
+async def get_internship_applications(
+    internship_id: int,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> EmployerApplicationListResponse:
+    """
+    Retrieve all student internship applications for a specific employer-owned opportunity.
+
+    Only the employer who owns the internship may view these applications. For each application,
+    returns student contact and academic details, application note, resume and cover letter links,
+    and selected status.
+
+    Args:
+        internship_id (int): The unique identifier for the internship opportunity.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        EmployerApplicationListResponse: List of application details and internship context.
+
+    Raises:
+        HTTPException (400): If the internship does not exist.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid or not allowed to preform the action.
+        HTTPException (500): If the operation fails.
+    """
+    assert_user_type(session_data, UserType.EMPLOYER)
+
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile = await get_employer_by_id(db_session, account_id)
+        internship = await get_internship_by_id(db_session, internship_id)
+        if not internship:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist.")
+        if internship.company_id != profile.company_id:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN, "Only the internship owner can view its applications."
+            )
+        applications = internship.applications
+
+        results = []
+        for application in applications:
+            student = application.student
+            contact = student.contact
+            internship = application.internship
+            results.append(
+                EmployerApplicationResponse(
+                    application_id=application.id,
+                    application=EmployerApplicationInfo(
+                        student=BriefStudentProfile(
+                            contact=Contact(
+                                first_name=contact.first,
+                                middle_name=contact.middle,
+                                last_name=contact.last,
+                                email=contact.email,
+                                phone=contact.phone,
+                            ),
+                            department_name=student.department.name,
+                            major_name=student.major.name,
+                        ),
+                        note=application.note,
+                        resume_link=application.resume_link,
+                        cover_letter_link=application.cover_letter_link,
+                        selected=application.selected,
+                    ),
+                )
+            )
+    return EmployerApplicationListResponse(applications=results)
+
+
+class EmployerSpecificSummaryApplication(BaseModel):
+    student: BriefStudentProfile
+
+
+class EmployerSpecificSummaryResponse(BaseModel):
+    summary_id: int
+    application: EmployerSpecificSummaryApplication
+    summary: EmployerSummary
+
+
+class EmployerSpecificSummaryListResponse(BaseModel):
+    summaries: list[EmployerSpecificSummaryResponse]
+
+
+@router.get(
+    "/{internship_id}/summaries",
+    tags=["Employers"],
+    summary="Retrieve internship summaries for a specific internship",
+    description=(
+        "Returns all summaries for a specified internship owned by the authenticated employer."
+    ),
+    response_model=EmployerSpecificSummaryListResponse,
+)
+async def get_internship_summaries(
+    internship_id: int,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+) -> EmployerSpecificSummaryListResponse:
+    """
+    Retrieve all summary submissions for a particular internship owned by the employer.
+
+    Args:
+        internship_id (int): The ID of the Internship.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
+
+    Returns:
+        EmployerSpecificSummaryListResponse: List of summaries for the specified internship.
+
+    Raises:
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
+    """
+    assert_user_type(session_data, UserType.EMPLOYER)
+
+    account_id = session_data[1]["account_id"]
+    async with DB_MANAGER.session() as db_session:
+        profile = await get_employer_by_id(db_session, account_id)
+        company = profile.company
+        internship = await get_internship_by_id(db_session, internship_id)
+        if internship.company_id != company.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to view summaries for internships owned by another company.",
+            )
+
+        summaries = internship.summaries
+        results = []
+        for summary in summaries:
+            student: StudentAccount = summary.student
+            contact = student.contact
+            results.append(
+                EmployerSpecificSummaryResponse(
+                    summary_id=summary.id,
+                    application=EmployerSpecificSummaryApplication(
+                        student=BriefStudentProfile(
+                            contact=Contact(
+                                first_name=contact.first,
+                                middle_name=contact.middle,
+                                last_name=contact.last,
+                                email=contact.email,
+                                phone=contact.phone,
+                            ),
+                            department_name=student.department.name,
+                            major_name=student.major.name,
+                        ),
+                    ),
+                    summary=EmployerSummary(
+                        summary=summary.summary,
+                        file_link=summary.file_link,
+                        employer_approval=summary.employer_approval,
+                    ),
+                )
+            )
+    return EmployerSpecificSummaryListResponse(summaries=results)

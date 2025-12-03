@@ -4,7 +4,6 @@ from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
 from src.backend.routers.models import (
-    EmployerApplicationInfo,
     FacultyApplicationInfo,
     BriefInternship,
     BriefStudentProfile,
@@ -20,7 +19,6 @@ from src.database.record_deletion import delete_record
 from src.database.record_retrieval import (
     get_application_by_id,
     get_department_applications,
-    get_employer_by_id,
     get_faculty_by_id,
     get_internship_by_id,
     get_student_by_id,
@@ -41,7 +39,7 @@ class FacultyApplicationListResponse(BaseModel):
 
 
 @router.get(
-    "/department-applications",
+    "/department",
     tags=["Faculty"],
     summary="List all internship applications for your department",
     description=(
@@ -50,7 +48,7 @@ class FacultyApplicationListResponse(BaseModel):
     ),
     response_model=FacultyApplicationListResponse,
 )
-async def get_departments_applications(
+async def get_department_applications_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> FacultyApplicationListResponse:
     """
@@ -77,12 +75,12 @@ async def get_departments_applications(
         department = profile.department
         applications = await get_department_applications(db_session, department.id)
 
-        list = []
+        results = []
         for application in applications:
             student = application.student
             contact = student.contact
             internship = application.internship
-            list.append(
+            results.append(
                 FacultyApplicationResponse(
                     application_id=application.id,
                     application=FacultyApplicationInfo(
@@ -109,7 +107,7 @@ async def get_departments_applications(
                     ),
                 )
             )
-    return FacultyApplicationListResponse(applications=list)
+    return FacultyApplicationListResponse(applications=results)
 
 
 class StudentApplicationCreationRequest(BaseModel):
@@ -122,23 +120,29 @@ class StudentApplicationCreationRequest(BaseModel):
 @router.post(
     "/create",
     tags=["Students"],
-    summary="__",
-    description=("__ " "__"),
+    summary="Submit a new application for an internship",
+    description=(
+        "Allows an authorized student to apply for an internship. Students must provide the internship ID and "
+        "may optionally include a note, resume link, and cover letter link."
+    ),
     response_model=GeneralRequestResponse,
 )
-async def create_application(
+async def create_application_endpoint(
     data: StudentApplicationCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
-    __
+    Submit a new internship application as a student.
+
+    This endpoint lets an authenticated student apply for an internship by submitting required and optional materials.
+    Co-op credit eligibility is checked based on the student's profile and the internship details.
 
     Args:
-        data (StudentApplicationCreationRequest): __
+        data (StudentApplicationCreationRequest): Details for the application, including internship ID and optional documents.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
@@ -185,7 +189,7 @@ class StudentApplicationListResponse(BaseModel):
 
 
 @router.get(
-    "/my-applications",
+    "/me",
     tags=["Students"],
     summary="Get all internship applications for the authenticated student",
     description=(
@@ -217,10 +221,10 @@ async def get_student_applications(
         profile = await get_student_by_id(db_session, account_id)
         applications = profile.applications
 
-        list = []
+        results = []
         for application in applications:
             internship = application.internship
-            list.append(
+            results.append(
                 StudentApplicationResponse(
                     application_id=application.id,
                     application=StudentApplicationInfo(
@@ -239,37 +243,43 @@ async def get_student_applications(
                     ),
                 )
             )
-    return StudentApplicationListResponse(applications=list)
+    return StudentApplicationListResponse(applications=results)
 
 
 class StudentApplicationDeletionRequest(BaseModel):
-    application_id: int
     note: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
     resume_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
     cover_letter_link: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
 
 
-# NOTE: make /{id}
 @router.patch(
-    "/update",
+    "/{application_id}/update",
     tags=["Students"],
-    summary="__",
-    description=("__ " "__"),
+    summary="Update a student's internship application",
+    description=(
+        "Allows a student to update their internship application materials (note, resume link, cover letter link). "
+        "Eligibility and ownership checks are enforced. Only the student who created the application can update it."
+    ),
     response_model=GeneralRequestResponse,
 )
-async def update_student_application(
+async def update_application_endpoint(
+    application_id: int,
     data: StudentApplicationDeletionRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
-    __
+    Update a student's existing internship application.
+
+    This endpoint enables students to update their submitted application materials, such as their note,
+    resume link, or cover letter link. Only authorized students that own the application may perform this action.
 
     Args:
-        data (StudentApplicationUpdateRequest): __
+        application_id (int): The ID of the application to be updated.
+        data (StudentApplicationDeletionRequest): Updated application fields.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (400): If the application does not exist.
@@ -282,7 +292,7 @@ async def update_student_application(
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
-        application = await get_application_by_id(db_session, data.application_id)
+        application = await get_application_by_id(db_session, application_id)
         if not application:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Application does not exist.")
         if application.student_id != account_id:
@@ -293,7 +303,7 @@ async def update_student_application(
 
         result = await update_application(
             db_session,
-            data.application_id,
+            application_id,
             (
                 profile.gpa >= 2
                 and internship.duration_weeks >= 7
@@ -313,31 +323,33 @@ async def update_student_application(
     return GeneralRequestResponse(success=True, message="Application updated")
 
 
-class StudentApplicationDeletionRequest(BaseModel):
-    application_id: int
-
-
-# NOTE: make /{id}
 @router.delete(
-    "/delete",
+    "/{application_id}/delete",
     tags=["Students"],
-    summary="__",
-    description=("__ " "__"),
+    summary="Delete a student's internship application",
+    description=(
+        "Allows an authorized student to delete their internship application, provided that the associated "
+        "internship is still accepting applications. Application ownership and internship status are checked."
+    ),
     response_model=GeneralRequestResponse,
 )
-async def delete_student_application(
-    data: StudentApplicationDeletionRequest,
+async def delete_application(
+    application_id: int,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
-    __
+    Delete a student's internship application by ID.
+
+    This endpoint enables a student to delete their application for an internship, as long as
+    the internship is still open. It enforces ownership and eligibility checks to prevent
+    unauthorized actions or deletions when applications are closed.
 
     Args:
-        data (StudentApplicationDeletionRequest): __
+        application_id (int): The unique identifier of the application to delete.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: Success status and optional message.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (400): If the application does not exist.
@@ -349,7 +361,7 @@ async def delete_student_application(
 
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
-        application = await get_application_by_id(db_session, data.application_id)
+        application = await get_application_by_id(db_session, application_id)
         if not application:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Application does not exist.")
         if application.student_id != account_id:
@@ -370,125 +382,3 @@ async def delete_student_application(
             status.HTTP_500_INTERNAL_SERVER_ERROR, "Application could not be deleted."
         )
     return GeneralRequestResponse(success=True, message="Application deleted")
-
-
-class EmployerApplicationRequest(BaseModel):
-    internship_id: int
-
-
-class EmployerApplicationResponse(BaseModel):
-    application_id: int
-    application: EmployerApplicationInfo
-
-
-class EmployerApplicationListResponse(BaseModel):
-    applications: list[EmployerApplicationResponse]
-
-
-@router.get(
-    "/applications",
-    tags=["Employers"],
-    summary="List all internship applications for your internship opportunity",
-    description=(
-        "Returns a list of internship applications submitted by students to your internship opportunity. "
-        "Each application includes relevant details. Only accessible by authenticated employers."
-    ),
-    response_model=EmployerApplicationListResponse,
-)
-async def get_internship_applications(
-    data: EmployerApplicationRequest,
-    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> EmployerApplicationListResponse:
-    """
-    __
-
-    Args:
-        data (EmployerApplicationRequest): __
-        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
-
-    Returns:
-        EmployerApplicationListResponse: List of applications application details and internship context.
-
-    Raises:
-        HTTPException (400): If the internship does not exist.
-        HTTPException (401): If the session is invalid or expired.
-        HTTPException (403): If the session's user type is invalid or not allowed to preform the action.
-        HTTPException (500): If the operation fails.
-    """
-    assert_user_type(session_data, UserType.EMPLOYER)
-
-    account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
-        profile = await get_employer_by_id(db_session, account_id)
-        internship = await get_internship_by_id(db_session, data.internship_id)
-        if not internship:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist.")
-        if internship.company_id != profile.company_id:
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, "Only the internship owner can view its applications."
-            )
-        applications = internship.applications
-
-        list = []
-        for application in applications:
-            student = application.student
-            contact = student.contact
-            internship = application.internship
-            list.append(
-                EmployerApplicationResponse(
-                    application_id=application.id,
-                    application=EmployerApplicationInfo(
-                        student=BriefStudentProfile(
-                            contact=Contact(
-                                first_name=contact.first,
-                                middle_name=contact.middle,
-                                last_name=contact.last,
-                                email=contact.email,
-                                phone=contact.phone,
-                            ),
-                            department_name=student.department.name,
-                            major_name=student.major.name,
-                        ),
-                        note=application.note,
-                        resume_link=application.resume_link,
-                        cover_letter_link=application.cover_letter_link,
-                        selected=application.selected,
-                    ),
-                )
-            )
-    return EmployerApplicationListResponse(applications=list)
-
-
-class ApplicationCandidateUpdateRequest(BaseModel):
-    added: list[int]
-    removed: list[int]
-
-
-@router.patch(
-    "/update-candidates",
-    tags=["Employers"],
-    summary="__",
-    description=("__. " "__."),
-    response_model=GeneralRequestResponse,
-)
-async def get_student_applications(
-    data: ApplicationCandidateUpdateRequest,
-    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
-) -> GeneralRequestResponse:
-    """
-    __
-
-    Args:
-        data (): __
-        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
-
-    Returns:
-        EmployerApplicationListResponse: List of applications application details and internship context.
-
-    Raises:
-        HTTPException (400): If the internship does not exist.
-        HTTPException (401): If the session is invalid or expired.
-        HTTPException (403): If the session's user type is invalid or not allowed to preform the action.
-        HTTPException (500): If the operation fails.
-    """
-    assert_user_type(session_data, UserType.EMPLOYER)
