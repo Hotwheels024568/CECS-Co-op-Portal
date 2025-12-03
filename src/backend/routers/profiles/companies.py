@@ -52,7 +52,7 @@ async def create_profile(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: {"success": True, "message": "..."} if the company was created successfully.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
@@ -168,7 +168,7 @@ async def update_profile(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: {"success": True, "message": "..."} if the company was updated successfully.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (400): If no update details are provided.

@@ -27,11 +27,8 @@ async def get_all_departments() -> DepartmentsResponse:
     """
     Retrieve all department names available in the catalog.
 
-    Args:
-        None
-
     Returns:
-        DepartmentsResponse: A dictionary containing a list of department names.
+        DepartmentsResponse: A dictionary containing a list of department IDs and names.
     """
     async with DB_MANAGER.session() as db_session:
         departments = await get_departments(db_session)
@@ -54,11 +51,8 @@ async def get_all_majors() -> MajorsResponse:
     """
     Retrieve all major names available in the catalog.
 
-    Args:
-        None
-
     Returns:
-        MajorsResponse: A dictionary containing a list of major names.
+        MajorsResponse: A dictionary containing a list of major IDs and names.
     """
     async with DB_MANAGER.session() as db_session:
         majors = await get_majors(db_session)
@@ -81,11 +75,8 @@ async def get_all_skills() -> SkillsResponse:
     """
     Retrieve all skill names available in the catalog.
 
-    Args:
-        None
-
     Returns:
-        SkillsResponse: A dictionary containing a list of skill names.
+        SkillsResponse: A dictionary containing a list of skill IDs and names.
     """
     async with DB_MANAGER.session() as db_session:
         skills = await get_skills(db_session)

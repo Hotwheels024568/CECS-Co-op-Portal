@@ -36,7 +36,7 @@ async def change_username(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: {"success": True, "message": "Username changed"} if the username was updated successfully.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
@@ -99,7 +99,7 @@ async def change_password(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: {"success": True, "message": "Password changed"} if the password was updated successfully.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
@@ -150,7 +150,7 @@ async def set_user_type(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: {"success": True, "message": "User type set"} if the user_type update succeeded.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.

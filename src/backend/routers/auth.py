@@ -173,7 +173,7 @@ async def logout(
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
-        GeneralRequestResponse: {"success": True, "message": "Logged out"} if logout was successful.
+        GeneralRequestResponse: Indicates success or failure with explanatory message.
 
     Raises:
         HTTPException (401): If the session is invalid or already expired.
