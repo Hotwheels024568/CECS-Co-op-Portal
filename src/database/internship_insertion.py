@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Optional
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -42,9 +42,9 @@ async def create_internship(
     salary_info: Optional[str],
     status: str = "Open",
     # Majors & Skills
-    majors: Optional[List[str]] = None,
-    required_skills: Optional[List[str]] = None,
-    preferred_skills: Optional[List[str]] = None,
+    majors: Optional[list[str]] = None,
+    required_skills: Optional[list[str]] = None,
+    preferred_skills: Optional[list[str]] = None,
     # Address (for Other)
     address_line1: Optional[str] = None,
     address_line2: Optional[str] = None,
@@ -52,7 +52,7 @@ async def create_internship(
     state_province: Optional[str] = None,
     zip_postal: Optional[str] = None,
     country: Optional[str] = None,
-) -> Tuple[Optional[Internship], str]:
+) -> tuple[Optional[Internship], str]:
     """
     Atomically creates a new Internship for the employer associated with the provided account.
 
@@ -66,14 +66,14 @@ async def create_internship(
         duration_weeks (int): Number of weeks.
         weekly_hours (int): Hours/week.
         salary_info (Optional[str]): Salary/compensation details.
-        status (str): One of: 'Open', 'Closed', 'PendingStart', 'InProgress', 'WaitingSummary', 'WaitingGrade', or 'Completed'
-        majors (List[str], optional): List of major names related to this internship.
-        required_skills (List[str], optional): List of required skill names.
-        preferred_skills (List[str], optional): List of preferred skill names.
+        status (str): One of: 'Open', 'Closed', 'PendingStart', 'InProgress', 'PendingSummary', 'PendingGrade', or 'Completed'
+        majors (list[str], optional): List of major names related to this internship.
+        required_skills (list[str], optional): List of required skill names.
+        preferred_skills (list[str], optional): List of preferred skill names.
         address_line1~country: Address fields for 'Other' locations.
 
     Returns:
-        Tuple[Optional[Internship], str]:
+        tuple[Optional[Internship], str]:
             (Internship, "Internship created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
@@ -195,7 +195,7 @@ async def create_application(
     note: Optional[str] = None,
     resume_link: Optional[str] = None,
     cover_letter_link: Optional[str] = None,
-) -> Tuple[Optional[InternshipApplication], str]:
+) -> tuple[Optional[InternshipApplication], str]:
     """
     Atomically creates an internship application for a student to a given internship.
 
@@ -211,7 +211,7 @@ async def create_application(
         cover_letter_link (Optional[str], optional): Cover letter link.
 
     Returns:
-        Tuple[Optional[InternshipApplication], str]:
+        tuple[Optional[InternshipApplication], str]:
             (InternshipApplication, "Success message") on success,
             (None, "Reason for failure") otherwise.
     """
@@ -277,7 +277,7 @@ async def create_summary(
     file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
-) -> Tuple[Optional[InternshipSummary], str]:
+) -> tuple[Optional[InternshipSummary], str]:
     """
     Atomically creates an internship summary for a given internship application.
 
@@ -290,7 +290,7 @@ async def create_summary(
         letter_grade (Optional[str], optional): Letter grade.
 
     Returns:
-        Tuple[Optional[InternshipSummary], str]
+        tuple[Optional[InternshipSummary], str]
             (InternshipSummary, "Internship summary created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
@@ -311,7 +311,7 @@ async def create_summary_from_internship(
     file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
-) -> Tuple[Optional[InternshipSummary], str]:
+) -> tuple[Optional[InternshipSummary], str]:
     """
     Atomically creates an internship summary for a given internship application.
 
@@ -325,7 +325,7 @@ async def create_summary_from_internship(
         letter_grade (Optional[str], optional): Letter grade.
 
     Returns:
-        Tuple[Optional[InternshipSummary], str]
+        tuple[Optional[InternshipSummary], str]
             (InternshipSummary, "Internship summary created successfully.") on success.
             (None, "Reason") with a descriptive message on failure.
     """
@@ -345,7 +345,7 @@ async def _create_summary(
     file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
-) -> Tuple[Optional[InternshipSummary], str]:
+) -> tuple[Optional[InternshipSummary], str]:
     try:
         summary = await add_summary(
             session,

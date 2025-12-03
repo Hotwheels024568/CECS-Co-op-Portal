@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -32,7 +32,7 @@ async def update_company_profile(
     state_province: Optional[str] = None,
     zip_postal: Optional[str] = None,
     country: Optional[str] = None,
-) -> Tuple[Optional[Company], str]:
+) -> tuple[Optional[Company], str]:
     """
     Updates a company's profile details and address information.
 
@@ -49,7 +49,7 @@ async def update_company_profile(
         country (Optional[str]): Updated company address's country.
 
     Returns:
-        Tuple[Optional[Company], str]:
+        tuple[Optional[Company], str]:
             - (Company, "Company details updated.") on success.
             - (None, "Company does not exist.") if a company with the provided id does not exist.
             - (None, "Company name already exists.") if the company name already exists.
@@ -63,9 +63,9 @@ async def update_company_profile(
             return None, "Company does not exist."
 
         address_id = company.address.id
-        address_id = await update_address(
+        address = await update_address(
             session,
-            address_id.id,
+            address_id,
             address_line1,
             address_line2,
             city,
@@ -78,7 +78,8 @@ async def update_company_profile(
             session,
             company.id,
             company_name,
-            website_link=website_link,
+            None,
+            website_link,
         )
 
         await session.commit()
@@ -116,7 +117,7 @@ async def update_employer_profile(
     phone: Optional[str] = None,
     # Profile
     company_id: Optional[int] = None,
-) -> Tuple[Optional[EmployerAccount], str]:
+) -> tuple[Optional[EmployerAccount], str]:
     """
     Updates an employer's profile, including associated contact information and company affiliation.
 
@@ -131,7 +132,7 @@ async def update_employer_profile(
         company_id (int): The updated ID of a company to associate with this profile.
 
     Returns:
-        Tuple[Optional[EmployerAccount], str]:
+        tuple[Optional[EmployerAccount], str]:
             - (EmployerAccount, "Employer profile updated.") on success.
             - (None, "Company does not exist.") if a company with the provided id does not exist.
             - (None, "Unexpected error: [message]") for all other failures.
@@ -177,7 +178,7 @@ async def update_student_profile(
     start_year: Optional[int] = None,
     transfer: Optional[bool] = None,
     resume_link: Optional[str] = None,
-) -> Tuple[Optional[StudentAccount], str]:
+) -> tuple[Optional[StudentAccount], str]:
     """
     Updates a student's profile, including contact, department, major, and academic details.
 
@@ -199,7 +200,7 @@ async def update_student_profile(
         resume_link (Optional[str]): Updated student's resume_link.
 
     Returns:
-        Tuple[Optional[StudentAccount], str]:
+        tuple[Optional[StudentAccount], str]:
             - (StudentAccount, "Student profile updated.") on success.
             - (None, "Email already in use.") if the email already exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
@@ -268,7 +269,7 @@ async def update_faculty_profile(
     phone: Optional[str] = None,
     # Faculty
     department_name: Optional[str] = None,
-) -> Tuple[Optional[FacultyAccount], str]:
+) -> tuple[Optional[FacultyAccount], str]:
     """
     Updates a faculty member's profile, including contact information and department affiliation.
 
@@ -283,7 +284,7 @@ async def update_faculty_profile(
         department_name (Optional[str]): Updated faculty's department_name.
 
     Returns:
-        Tuple[Optional[FacultyAccount], str]:
+        tuple[Optional[FacultyAccount], str]:
             - (FacultyAccount, "Faculty profile updated.") on success.
             - (None, "Email already in use.") if the email already exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.

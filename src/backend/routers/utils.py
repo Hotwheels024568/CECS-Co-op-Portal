@@ -43,7 +43,7 @@ def get_current_session(
         session_id (str): The session ID provided in the request header.
 
     Returns:
-        Tuple (str, AccountInfo): The session ID and session data if valid.
+        tuple (str, AccountInfo): The session ID and session data if valid.
 
     Raises:
         HTTPException (401): If the session is invalid or expired.

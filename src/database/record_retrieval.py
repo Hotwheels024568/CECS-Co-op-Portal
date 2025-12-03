@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -22,7 +22,6 @@ from src.database.schema import (
 )
 
 from src.database.utils import (
-    get_all_rows,
     get_first_column_element,
     get_first_column_element_of_all_rows,
 )
@@ -51,7 +50,7 @@ async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]
     return await session.get(Address, id)
 
 
-async def get_companies(session: AsyncSession) -> List[Company]:
+async def get_companies(session: AsyncSession) -> list[Company]:
     return await get_first_column_element_of_all_rows(session, select(Company))
 
 
@@ -77,7 +76,7 @@ async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[Employe
     return await session.get(EmployerAccount, id)
 
 
-async def get_departments(session: AsyncSession) -> List[Department]:
+async def get_departments(session: AsyncSession) -> list[Department]:
     return await get_first_column_element_of_all_rows(session, select(Department))
 
 
@@ -90,7 +89,7 @@ async def get_department_by_name(session: AsyncSession, name: str) -> Optional[D
     return await get_first_column_element(session, statement)
 
 
-async def get_majors(session: AsyncSession) -> List[Major]:
+async def get_majors(session: AsyncSession) -> list[Major]:
     return await get_first_column_element_of_all_rows(session, select(Major))
 
 
@@ -107,7 +106,7 @@ async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentA
     return await session.get(StudentAccount, id)
 
 
-async def get_faculty(session: AsyncSession) -> List[FacultyAccount]:
+async def get_faculty(session: AsyncSession) -> list[FacultyAccount]:
     return await get_first_column_element_of_all_rows(session, select(FacultyAccount))
 
 
@@ -119,7 +118,7 @@ async def get_internship_by_id(session: AsyncSession, id: int) -> Optional[Inter
     return await session.get(Internship, id)
 
 
-async def get_skills(session: AsyncSession) -> List[Skill]:
+async def get_skills(session: AsyncSession) -> list[Skill]:
     return await get_first_column_element_of_all_rows(session, select(Skill))
 
 
@@ -147,7 +146,7 @@ async def get_application_from_ids(
 
 async def get_department_applications(
     session: AsyncSession, department_id: int
-) -> List[InternshipApplication]:
+) -> list[InternshipApplication]:
     statement = (
         select(InternshipApplication)
         .join(InternshipApplication.student)
@@ -162,7 +161,7 @@ async def get_summary_by_id(session: AsyncSession, id: int) -> Optional[Internsh
 
 async def get_department_summaries(
     session: AsyncSession, department_id: int
-) -> List[InternshipSummary]:
+) -> list[InternshipSummary]:
     statement = (
         select(InternshipSummary)
         .join(InternshipSummary.application)

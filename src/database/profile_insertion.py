@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -31,7 +31,7 @@ async def create_company(
     state_province: str,
     zip_postal: str,
     country: str,
-) -> Tuple[Optional[Company], str]:
+) -> tuple[Optional[Company], str]:
     """
     Atomically creates an employer profile for the specified account,
     including a new company (with address), and a new contact record.
@@ -50,7 +50,7 @@ async def create_company(
         country (str): Country of company address.
 
     Returns:
-        Tuple[Optional[EmployerAccount], str]:
+        tuple[Optional[EmployerAccount], str]:
             - (EmployerAccount, "Profile created successfully.") on success.
             - (None, "Company name already exists.") if the company name already exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
@@ -108,7 +108,7 @@ async def create_employer_profile(
     phone: Optional[str],
     # Company
     company_id: int,
-) -> Tuple[Optional[EmployerAccount], str]:
+) -> tuple[Optional[EmployerAccount], str]:
     """
     Atomically creates an employer profile for the specified account,
     linking to an existing company. A new contact record is created
@@ -127,7 +127,7 @@ async def create_employer_profile(
         company_id (int): The ID of a company to associate with this profile.
 
     Returns:
-        Tuple[Optional[EmployerAccount], str]:
+        tuple[Optional[EmployerAccount], str]:
             - (EmployerAccount, "Profile created successfully.") on success.
             - (None, "Email already in use.") if the contact email already exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
@@ -191,7 +191,7 @@ async def create_student_profile(
     start_year: int,
     transfer: bool,
     resume_link: Optional[str] = None,
-) -> Tuple[Optional[StudentAccount], str]:
+) -> tuple[Optional[StudentAccount], str]:
     """
     Atomically creates a student profile for the specified account.
 
@@ -219,7 +219,7 @@ async def create_student_profile(
         resume_link (Optional[str]): URL/link to the student's resume file.
 
     Returns:
-        Tuple[Optional[StudentAccount], str]:
+        tuple[Optional[StudentAccount], str]:
             - (StudentAccount, "Profile created successfully.") on success.
             - (None, "Email already in use.") if the email exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.
@@ -288,7 +288,7 @@ async def create_faculty_profile(
     phone: Optional[str],
     # Faculty
     department_name: str,
-) -> Tuple[Optional[FacultyAccount], str]:
+) -> tuple[Optional[FacultyAccount], str]:
     """
     Atomically creates a faculty profile, including a unique contact record and FacultyAccount,
     and links the faculty profile to the provided account and department.
@@ -307,7 +307,7 @@ async def create_faculty_profile(
         department_name (str): Name of faculty member's department.
 
     Returns:
-        Tuple[Optional[FacultyAccount], str]:
+        tuple[Optional[FacultyAccount], str]:
             - (FacultyAccount, "Profile created successfully.") on success.
             - (None, "Email already in use.") if the email exists.
             - (None, "Unique constraint violated: [constraint_name]") for other unique violations.

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from sqlalchemy import Executable, Row, Select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -36,7 +36,7 @@ async def count(session: AsyncSession, model) -> int:
 
 
 async def exists(
-    session: AsyncSession, statement: Select, parameters: Optional[Dict] = None
+    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
 ) -> bool:
     """
     Executes a SQLAlchemy SELECT query and checks if at least one result was returned.
@@ -44,7 +44,7 @@ async def exists(
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Select): A SQLAlchemy SELECT statement.
-        parameters (Dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
+        parameters (dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
 
     Returns:
         bool: True if the query returns at least one result, otherwise False.
@@ -63,7 +63,7 @@ async def exists(
 
 
 async def get_first_column_element(
-    session: AsyncSession, statement: Select, parameters: Optional[Dict] = None
+    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
 ) -> Optional[Any]:
     """
     Executes a SQLAlchemy SELECT query and returns the first column element (or object) from the first Row.
@@ -71,7 +71,7 @@ async def get_first_column_element(
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Select): A SQLAlchemy SELECT statement.
-        parameters (Dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
+        parameters (dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
 
     Returns:
         Optional[Any]: The first column's element of the first row, or None if no result is found.
@@ -87,7 +87,7 @@ async def get_first_column_element(
 
 
 async def get_row(
-    session: AsyncSession, statement: Select, parameters: Optional[Dict] = None
+    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
 ) -> Optional[Row]:
     """
     Executes a SQLAlchemy SELECT query and returns the first Row.
@@ -95,7 +95,7 @@ async def get_row(
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Select): A SQLAlchemy SELECT statement.
-        parameters (Dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
+        parameters (dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
 
     Returns:
         Optional[Row]: A SQLAlchemy row, or None if no result is found.
@@ -109,18 +109,18 @@ async def get_row(
 
 
 async def get_first_column_element_of_all_rows(
-    session: AsyncSession, statement: Select, parameters: Optional[Dict] = None
-) -> List[Any]:
+    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
+) -> list[Any]:
     """
-    Executes a SQLAlchemy SELECT query and returns a List of the first column's element (or object) from each Row.
+    Executes a SQLAlchemy SELECT query and returns a list of the first column's element (or object) from each Row.
 
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Select): A SQLAlchemy SELECT statement.
-        parameters (Dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
+        parameters (dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
 
     Returns:
-        List[Any]: A List containing the first column's element of each Row returned.
+        list[Any]: A list containing the first column's element of each Row returned.
     """
     parameters = parameters or {}
     try:
@@ -133,18 +133,18 @@ async def get_first_column_element_of_all_rows(
 
 
 async def get_all_rows(
-    session: AsyncSession, statement: Select, parameters: Optional[Dict] = None
-) -> List[Row]:
+    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
+) -> list[Row]:
     """
     Executes a SQLAlchemy SELECT query and returns all Rows as a list.
 
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Select): A SQLAlchemy SELECT statement.
-        parameters (Dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
+        parameters (dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
 
     Returns:
-        List[Row]: List of SQLAlchemy Row objects returned by the query.
+        list[Row]: List of SQLAlchemy Row objects returned by the query.
     """
     parameters = parameters or {}
     try:
@@ -155,7 +155,7 @@ async def get_all_rows(
 
 
 async def execute(
-    session: AsyncSession, statement: Executable, parameters: Optional[Dict] = None
+    session: AsyncSession, statement: Executable, parameters: Optional[dict] = None
 ) -> None:
     """
     Executes a single SQLAlchemy SQL statement.
@@ -163,7 +163,7 @@ async def execute(
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Executable): A SQLAlchemy SQL statement to execute (e.g., insert, update, delete).
-        parameters (Dict, optional): Optional dictionary of bind parameters for the statement. Defaults to {}.
+        parameters (dict, optional): Optional dictionary of bind parameters for the statement. Defaults to {}.
     """
     parameters = parameters or {}
     try:
@@ -173,7 +173,7 @@ async def execute(
 
 
 async def execute_many(
-    session: AsyncSession, statement: Executable, parameters: Optional[List[Dict]] = None
+    session: AsyncSession, statement: Executable, parameters: Optional[list[dict]] = None
 ) -> None:
     """
     Executes a SQLAlchemy SQL statement multiple times with a list of parameter sets.
@@ -181,7 +181,7 @@ async def execute_many(
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
         statement (Executable): A SQLAlchemy SQL statement to execute (e.g., insert, update, delete).
-        parameters (List[Dict], optional): List of dictionaries representing parameter sets for each execution. Defaults to [].
+        parameters (list[dict], optional): List of dictionaries representing parameter sets for each execution. Defaults to [].
     """
     parameters = parameters or []
     try:
