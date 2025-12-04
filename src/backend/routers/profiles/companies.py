@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType, get_db_manager
 from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
@@ -12,7 +12,7 @@ from src.backend.routers.models import (
     Contact,
     GeneralRequestResponse,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile

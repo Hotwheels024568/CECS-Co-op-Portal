@@ -1,7 +1,6 @@
 {
     "addresses": [
         {
-            "id": 1,
             "address_line1": "100 Tech Ave",
             "city": "Ann Arbor",
             "state_province": "MI",
@@ -9,7 +8,6 @@
             "country": "USA"
         },
         {
-            "id": 2,
             "address_line1": "500 Innovation Rd",
             "city": "Detroit",
             "state_province": "MI",
@@ -18,7 +16,6 @@
             "address_line2": "Suite 200"
         },
         {
-            "id": 3,
             "address_line1": "123 College St",
             "city": "Dearborn",
             "state_province": "MI",
@@ -26,7 +23,6 @@
             "country": "USA"
         },
         {
-            "id": 4,
             "address_line1": "456 Startup Blvd",
             "city": "Ypsilanti",
             "state_province": "MI",
@@ -34,7 +30,6 @@
             "country": "USA"
         },
         {
-            "id": 5,
             "address_line1": "678 Research Pkwy",
             "city": "Ann Arbor",
             "state_province": "MI",
@@ -44,31 +39,26 @@
     ],
     "companies": [
         {
-            "id": 1,
             "name": "Tech Dynamics",
             "address_id": 1,
             "website_link": "https://techdynamics.com"
         },
         {
-            "id": 2,
             "name": "InnovateX",
             "address_id": 2,
             "website_link": "https://innovatex.com"
         },
         {
-            "id": 3,
             "name": "Green Solutions",
             "address_id": 3,
             "website_link": "https://greensolutions.com"
         },
         {
-            "id": 4,
             "name": "Future Minds",
             "address_id": 4,
             "website_link": "https://futureminds.com"
         },
         {
-            "id": 5,
             "name": "AI Labs",
             "address_id": 5,
             "website_link": "https://ailabs.com"
@@ -76,123 +66,97 @@
     ],
     "departments": [
         {
-            "id": 1,
             "name": "Computer Science"
         },
         {
-            "id": 2,
             "name": "Mechanical Engineering"
         },
         {
-            "id": 3,
             "name": "Physics"
         },
         {
-            "id": 4,
             "name": "Mathematics"
         },
         {
-            "id": 5,
             "name": "Business"
         }
     ],
     "majors": [
         {
-            "id": 1,
             "name": "Software Engineering"
         },
         {
-            "id": 2,
             "name": "Robotics"
         },
         {
-            "id": 3,
             "name": "Applied Physics"
         },
         {
-            "id": 4,
             "name": "Data Science"
         },
         {
-            "id": 5,
             "name": "Finance"
         }
     ],
     "skills": [
         {
-            "id": 1,
             "name": "Python"
         },
         {
-            "id": 2,
             "name": "Machine Learning"
         },
         {
-            "id": 3,
             "name": "Robotics"
         },
         {
-            "id": 4,
             "name": "CAD"
         },
         {
-            "id": 5,
             "name": "Business Analytics"
         },
         {
-            "id": 6,
             "name": "Statistics"
         },
         {
-            "id": 7,
             "name": "Team Management"
         },
         {
-            "id": 8,
             "name": "Public Speaking"
         },
         {
-            "id": 9,
             "name": "C++"
         },
         {
-            "id": 10,
             "name": "Research Skills"
         }
     ],
     "accounts": [
         {
-            "id": 1,
             "username": "alice",
             "password": "password1",
             "user_type": "Student"
         },
         {
-            "id": 2,
             "username": "bob",
             "password": "password2",
             "user_type": "Employer"
         },
         {
-            "id": 3,
             "username": "carol",
             "password": "password3",
             "user_type": "Faculty"
         },
         {
-            "id": 4,
             "username": "dave",
             "password": "password4",
             "user_type": "Student"
         },
         {
-            "id": 5,
             "username": "eve",
             "password": "password5",
             "user_type": "Employer"
         },
         {
-            "id": 6,
             "username": "frank",
             "password": "password6",
             "user_type": "Student"
@@ -289,7 +253,6 @@
     ],
     "internships": [
         {
-            "id": 1,
             "company_id": 1,
             "title": "Software Intern",
             "description": "Join our backend team working on real Python projects and APIs.",
@@ -302,7 +265,6 @@
             "status": "Open"
         },
         {
-            "id": 2,
             "company_id": 2,
             "title": "Robotics Intern",
             "description": "Robotics research and CAD design for new automation solutions.",
@@ -315,7 +277,6 @@
             "status": "Open"
         },
         {
-            "id": 3,
             "company_id": 3,
             "title": "Physics Research Intern",
             "description": "Data analysis and simulation in experimental physics lab.",
@@ -327,7 +288,6 @@
             "status": "Open"
         },
         {
-            "id": 4,
             "company_id": 4,
             "title": "Business Analyst",
             "description": "Assist in financial analysis and business modeling.",
@@ -340,7 +300,6 @@
             "status": "Open"
         },
         {
-            "id": 5,
             "company_id": 5,
             "title": "AI Research Intern",
             "description": "Work with state-of-the-art machine learning models.",
@@ -432,7 +391,6 @@
     ],
     "internship_applications": [
         {
-            "id": 1,
             "student_id": 1,
             "internship_id": 1,
             "application_date": "2024-05-01T09:00:00Z",
@@ -443,7 +401,6 @@
             "selected": false
         },
         {
-            "id": 2,
             "student_id": 4,
             "internship_id": 3,
             "application_date": "2024-05-03T11:30:00Z",
@@ -452,7 +409,6 @@
             "selected": true
         },
         {
-            "id": 3,
             "student_id": 6,
             "internship_id": 5,
             "application_date": "2024-05-07T13:15:00Z",

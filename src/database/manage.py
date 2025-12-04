@@ -50,7 +50,7 @@ class AsyncDBManager:
         _instance (Optional[AsyncDBManager]): Singleton instance for this class.
 
     Class Methods:
-        create(rebuild: bool = False, seed: bool = False, autocommit: bool = False) -> AsyncDBManager:
+        create(rebuild_tables: bool = False, rebuild_schema: bool = False, seed: bool = False, autocommit: bool = False) -> AsyncDBManager:
             Asynchronously initializes or returns the singleton DB manager, recreating and/or seeding the database schema as requested.
 
     Instance Methods:
@@ -97,13 +97,18 @@ class AsyncDBManager:
 
     @classmethod
     async def create(
-        cls, rebuild: bool = False, seed: bool = False, autocommit: bool = False
+        cls,
+        rebuild_tables: bool = False,
+        rebuild_schema: bool = False,
+        seed: bool = False,
+        autocommit: bool = False,
     ) -> Self:
         """
         Create or return the singleton AsyncDBManager.
 
         Args:
-            rebuild (bool): If True, drop existing tables and recreate the schema.
+            rebuild_tables (bool): If True, drop existing tables and recreate the schema.
+            rebuild_schema (bool): If True, drop existing schema and recreate it.
             seed (bool): If True, populate empty tables with initial data from seed JSON.
             autocommit (bool): Default autocommit behavior for sessions.
 
@@ -115,8 +120,10 @@ class AsyncDBManager:
 
         self = cls._instance = cls(autocommit)
 
-        if rebuild:
-            await self._drop_db()
+        if rebuild_tables:
+            await self._drop_db_tables()
+        if rebuild_schema:
+            await self._drop_db_schema()
         await self._create_db()
         if seed:
             await self._seed()
@@ -128,24 +135,31 @@ class AsyncDBManager:
         async with self.engine.begin() as conn:
             await conn.run_sync(self.metadata.create_all)
 
-    async def _drop_db(self) -> None:
+    async def _drop_db_tables(self) -> None:
         """
         Drop all tables from the database schema.
 
         If standard table drop fails, attempts to drop and recreate the entire 'public' schema (PostgreSQL only).
         """
-        async with self.engine.begin() as conn:
-            try:
+        try:
+            async with self.engine.begin() as conn:
                 await conn.run_sync(self.metadata.drop_all)
-            except Exception as e:
-                from sqlalchemy import text
+        except Exception as e:
+            print(
+                f"Standard drop_all failed with error: {e}. Attempting full schema drop and recreation..."
+            )
+            self._drop_db_schema()
 
-                print(
-                    f"Standard drop_all failed with error: {e}.\n"
-                    "Attempting full schema drop and recreation..."
-                )
-                await conn.execute(text("DROP SCHEMA public CASCADE"))
-                await conn.execute(text("CREATE SCHEMA public"))
+    async def _drop_db_schema(self) -> None:
+        """
+        Drop the database schema.
+        Attempts to drop and recreate the entire 'public' schema (PostgreSQL only).
+        """
+        from sqlalchemy import text
+
+        async with self.engine.begin() as conn:
+            await conn.execute(text("DROP SCHEMA public CASCADE"))
+            await conn.execute(text("CREATE SCHEMA public"))
 
     async def _seed(
         self, json_path: Path = Path(__file__).parent.parent / "seed_data.json"
@@ -167,6 +181,10 @@ class AsyncDBManager:
         DATETIME_FIELDS = {"internship_applications": ["application_date"]}
 
         tables = {table.name: table for table in self.metadata.sorted_tables}
+        if not await self._all_tables_empty(self.engine, self.metadata):
+            print("Skipping seed: database is not empty.")
+            return
+
         with open(json_path) as file:
             seed_data = json.load(file)
 
@@ -177,7 +195,11 @@ class AsyncDBManager:
                     continue
 
                 # Handle None for missing nullable columns
-                nullable_cols = {col.name for col in table.columns if col.nullable}
+                nullable_cols = {
+                    col.name
+                    for col in table.columns
+                    if col.nullable and not (col.primary_key and col.autoincrement)
+                }
                 for record in records:
                     for col in nullable_cols:
                         if col not in record:
@@ -192,24 +214,32 @@ class AsyncDBManager:
                                 record[field].replace("Z", "+00:00")
                             )
 
-                # Check if table is empty
-                table_count = await count(conn, table)
-                if table_count == 0:
-                    if table.name == Account.__tablename__:
-                        # Hash passwords for account records
-                        processed_records = []
-                        for record in records:
-                            current_record = record.copy()
-                            password = current_record.get("password")
-                            if password is not None:
-                                salt = secrets.token_bytes(16)
-                                hashed_pw = hash_password(password, salt)
-                                current_record["password"] = hashed_pw
-                                current_record["salt"] = salt
-                            processed_records.append(current_record)
-                        await conn.execute(table.insert(), processed_records)
-                    else:
-                        await conn.execute(table.insert(), records)
+                if table.name == Account.__tablename__:
+                    # Hash passwords for account records
+                    processed_records = []
+                    for record in records:
+                        current_record = record.copy()
+                        password = current_record.get("password")
+                        if password is not None:
+                            salt = secrets.token_bytes(16)
+                            hashed_pw = hash_password(password, salt)
+                            current_record["password"] = hashed_pw
+                            current_record["salt"] = salt
+                        processed_records.append(current_record)
+                    await conn.execute(table.insert(), processed_records)
+                else:
+                    await conn.execute(table.insert(), records)
+
+    async def _all_tables_empty(self, engine, metadata) -> bool:
+        from sqlalchemy import select, func
+
+        async with engine.begin() as conn:
+            for table in metadata.sorted_tables:
+                query = select(func.count()).select_from(table)
+                result = await conn.execute(query)
+                if result.scalar_one() > 0:
+                    return False
+        return True
 
     # --- context manager (manager.session())
     @asynccontextmanager

@@ -8,9 +8,10 @@ from src.backend.globals import (
     SESSION_EXPIRE_SECONDS,
     AccountInfo,
     UserType,
+    get_db_manager,
 )
 from src.backend.routers.models import GeneralRequestResponse
-from src.backend.routers.utils import get_current_session, get_db_manager, hash_password
+from src.backend.routers.utils import get_current_session, hash_password
 from src.database.manage import AsyncDBManager
 from src.database.record_insertion import add_account
 from src.database.record_retrieval import get_account_by_username
@@ -63,6 +64,7 @@ async def register(
     Raises:
         HTTPException (400): If the username is already taken or registration fails.
     """
+    global SESSION_STORE
     # 1. Generate salt and hash
     salt = secrets.token_bytes(16)
     pw_hash = hash_password(request.password, salt)
@@ -120,6 +122,7 @@ async def login(
     Raises:
         HTTPException (401): If credentials are invalid.
     """
+    global SESSION_STORE
     # 1. Look up user by username
     async with db_manager.session() as db_session:
         account = await get_account_by_username(db_session, request.username)
@@ -182,6 +185,8 @@ async def logout(
     Raises:
         HTTPException (401): If the session is invalid or already expired.
     """
+    global SESSION_STORE
+
     session_id = session_data[0]
     removed = SESSION_STORE.pop(session_id, None)
     if removed is not None:

@@ -61,8 +61,6 @@ class Account(Base):
         cascade="all, delete-orphan",
     )
 
-    __mapper_args__ = {"polymorphic_identity": "account", "polymorphic_on": user_type}
-
 
 class Address(Base):
     """
@@ -146,7 +144,7 @@ class ContactInfo(Base):
     account: Mapped["Account"] = relationship("Account", back_populates="contact", uselist=False)
 
 
-class EmployerAccount(Account):
+class EmployerAccount(Base):
     """
     Employer user account.
 
@@ -167,8 +165,6 @@ class EmployerAccount(Account):
     # Could add a employee title (str) field
 
     company: Mapped["Company"] = relationship("Company", back_populates="employees")
-
-    __mapper_args__ = {"polymorphic_identity": "Employer"}
 
 
 class Department(Base):
@@ -195,7 +191,7 @@ class Department(Base):
     )
 
 
-class FacultyAccount(Account):
+class FacultyAccount(Base):
     """
     Faculty user account.
 
@@ -214,8 +210,6 @@ class FacultyAccount(Account):
     department: Mapped["Department"] = relationship("Department", back_populates="faculty")
     # 1-to-1 with Department
     # department: Mapped["Department"] = relationship("Department", back_populates="faculty", uselist=False)
-
-    __mapper_args__ = {"polymorphic_identity": "Faculty"}
 
 
 class Major(Base):
@@ -242,7 +236,7 @@ class Major(Base):
     )
 
 
-class StudentAccount(Account):
+class StudentAccount(Base):
     """
     Student user account.
 
@@ -291,8 +285,6 @@ class StudentAccount(Account):
         CheckConstraint("gpa >= 0", name="_check_gpa_non_negative"),
         CheckConstraint("start_year >= 0", name="_check_start_year_non_negative"),
     )
-
-    __mapper_args__ = {"polymorphic_identity": "Student"}
 
 
 class Internship(Base):

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 
-from src.backend.globals import AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType, get_db_manager
 from src.backend.routers.models import (
     Address,
     Company,
@@ -12,11 +12,11 @@ from src.backend.routers.models import (
     EmployerProfile,
     GeneralRequestResponse,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_employer_profile
 from src.database.profile_updating import update_employer_profile
-from src.database.record_retrieval import get_employer_by_id
+from src.database.record_retrieval import get_account_by_id, get_employer_by_id
 
 router = APIRouter()
 

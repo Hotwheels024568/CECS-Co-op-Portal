@@ -3,22 +3,13 @@ from typing import Collection, Optional, Union
 import hashlib
 import time
 
-from src.database.manage import AsyncDBManager
 from src.backend.globals import (
-    DB_MANAGER,
     PEPPER,
     SESSION_EXPIRE_SECONDS,
     SESSION_STORE,
     AccountInfo,
     UserType,
 )
-
-
-def get_db_manager() -> AsyncDBManager:
-    global DB_MANAGER
-    if DB_MANAGER is None:
-        raise RuntimeError("Database manager not initialized!")
-    return DB_MANAGER
 
 
 # --- Helper: hash_and_pepper Example (You can use bcrypt/scrypt/argon2, but here's a basic PBKDF2 example) ---

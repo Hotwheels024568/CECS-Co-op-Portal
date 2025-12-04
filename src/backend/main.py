@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from src.database.manage import AsyncDBManager
-from src.backend.globals import DB_MANAGER
+import src.backend.globals as globals
 
 from src.backend.routers.auth import router as auth_router
 from src.backend.routers.accounts import router as accounts_router
@@ -25,8 +25,7 @@ from src.backend.routers.catalog import router as catalog_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup code
-    global DB_MANAGER
-    DB_MANAGER = await AsyncDBManager.create(rebuild=True, seed=True)
+    globals.DB_MANAGER = await AsyncDBManager.create(rebuild_tables=True, seed=True)
 
     yield  # <-- App runs while you wait here
 

@@ -34,3 +34,9 @@ SESSION_EXPIRE_SECONDS = 3600
 
 # Load pepper from environment variable for production, fallback for development.
 PEPPER = os.environ.get("APP_PEPPER", "dev-pepper-secret")
+
+
+def get_db_manager() -> AsyncDBManager:
+    if DB_MANAGER is None:
+        raise RuntimeError("Database manager not initialized!")
+    return DB_MANAGER

@@ -3,9 +3,9 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated
 import secrets
 
-from src.backend.globals import SESSION_STORE, AccountInfo, UserType
+from src.backend.globals import SESSION_STORE, AccountInfo, UserType, get_db_manager
 from src.backend.routers.models import GeneralRequestResponse
-from src.backend.routers.utils import get_current_session, get_db_manager
+from src.backend.routers.utils import get_current_session
 from src.backend.routers.utils import hash_password
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_account_by_id

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from src.backend.routers.utils import get_db_manager
+from src.backend.globals import get_db_manager
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_departments, get_majors, get_skills
 

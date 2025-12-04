@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from src.backend.globals import AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType, get_db_manager
 from src.backend.routers.models import Contact, FacultyProfile, StudentProfile
 from src.backend.routers.profiles.faculty import FacultyProfileResponse
 from src.backend.routers.profiles.students import StudentProfileResponse
-from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
 
