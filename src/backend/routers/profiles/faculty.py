@@ -15,6 +15,7 @@ from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_faculty_profile
 from src.database.profile_updating import update_faculty_profile
 from src.database.record_retrieval import get_faculty_by_id
+from src.database.schema import ContactInfo
 
 router = APIRouter()
 
@@ -126,7 +127,7 @@ async def get_profile(
                 "Profile does not exist. Please create a profile first.",
             )
 
-        contact = profile.contact
+        contact: ContactInfo = profile.contact
 
     return FacultyProfileResponse(
         contact=Contact(

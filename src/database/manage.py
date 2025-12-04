@@ -299,11 +299,11 @@ async def main(recreate: bool = False) -> None:
         Address,
         Company,
         ContactInfo,
-        EmployerAccount,
+        EmployerProfile,
         Department,
         Major,
-        StudentAccount,
-        FacultyAccount,
+        StudentProfile,
+        FacultyProfile,
         Internship,
         InternshipMajor,
         Skill,
@@ -326,11 +326,11 @@ async def main(recreate: bool = False) -> None:
             \tAddress                  {await count(session, Address)}
             \tCompany                  {await count(session, Company)}
             \tContactInfo              {await count(session, ContactInfo)}
-            \tEmployerAccount          {await count(session, EmployerAccount)}
+            \tEmployerAccount          {await count(session, EmployerProfile)}
             \tDepartment               {await count(session, Department)}
             \tMajor                    {await count(session, Major)}
-            \tStudentAccount           {await count(session, StudentAccount)}
-            \tFacultyAccount           {await count(session, FacultyAccount)}
+            \tStudentAccount           {await count(session, StudentProfile)}
+            \tFacultyAccount           {await count(session, FacultyProfile)}
             \tInternship               {await count(session, Internship)}
             \tInternshipMajor          {await count(session, InternshipMajor)}
             \tSkill                    {await count(session, Skill)}

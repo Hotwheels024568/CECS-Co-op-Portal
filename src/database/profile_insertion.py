@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from src.database.schema import Company, EmployerAccount, FacultyAccount, StudentAccount
+from src.database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
 from src.database.utils import get_constraint_name_from_integrity_error
 from src.database.record_retrieval import get_company_by_id
 from src.database.record_insertion import (
@@ -108,7 +108,7 @@ async def create_employer_profile(
     phone: Optional[str],
     # Company
     company_id: int,
-) -> tuple[Optional[EmployerAccount], str]:
+) -> tuple[Optional[EmployerProfile], str]:
     """
     Atomically creates an employer profile for the specified account,
     linking to an existing company. A new contact record is created
@@ -191,7 +191,7 @@ async def create_student_profile(
     start_year: int,
     transfer: bool,
     resume_link: Optional[str] = None,
-) -> tuple[Optional[StudentAccount], str]:
+) -> tuple[Optional[StudentProfile], str]:
     """
     Atomically creates a student profile for the specified account.
 
@@ -288,7 +288,7 @@ async def create_faculty_profile(
     phone: Optional[str],
     # Faculty
     department_name: str,
-) -> tuple[Optional[FacultyAccount], str]:
+) -> tuple[Optional[FacultyProfile], str]:
     """
     Atomically creates a faculty profile, including a unique contact record and FacultyAccount,
     and links the faculty profile to the provided account and department.

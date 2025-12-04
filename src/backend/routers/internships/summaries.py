@@ -22,7 +22,7 @@ from src.database.record_retrieval import (
     get_summary_by_id,
 )
 from src.database.record_updating import update_summary
-from src.database.schema import Company, Internship, StudentAccount
+from src.database.schema import Company, ContactInfo, Internship, StudentProfile
 
 
 router = APIRouter()
@@ -87,8 +87,8 @@ async def get_department_summaries_endpoint(
 
         results = []
         for summary in summaries:
-            student: StudentAccount = summary.student
-            contact = student.contact
+            student: StudentProfile = summary.student
+            contact: ContactInfo = student.contact
             internship: Internship = summary.internship
             application = summary.application
             results.append(
@@ -171,7 +171,7 @@ async def update_summary_grade(
         profile = await get_faculty_by_id(db_session, account_id)
         faculty_dept = profile.department.id
         summary = await get_summary_by_id(db_session, summary_id)
-        student: StudentAccount = summary.student
+        student: StudentProfile = summary.student
         student_dept = student.department.id
         if student_dept != faculty_dept:
             raise HTTPException(
@@ -310,7 +310,7 @@ async def update_summary_text(
 
     async with db_manager.session() as db_session:
         summary = await get_summary_by_id(db_session, summary_id)
-        student: StudentAccount = summary.student
+        student: StudentProfile = summary.student
         if student.id != session_data[1]["account_id"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

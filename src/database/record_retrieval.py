@@ -7,11 +7,11 @@ from src.database.schema import (
     Address,
     Company,
     ContactInfo,
-    EmployerAccount,
+    EmployerProfile,
     Department,
     Major,
-    StudentAccount,
-    FacultyAccount,
+    StudentProfile,
+    FacultyProfile,
     Internship,
     InternshipMajor,
     Skill,
@@ -72,8 +72,8 @@ async def get_contact_by_email(session: AsyncSession, email: str) -> Optional[Co
     return await get_first_column_element(session, statement)
 
 
-async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[EmployerAccount]:
-    return await session.get(EmployerAccount, id)
+async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[EmployerProfile]:
+    return await session.get(EmployerProfile, id)
 
 
 async def get_departments(session: AsyncSession) -> list[Department]:
@@ -102,16 +102,16 @@ async def get_major_by_name(session: AsyncSession, name: str) -> Optional[Major]
     return await get_first_column_element(session, statement)
 
 
-async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentAccount]:
-    return await session.get(StudentAccount, id)
+async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentProfile]:
+    return await session.get(StudentProfile, id)
 
 
-async def get_faculty(session: AsyncSession) -> list[FacultyAccount]:
-    return await get_first_column_element_of_all_rows(session, select(FacultyAccount))
+async def get_faculty(session: AsyncSession) -> list[FacultyProfile]:
+    return await get_first_column_element_of_all_rows(session, select(FacultyProfile))
 
 
-async def get_faculty_by_id(session: AsyncSession, id: int) -> Optional[FacultyAccount]:
-    return await session.get(FacultyAccount, id)
+async def get_faculty_by_id(session: AsyncSession, id: int) -> Optional[FacultyProfile]:
+    return await session.get(FacultyProfile, id)
 
 
 async def get_internship_by_id(session: AsyncSession, id: int) -> Optional[Internship]:
@@ -177,7 +177,7 @@ async def get_department_applications(
     statement = (
         select(InternshipApplication)
         .join(InternshipApplication.student)
-        .filter(StudentAccount.department_id == department_id)
+        .filter(StudentProfile.department_id == department_id)
     )
     return await get_first_column_element_of_all_rows(session, statement)
 
@@ -207,6 +207,6 @@ async def get_department_summaries(
         select(InternshipSummary)
         .join(InternshipSummary.application)
         .join(InternshipApplication.student)
-        .filter(StudentAccount.department_id == department_id)
+        .filter(StudentProfile.department_id == department_id)
     )
     return await get_first_column_element_of_all_rows(session, statement)

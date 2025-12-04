@@ -14,11 +14,11 @@ from src.database.schema import (
     Address,
     Company,
     ContactInfo,
-    EmployerAccount,
+    EmployerProfile,
     Department,
     Major,
-    StudentAccount,
-    FacultyAccount,
+    StudentProfile,
+    FacultyProfile,
     Internship,
     InternshipMajor,
     Skill,
@@ -224,7 +224,7 @@ async def add_employer(
     account_id: int,
     company_id: int,
     commit: bool = False,
-) -> Optional[EmployerAccount]:
+) -> Optional[EmployerProfile]:
     """
     Adds a new EmployerAccount record to the database.
 
@@ -238,7 +238,7 @@ async def add_employer(
     Returns:
         Optional[EmployerAccount]: The newly created EmployerAccount object if successful, or None if insertion fails.
     """
-    entry = EmployerAccount(id=account_id, company_id=company_id)
+    entry = EmployerProfile(id=account_id, company_id=company_id)
     session.add(entry)
     try:
         await session.flush()
@@ -340,7 +340,7 @@ async def add_student(
     transfer: bool,
     resume_link: Optional[str] = None,
     commit: bool = False,
-) -> Optional[StudentAccount]:
+) -> Optional[StudentProfile]:
     """
     Adds a new StudentAccount record to the database.
 
@@ -361,7 +361,7 @@ async def add_student(
     Returns:
         Optional[StudentAccount]: The newly created StudentAccount object if successful, or None if insertion fails.
     """
-    entry = StudentAccount(
+    entry = StudentProfile(
         id=account_id,
         department_id=department_id,
         major_id=major_id,
@@ -397,7 +397,7 @@ async def add_faculty(
     account_id: int,
     department_id: int,
     commit: bool = False,
-) -> Optional[FacultyAccount]:
+) -> Optional[FacultyProfile]:
     """
     Adds a new FacultyAccount record to the database.
 
@@ -411,7 +411,7 @@ async def add_faculty(
     Returns:
         Optional[FacultyAccount]: The newly created FacultyAccount object if successful, or None if insertion fails.
     """
-    entry = FacultyAccount(id=account_id, department_id=department_id)
+    entry = FacultyProfile(id=account_id, department_id=department_id)
     session.add(entry)
     try:
         await session.flush()

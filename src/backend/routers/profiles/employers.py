@@ -17,6 +17,7 @@ from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_employer_profile
 from src.database.profile_updating import update_employer_profile
 from src.database.record_retrieval import get_account_by_id, get_employer_by_id
+from src.database.schema import ContactInfo
 
 router = APIRouter()
 
@@ -128,7 +129,7 @@ async def get_profile(
                 "Profile does not exist. Please create a profile first.",
             )
 
-        contact = profile.contact
+        contact: ContactInfo = profile.contact
         company = profile.company
         address = company.address
 

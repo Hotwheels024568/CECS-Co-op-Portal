@@ -27,7 +27,7 @@ from src.database.record_retrieval import (
     get_internship_applications,
     get_internship_by_id,
 )
-from src.database.schema import StudentAccount
+from src.database.schema import ContactInfo, StudentProfile
 
 router = APIRouter()
 
@@ -554,7 +554,7 @@ async def get_internship_applications_endpoint(
         results = []
         for application in applications:
             student = application.student
-            contact = student.contact
+            contact: ContactInfo = student.contact
             internship = application.internship
             results.append(
                 EmployerApplicationResponse(
@@ -639,8 +639,8 @@ async def get_internship_summaries(
         summaries = internship.summaries
         results = []
         for summary in summaries:
-            student: StudentAccount = summary.student
-            contact = student.contact
+            student: StudentProfile = summary.student
+            contact: ContactInfo = student.contact
             results.append(
                 EmployerSpecificSummaryResponse(
                     summary_id=summary.id,

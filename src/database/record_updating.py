@@ -20,9 +20,9 @@ from src.database.schema import (
     Address,
     Company,
     ContactInfo,
-    EmployerAccount,
-    StudentAccount,
-    FacultyAccount,
+    EmployerProfile,
+    StudentProfile,
+    FacultyProfile,
     Internship,
     InternshipApplication,
     InternshipSummary,
@@ -295,7 +295,7 @@ async def update_employer(
     id: int,
     company_id: Optional[int] = None,
     commit: bool = False,
-) -> Optional[EmployerAccount]:
+) -> Optional[EmployerProfile]:
     """
     Updates the fields of an EmployerAccount record in the database.
 
@@ -346,7 +346,7 @@ async def update_student(
     transfer: Optional[bool] = None,
     resume_link: Optional[str] = None,
     commit: bool = False,
-) -> Optional[StudentAccount]:
+) -> Optional[StudentProfile]:
     """
     Updates the fields of a StudentAccount record in the database.
 
@@ -423,7 +423,7 @@ async def update_faculty(
     id: int,
     department_id: Optional[int] = None,
     commit: bool = False,
-) -> Optional[FacultyAccount]:
+) -> Optional[FacultyProfile]:
     """
     Updates the fields of a FacultyAccount record in the database.
 

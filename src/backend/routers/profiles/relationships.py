@@ -8,6 +8,7 @@ from src.backend.routers.profiles.students import StudentProfileResponse
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
+from src.database.schema import ContactInfo
 
 router = APIRouter()
 
@@ -56,7 +57,7 @@ async def get_dept_students(
 
         results = []
         for student in students:
-            contact = student.contact
+            contact: ContactInfo = student.contact
             results.append(
                 StudentProfileResponse(
                     contact=Contact(
@@ -121,11 +122,20 @@ async def get_dept_faculty(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
-        faculty = profile.department.faculty
+
+        def sync_access_faculty(session, profile):
+            # All lazy relationship loads occur in sync context here
+            return profile.department.faculty
+
+        def sync_access_contact(session, profile):
+            # All lazy relationship loads occur in sync context here
+            return profile.contact
+
+        faculty = await db_session.run_sync(sync_access_faculty, profile)
 
         results = []
         for staff in faculty:
-            contact = staff.contact
+            contact: ContactInfo = await db_session.run_sync(sync_access_contact, staff)
             results.append(
                 FacultyProfileResponse(
                     contact=Contact(
@@ -179,7 +189,7 @@ async def get_all_faculty(
 
         results = []
         for staff in faculty:
-            contact = staff.contact
+            contact: ContactInfo = staff.contact
             results.append(
                 FacultyProfileResponse(
                     contact=Contact(

@@ -60,6 +60,15 @@ class Account(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    employer_profile: Mapped["EmployerProfile"] = relationship(
+        "EmployerProfile", back_populates="account", uselist=False
+    )
+    faculty_profile: Mapped["FacultyProfile"] = relationship(
+        "FacultyProfile", back_populates="account", uselist=False
+    )
+    student_profile: Mapped["StudentProfile"] = relationship(
+        "StudentProfile", back_populates="account", uselist=False
+    )
 
 
 class Address(Base):
@@ -97,7 +106,7 @@ class Company(Base):
         address_id (int): Foreign key to the Address.
         website_link (str, optional): Company website. Defaults to None.
         address (Address): Associated Address (one-to-one).
-        employees (list[EmployerAccount]): Employer accounts associated with the company.
+        employees (list[EmployerProfile]): Employer accounts associated with the company.
         internships (list[Internship]): Internships offered by the company.
     """
 
@@ -111,8 +120,8 @@ class Company(Base):
     # 1-to-1 with Address
     address: Mapped["Address"] = relationship("Address", uselist=False)
 
-    employees: Mapped[list["EmployerAccount"]] = relationship(
-        "EmployerAccount", back_populates="company"
+    employees: Mapped[list["EmployerProfile"]] = relationship(
+        "EmployerProfile", back_populates="company"
     )
     internships: Mapped[list["Internship"]] = relationship("Internship", back_populates="company")
 
@@ -144,11 +153,9 @@ class ContactInfo(Base):
     account: Mapped["Account"] = relationship("Account", back_populates="contact", uselist=False)
 
 
-class EmployerAccount(Base):
+class EmployerProfile(Base):
     """
     Employer user account.
-
-    Inherits login credentials and contact info from Account.
 
     Attributes:
         id (int): Primary key and foreign key to the Account (one-to-one).
@@ -164,7 +171,11 @@ class EmployerAccount(Base):
     )
     # Could add a employee title (str) field
 
+    account: Mapped["Account"] = relationship(
+        "Account", back_populates="employer_profile", uselist=False
+    )
     company: Mapped["Company"] = relationship("Company", back_populates="employees")
+    contact: "ContactInfo" = association_proxy("account", "contact")
 
 
 class Department(Base):
@@ -174,8 +185,8 @@ class Department(Base):
     Attributes:
         id (int): Auto-incrementing primary key.
         name (str): Unique Department name.
-        faculty (list[FacultyAccount]): Faculty accounts within the Department.
-        students (list[StudentAccount]): Student accounts within the Department.
+        faculty (list[FacultyProfile]): Faculty accounts within the Department.
+        students (list[StudentProfile]): Student accounts within the Department.
     """
 
     __tablename__ = "departments"
@@ -183,15 +194,15 @@ class Department(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
-    faculty: Mapped[list["FacultyAccount"]] = relationship(
-        "FacultyAccount", back_populates="department"
+    faculty: Mapped[list["FacultyProfile"]] = relationship(
+        "FacultyProfile", back_populates="department"
     )
-    students: Mapped[list["StudentAccount"]] = relationship(
-        "StudentAccount", back_populates="department"
+    students: Mapped[list["StudentProfile"]] = relationship(
+        "StudentProfile", back_populates="department"
     )
 
 
-class FacultyAccount(Base):
+class FacultyProfile(Base):
     """
     Faculty user account.
 
@@ -207,6 +218,10 @@ class FacultyAccount(Base):
     # Should be Unique according to assignment directions
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), nullable=False)
 
+    account: Mapped["Account"] = relationship(
+        "Account", back_populates="faculty_profile", uselist=False
+    )
+    contact: "ContactInfo" = association_proxy("account", "contact")
     department: Mapped["Department"] = relationship("Department", back_populates="faculty")
     # 1-to-1 with Department
     # department: Mapped["Department"] = relationship("Department", back_populates="faculty", uselist=False)
@@ -219,7 +234,7 @@ class Major(Base):
     Attributes:
         id (int): Auto-incrementing primary key.
         name (str): Unique Major name.
-        students (list[StudentAccount]): Student accounts enrolled in the Major.
+        students (list[StudentProfile]): Student accounts enrolled in the Major.
         internships (list[InternshipMajor]): Internships associated with the Major.
     """
 
@@ -228,15 +243,15 @@ class Major(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
-    students: Mapped[list["StudentAccount"]] = relationship(
-        "StudentAccount", back_populates="major"
+    students: Mapped[list["StudentProfile"]] = relationship(
+        "StudentProfile", back_populates="major"
     )
     internships: Mapped[list["InternshipMajor"]] = relationship(
         "InternshipMajor", back_populates="major"
     )
 
 
-class StudentAccount(Base):
+class StudentProfile(Base):
     """
     Student user account.
 
@@ -272,6 +287,10 @@ class StudentAccount(Base):
     transfer: Mapped[bool] = mapped_column(Boolean, nullable=False)
     resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
 
+    account: Mapped["Account"] = relationship(
+        "Account", back_populates="student_profile", uselist=False
+    )
+    contact: "ContactInfo" = association_proxy("account", "contact")
     department: Mapped["Department"] = relationship("Department", back_populates="students")
     major: Mapped["Major"] = relationship("Major", back_populates="students")
 
@@ -492,7 +511,7 @@ class InternshipApplication(Base):
 
     Attributes:
         id (int): Auto-incrementing primary key.
-        student_id (int): Foreign key to the StudentAccount.
+        student_id (int): Foreign key to the StudentProfile.
         internship_id (int): Foreign key to the Internship.
         application_date (str): ISO 8601 timestamp of when the application was submitted.
         coop_credit_eligibility (bool): Whether the application is eligible for co-op credit.
@@ -502,7 +521,7 @@ class InternshipApplication(Base):
         selected (bool): Indicates if this application was chosen/hired by the employer for the internship. Defaults to False.
         company (Company): Associated Company.
         internship (Internship): Associated Internship.
-        student (StudentAccount): Associated Student.
+        student (StudentProfile): Associated Student.
         summary (InternshipSummary): Associated summary for the application (one-to-one).
 
     Notes:
@@ -534,8 +553,8 @@ class InternshipApplication(Base):
 
     company: "Company" = association_proxy("internship", "company")
     internship: Mapped["Internship"] = relationship("Internship", back_populates="applications")
-    student: Mapped["StudentAccount"] = relationship(
-        "StudentAccount", back_populates="applications"
+    student: Mapped["StudentProfile"] = relationship(
+        "StudentProfile", back_populates="applications"
     )
     # 1-to-1 with InternshipSummary
     summary: Mapped["InternshipSummary"] = relationship(
@@ -561,7 +580,7 @@ class InternshipSummary(Base):
             Defaults to ""
         employer_approval (bool): Employer approval status (False = Not Approved by default; True = Approved).
         letter_grade (str, optional): Letter grade (e.g., "A+", "A", "B"). Defaults to None.
-        student (StudentAccount): Associated StudentAccount.
+        student (StudentProfile): Associated StudentProfile.
         internship (Internship): Associated Internship.
         application (InternshipApplication): Associated InternshipApplication (one-to-one).
 
@@ -582,7 +601,7 @@ class InternshipSummary(Base):
     # Nullable, e.g., "A", "B", "C"
     letter_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)  # Nullable
 
-    student: "StudentAccount" = association_proxy("application", "student")
+    student: "StudentProfile" = association_proxy("application", "student")
     internship: "Internship" = association_proxy("application", "internship")
     # 1-to-1 with InternshipApplication
     application: Mapped["InternshipApplication"] = relationship(

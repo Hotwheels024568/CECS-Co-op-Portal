@@ -25,6 +25,7 @@ from src.database.record_retrieval import (
     get_student_by_id,
 )
 from src.database.record_updating import update_application
+from src.database.schema import ContactInfo
 from src.utils_semesters import semesters_since_enrollment
 
 router = APIRouter()
@@ -80,7 +81,7 @@ async def get_department_applications_endpoint(
         results = []
         for application in applications:
             student = application.student
-            contact = student.contact
+            contact: ContactInfo = student.contact
             internship = application.internship
             results.append(
                 FacultyApplicationResponse(

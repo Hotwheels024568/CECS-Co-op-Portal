@@ -17,7 +17,7 @@ from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
 from src.database.record_retrieval import get_companies, get_employer_by_id
-from src.database.schema import StudentAccount
+from src.database.schema import ContactInfo, StudentProfile
 
 router = APIRouter()
 
@@ -297,8 +297,8 @@ async def get_company_internship_summaries(
         for internship in internships:
             summaries = internship.summaries
             for summary in summaries:
-                student: StudentAccount = summary.student
-                contact = student.contact
+                student: StudentProfile = summary.student
+                contact: ContactInfo = student.contact
                 results.append(
                     EmployerSummaryResponse(
                         summary_id=summary.id,

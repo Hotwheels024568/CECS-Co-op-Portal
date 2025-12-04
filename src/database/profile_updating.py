@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from src.database.schema import Company, EmployerAccount, FacultyAccount, StudentAccount
+from src.database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
 from src.database.utils import get_constraint_name_from_integrity_error
 from src.database.record_retrieval import get_company_by_id
 from src.database.record_updating import (
@@ -114,7 +114,7 @@ async def update_employer_profile(
     phone: Optional[str] = None,
     # Profile
     company_id: Optional[int] = None,
-) -> tuple[Optional[EmployerAccount], str]:
+) -> tuple[Optional[EmployerProfile], str]:
     """
     Updates an employer's profile, including associated contact information and company affiliation.
 
@@ -175,7 +175,7 @@ async def update_student_profile(
     start_year: Optional[int] = None,
     transfer: Optional[bool] = None,
     resume_link: Optional[str] = None,
-) -> tuple[Optional[StudentAccount], str]:
+) -> tuple[Optional[StudentProfile], str]:
     """
     Updates a student's profile, including contact, department, major, and academic details.
 
@@ -263,7 +263,7 @@ async def update_faculty_profile(
     phone: Optional[str] = None,
     # Faculty
     department_name: Optional[str] = None,
-) -> tuple[Optional[FacultyAccount], str]:
+) -> tuple[Optional[FacultyProfile], str]:
     """
     Updates a faculty member's profile, including contact information and department affiliation.
 
