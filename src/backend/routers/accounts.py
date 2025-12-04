@@ -66,7 +66,7 @@ async def change_username(
     if result is None:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update username.")
 
-    return GeneralRequestResponse(success=True, message="Username changed")
+    return GeneralRequestResponse(success=True, message="Username changed.")
 
 
 class PasswordUpdateRequest(BaseModel):
@@ -124,7 +124,7 @@ async def change_password(
     if result is None:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update password.")
 
-    return GeneralRequestResponse(success=True, message="Password changed")
+    return GeneralRequestResponse(success=True, message="Password changed.")
 
 
 class UpdateUserTypeRequest(BaseModel):
@@ -169,7 +169,7 @@ async def set_user_type(
         account = await get_account_by_id(db_session, account_id)
 
         if not account:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Account not found")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Account not found.")
 
         if account.user_type is not None:
             raise HTTPException(
@@ -180,14 +180,11 @@ async def set_user_type(
             db_session, account_id, user_type=data.user_type.value, commit=True
         )
 
-        if not result:
-            raise HTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
-                "Failed to update user type due to server/database error.",
-            )
+    if not result:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update user type.")
 
     SESSION_STORE[session_id]["user_type"] = data.user_type
-    return GeneralRequestResponse(success=True, message="User type set")
+    return GeneralRequestResponse(success=True, message="User type set.")
 
 
 """

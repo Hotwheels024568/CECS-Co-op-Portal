@@ -22,7 +22,20 @@ from src.database.record_retrieval import (
     get_summary_by_id,
 )
 from src.database.record_updating import update_summary
-from src.database.schema import Company, ContactInfo, Internship, StudentProfile
+from src.database.sync_retrieval import (
+    get_application_internship,
+    get_application_student,
+    get_contact,
+    get_department,
+    get_employer_company,
+    get_internship_company,
+    get_major,
+    get_student_summaries,
+    get_summary_application,
+    get_summary_company,
+    get_summary_internship,
+    get_summary_student,
+)
 
 
 router = APIRouter()
@@ -82,15 +95,18 @@ async def get_department_summaries_endpoint(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
-        department = profile.department
+        department = await db_session.run_sync(get_department, profile)
         summaries = await get_department_summaries(db_session, department.id)
 
         results = []
         for summary in summaries:
-            student: StudentProfile = summary.student
-            contact: ContactInfo = student.contact
-            internship: Internship = summary.internship
-            application = summary.application
+            student = await db_session.run_sync(get_application_student, application)
+            contact = await db_session.run_sync(get_contact, student)
+            major = await db_session.run_sync(get_major, student)
+            department = await db_session.run_sync(get_department, student)
+            internship = await db_session.run_sync(get_application_internship, application)
+            company = await db_session.run_sync(get_internship_company, internship)
+            application = await db_session.run_sync(get_summary_application, summary)
             results.append(
                 FacultySummaryResponse(
                     summary_id=summary.id,
@@ -103,11 +119,11 @@ async def get_department_summaries_endpoint(
                                 email=contact.email,
                                 phone=contact.phone,
                             ),
-                            department_name=student.department.name,
-                            major_name=student.major.name,
+                            department_name=department.name,
+                            major_name=major.name,
                         ),
                         internship=BriefInternship(
-                            company=CompanyName(name=internship.company.name),
+                            company=CompanyName(name=company.name),
                             title=internship.title,
                             description=internship.description,
                             duration_weeks=internship.duration_weeks,
@@ -169,11 +185,11 @@ async def update_summary_grade(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
-        faculty_dept = profile.department.id
+        faculty_dept = await db_session.run_sync(get_department, profile)
         summary = await get_summary_by_id(db_session, summary_id)
-        student: StudentProfile = summary.student
-        student_dept = student.department.id
-        if student_dept != faculty_dept:
+        student = await db_session.run_sync(get_summary_student, summary)
+        student_dept = await db_session.run_sync(get_department, student)
+        if student_dept.id != faculty_dept.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only grade internship summaries for students in your own department.",
@@ -216,7 +232,7 @@ class StudentSummaryListResponse(BaseModel):
     ),
     response_model=StudentSummaryListResponse,
 )
-async def get_student_summaries(
+async def get_student_summaries_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
     db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> StudentSummaryListResponse:
@@ -238,18 +254,19 @@ async def get_student_summaries(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
-        summaries = profile.summaries
+        summaries = await db_session.run_sync(get_student_summaries, profile)
 
         results = []
         for summary in summaries:
-            internship: Internship = summary.internship
-            application = summary.application
+            internship = await db_session.run_sync(get_summary_internship, summary)
+            application = await db_session.run_sync(get_summary_application, summary)
+            company = await db_session.run_sync(get_internship_company, internship)
             results.append(
                 StudentSummaryListResponse(
                     summary_id=summary.id,
                     application=StudentSummaryApplication(
                         internship=BriefInternship(
-                            company=CompanyName(name=internship.company.name),
+                            company=CompanyName(name=company.name),
                             title=internship.title,
                             description=internship.description,
                             duration_weeks=internship.duration_weeks,
@@ -310,11 +327,11 @@ async def update_summary_text(
 
     async with db_manager.session() as db_session:
         summary = await get_summary_by_id(db_session, summary_id)
-        student: StudentProfile = summary.student
+        student = await db_session.run_sync(get_summary_student, summary)
         if student.id != session_data[1]["account_id"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the student who owns this summary may update its content.",
+                detail="Only the student who owns this summary may update its contents.",
             )
 
         result = await update_summary(
@@ -370,9 +387,9 @@ async def update_summary_approval(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
-        company = profile.company
+        company = await db_session.run_sync(get_employer_company, profile)
         summary = await get_summary_by_id(db_session, summary_id)
-        intern_company: Company = summary.application.company
+        intern_company = await db_session.run_sync(get_summary_company, summary)
 
         if intern_company.id != company.id:
             raise HTTPException(

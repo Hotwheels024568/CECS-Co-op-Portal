@@ -176,7 +176,8 @@ async def create_internship(
 
     except IntegrityError as e:
         await session.rollback()
-        return None, f"Unique constraint violated in create_internship: {e}"
+        constraint = get_constraint_name_from_integrity_error(e)
+        return None, f"Unique constraint violated in create_internship: {constraint}"
 
     except DBAPIError as e:
         await session.rollback()
@@ -258,7 +259,7 @@ async def create_application(
         constraint = get_constraint_name_from_integrity_error(e)
         if "_internship_student_uc" in constraint:
             return None, "You have already applied to this internship."
-        return None, f"A database integrity error occurred: {constraint}"
+        return None, f"Unique constraint violated in create_internship_application: {constraint}"
 
     except DBAPIError as e:
         await session.rollback()
@@ -371,10 +372,7 @@ async def _create_summary(
             or "internship_summaries_id_key" in constraint
         ):
             return None, "A summary for this application already exists."
-        return (
-            None,
-            f"Database integrity error in create_internship_summary: {constraint}",
-        )
+        return None, f"Unique constraint violated in create_internship_summary: {constraint}"
 
     except DBAPIError as e:
         await session.rollback()

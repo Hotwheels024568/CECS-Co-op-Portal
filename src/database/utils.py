@@ -1,6 +1,6 @@
-from typing import Any, Optional
-from sqlalchemy import Executable, Row, Select
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy import Executable, Row, Select
+from typing import Any, Optional
 
 """  Result helpers
 Method                  Returns if 0 rows	If 1 row	            If >1 row	        Notes
@@ -124,7 +124,7 @@ async def get_first_column_element_of_all_rows(
     """
     parameters = parameters or {}
     try:
-        return await session.scalars(statement, parameters).all()
+        return (await session.scalars(statement, parameters)).all()
     except Exception as e:
         print(
             f"Error in DB 'get_first_column_element_of_all_rows' function:\nStatement: {statement}\nError: {e}"

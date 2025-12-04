@@ -1,7 +1,8 @@
-from typing import Any, Optional
-from sqlalchemy import delete
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import delete
+from typing import Any, Optional
+
 from src.database.schema import InternshipMajor, InternshipReqSkill, InternshipPrefSkill
 
 

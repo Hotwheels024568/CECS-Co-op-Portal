@@ -16,8 +16,8 @@ from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_employer_profile
 from src.database.profile_updating import update_employer_profile
-from src.database.record_retrieval import get_account_by_id, get_employer_by_id
-from src.database.schema import ContactInfo
+from src.database.record_retrieval import get_employer_by_id
+from src.database.sync_retrieval import get_employer_company, get_company_address, get_contact
 
 router = APIRouter()
 
@@ -129,9 +129,9 @@ async def get_profile(
                 "Profile does not exist. Please create a profile first.",
             )
 
-        contact: ContactInfo = profile.contact
-        company = profile.company
-        address = company.address
+        contact = await db_session.run_sync(get_contact, profile)
+        company = await db_session.run_sync(get_employer_company, profile)
+        address = await db_session.run_sync(get_company_address, company)
 
     return EmployerProfileResponse(
         contact=Contact(
@@ -210,25 +210,19 @@ async def update_profile(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     contact = data.contact
-    first_name = contact.first_name if contact else None
-    middle_name = contact.middle_name if contact else None
-    last_name = contact.last_name if contact else None
-    email = contact.email if contact else None
-    phone = contact.phone if contact else None
     profile = data.profile
-    company_id = profile.company_id if profile else None
 
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile, msg = await update_employer_profile(
             db_session,
             account_id,
-            first_name,
-            middle_name,
-            last_name,
-            email,
-            phone,
-            company_id,
+            contact.first_name if contact else None,
+            contact.middle_name if contact else None,
+            contact.last_name if contact else None,
+            contact.email if contact else None,
+            contact.phone if contact else None,
+            company_id=profile.company_id if profile else None,
         )
 
     if not profile:

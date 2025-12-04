@@ -1,6 +1,6 @@
-from typing import Optional
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from typing import Optional
 
 from src.database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
 from src.database.utils import get_constraint_name_from_integrity_error

@@ -1,11 +1,11 @@
-import asyncio
-import configparser
-from pathlib import Path
-from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional, Self
+from contextlib import asynccontextmanager
+from pathlib import Path
+import configparser
+import asyncio
 
-from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.schema import Base
 
@@ -181,8 +181,8 @@ class AsyncDBManager:
         DATETIME_FIELDS = {"internship_applications": ["application_date"]}
 
         tables = {table.name: table for table in self.metadata.sorted_tables}
-        if not await self._all_tables_empty(self.engine, self.metadata):
-            print("Skipping seed: database is not empty.")
+        if not await self._all_tables_empty():
+            print("Skipping seed: Database is not empty.")
             return
 
         with open(json_path) as file:
@@ -230,14 +230,12 @@ class AsyncDBManager:
                 else:
                     await conn.execute(table.insert(), records)
 
-    async def _all_tables_empty(self, engine, metadata) -> bool:
-        from sqlalchemy import select, func
+    async def _all_tables_empty(self) -> bool:
+        from src.database.utils import count
 
-        async with engine.begin() as conn:
-            for table in metadata.sorted_tables:
-                query = select(func.count()).select_from(table)
-                result = await conn.execute(query)
-                if result.scalar_one() > 0:
+        async with self.engine.begin() as conn:
+            for table in self.metadata.sorted_tables:
+                if (await count(conn, table)) > 0:
                     return False
         return True
 
@@ -301,9 +299,9 @@ async def main(recreate: bool = False) -> None:
         ContactInfo,
         EmployerProfile,
         Department,
+        FacultyProfile,
         Major,
         StudentProfile,
-        FacultyProfile,
         Internship,
         InternshipMajor,
         Skill,
@@ -316,9 +314,6 @@ async def main(recreate: bool = False) -> None:
 
     manager = await AsyncDBManager.create()
     async with manager.session() as session:
-        if recreate:
-            await manager.drop_and_create_db()
-
         print(
             f"""
             Counts:
@@ -328,9 +323,9 @@ async def main(recreate: bool = False) -> None:
             \tContactInfo              {await count(session, ContactInfo)}
             \tEmployerAccount          {await count(session, EmployerProfile)}
             \tDepartment               {await count(session, Department)}
+            \tFacultyAccount           {await count(session, FacultyProfile)}
             \tMajor                    {await count(session, Major)}
             \tStudentAccount           {await count(session, StudentProfile)}
-            \tFacultyAccount           {await count(session, FacultyProfile)}
             \tInternship               {await count(session, Internship)}
             \tInternshipMajor          {await count(session, InternshipMajor)}
             \tSkill                    {await count(session, Skill)}

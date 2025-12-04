@@ -1,6 +1,6 @@
-import os
-from enum import Enum
 from typing import Optional, TypedDict
+from enum import Enum
+import os
 
 from src.database.manage import AsyncDBManager
 

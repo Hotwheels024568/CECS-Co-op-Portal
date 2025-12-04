@@ -15,7 +15,7 @@ from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_faculty_profile
 from src.database.profile_updating import update_faculty_profile
 from src.database.record_retrieval import get_faculty_by_id
-from src.database.schema import ContactInfo
+from src.database.sync_retrieval import get_contact, get_department
 
 router = APIRouter()
 
@@ -127,7 +127,8 @@ async def get_profile(
                 "Profile does not exist. Please create a profile first.",
             )
 
-        contact: ContactInfo = profile.contact
+        contact = await db_session.run_sync(get_contact, profile)
+        department = await db_session.run_sync(get_department, profile)
 
     return FacultyProfileResponse(
         contact=Contact(
@@ -137,7 +138,7 @@ async def get_profile(
             email=contact.email,
             phone=contact.phone,
         ),
-        profile=FacultyProfile(department=profile.department.name),
+        profile=FacultyProfile(department=department.name),
     )
 
 
@@ -193,25 +194,19 @@ async def update_profile(
     assert_user_type(session_data, UserType.FACULTY)
 
     contact = data.contact
-    first_name = contact.first_name if contact else None
-    middle_name = contact.middle_name if contact else None
-    last_name = contact.last_name if contact else None
-    email = contact.email if contact else None
-    phone = contact.phone if contact else None
     profile = data.profile
-    department_name = profile.department_name if profile else None
 
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile, msg = await update_faculty_profile(
             db_session,
             account_id,
-            first_name,
-            middle_name,
-            last_name,
-            email,
-            phone,
-            department_name,
+            contact.first_name if contact else None,
+            contact.middle_name if contact else None,
+            contact.last_name if contact else None,
+            contact.email if contact else None,
+            contact.phone if contact else None,
+            profile.department_name if profile else None,
         )
 
     if not profile:

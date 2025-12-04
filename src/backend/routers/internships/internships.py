@@ -24,10 +24,23 @@ from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import (
     get_application_by_id,
     get_employer_by_id,
-    get_internship_applications,
     get_internship_by_id,
 )
 from src.database.schema import ContactInfo, StudentProfile
+from src.database.sync_retrieval import (
+    get_application_internship,
+    get_application_student,
+    get_company_address,
+    get_contact,
+    get_department,
+    get_internship_applications,
+    get_internship_company,
+    get_internship_majors,
+    get_internship_preferred_skills,
+    get_internship_required_skills,
+    get_major,
+    get_summary_student,
+)
 
 router = APIRouter()
 
@@ -102,8 +115,13 @@ async def search_internships_endpoint(
 
         results = []
         for internship in internships:
-            company = internship.company
-            address = company.address
+            company = await db_session.run_sync(get_internship_company, internship)
+            address = await db_session.run_sync(get_company_address, company)
+            majors = await db_session.run_sync(get_internship_majors, internship)
+            required_skills = await db_session.run_sync(get_internship_required_skills, internship)
+            preferred_skills = await db_session.run_sync(
+                get_internship_preferred_skills, internship
+            )
             results.append(
                 Internship(
                     company=Company(
@@ -128,14 +146,9 @@ async def search_internships_endpoint(
                     total_work_hours=internship.total_work_hours,
                     salary_info=internship.salary_info,
                     status=internship.status,
-                    majors=[major.major.name for major in internship.majors],
-                    required_skills=[
-                        required_skill.skill.name for required_skill in internship.required_skills
-                    ],
-                    preferred_skills=[
-                        preferred_skill.skill.name
-                        for preferred_skill in internship.preferred_skills
-                    ],
+                    majors=majors,
+                    required_skills=required_skills,
+                    preferred_skills=preferred_skills,
                 )
             )
     return InternshipSearchResponse(internships=results, count=count)
@@ -181,8 +194,11 @@ async def get_internship(
         if not internship:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist")
 
-        company = internship.company
-        address = company.address
+        company = await db_session.run_sync(get_internship_company, internship)
+        address = await db_session.run_sync(get_company_address, company)
+        majors = await db_session.run_sync(get_internship_majors, internship)
+        required_skills = await db_session.run_sync(get_internship_required_skills, internship)
+        preferred_skills = await db_session.run_sync(get_internship_preferred_skills, internship)
         return Internship(
             company=Company(
                 id=company.id,
@@ -206,13 +222,9 @@ async def get_internship(
             total_work_hours=internship.total_work_hours,
             salary_info=internship.salary_info,
             status=internship.status,
-            majors=[major.major.name for major in internship.majors],
-            required_skills=[
-                required_skill.skill.name for required_skill in internship.required_skills
-            ],
-            preferred_skills=[
-                preferred_skill.skill.name for preferred_skill in internship.preferred_skills
-            ],
+            majors=majors,
+            required_skills=required_skills,
+            preferred_skills=preferred_skills,
         )
 
 
@@ -379,8 +391,7 @@ async def update_internship_endpoint(
 
     if not result:
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            f"Internship could not be updated. Reason: {msg}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"Internship could not be updated. Reason: {msg}"
         )
     return GeneralRequestResponse(success=True, message=msg)
 
@@ -442,10 +453,11 @@ async def update_selected_candidates_for_internship(
         if internship.company_id != profile.company_id:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,
-                "You can only update candidate selection for internships you own.",
+                "You can only update the selected candidates for internships you own.",
             )
 
-        applications = await get_internship_applications(db_session, internship_id)
+        applications = await db_session.run_sync(get_internship_applications, internship)
+        applications_by_id = {app.id: app for app in applications}
         current_selected = set(app.id for app in applications if app.selected)
         new_selected = set(data.selected)
 
@@ -454,15 +466,11 @@ async def update_selected_candidates_for_internship(
         changed = []
         # Handle additions
         for app_id in to_add:
-            application = await get_application_by_id(db_session, app_id)
+            application = applications_by_id.get(app_id)
             if not application:
                 raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST, f"Application {app_id} does not exist."
-                )
-            if application.internship_id != internship_id:
-                raise HTTPException(
                     status.HTTP_400_BAD_REQUEST,
-                    f"Application {app_id} does not belong to this internship.",
+                    f"Application {app_id} does not exist or does not belong to this internship.",
                 )
             if not application.selected:
                 application.selected = True
@@ -471,15 +479,11 @@ async def update_selected_candidates_for_internship(
 
         # Handle removals
         for app_id in to_remove:
-            application = await get_application_by_id(db_session, app_id)
+            application = applications_by_id.get(app_id)
             if not application:
                 raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST, f"Application {app_id} does not exist."
-                )
-            if application.internship_id != internship_id:
-                raise HTTPException(
                     status.HTTP_400_BAD_REQUEST,
-                    f"Application {app_id} does not belong to this internship.",
+                    f"Application {app_id} does not exist or does not belong to this internship.",
                 )
             if application.selected:
                 application.selected = False
@@ -549,13 +553,14 @@ async def get_internship_applications_endpoint(
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN, "Only the internship owner can view its applications."
             )
-        applications = internship.applications
+        applications = await db_session.run_sync(get_internship_applications, internship)
 
         results = []
         for application in applications:
-            student = application.student
-            contact: ContactInfo = student.contact
-            internship = application.internship
+            student = await db_session.run_sync(get_application_student, application)
+            contact = await db_session.run_sync(get_contact, student)
+            major = await db_session.run_sync(get_major, student)
+            department = await db_session.run_sync(get_department, student)
             results.append(
                 EmployerApplicationResponse(
                     application_id=application.id,
@@ -568,8 +573,8 @@ async def get_internship_applications_endpoint(
                                 email=contact.email,
                                 phone=contact.phone,
                             ),
-                            department_name=student.department.name,
-                            major_name=student.major.name,
+                            department_name=department.name,
+                            major_name=major.name,
                         ),
                         note=application.note,
                         resume_link=application.resume_link,
@@ -639,8 +644,10 @@ async def get_internship_summaries(
         summaries = internship.summaries
         results = []
         for summary in summaries:
-            student: StudentProfile = summary.student
-            contact: ContactInfo = student.contact
+            student = await db_session.run_sync(get_summary_student, summary)
+            contact = await db_session.run_sync(get_contact, student)
+            major = await db_session.run_sync(get_major, student)
+            department = await db_session.run_sync(get_department, student)
             results.append(
                 EmployerSpecificSummaryResponse(
                     summary_id=summary.id,
@@ -653,8 +660,8 @@ async def get_internship_summaries(
                                 email=contact.email,
                                 phone=contact.phone,
                             ),
-                            department_name=student.department.name,
-                            major_name=student.major.name,
+                            department_name=department.name,
+                            major_name=major.name,
                         ),
                     ),
                     summary=EmployerSummary(

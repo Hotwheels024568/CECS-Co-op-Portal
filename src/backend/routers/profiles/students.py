@@ -15,7 +15,7 @@ from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
 from src.database.record_retrieval import get_student_by_id
-from src.database.schema import ContactInfo
+from src.database.sync_retrieval import get_contact, get_department, get_major
 from src.utils_semesters import Semester
 
 router = APIRouter()
@@ -143,7 +143,9 @@ async def get_profile(
                 "Profile does not exist. Please create a profile first.",
             )
 
-        contact: ContactInfo = profile.contact
+        contact = await db_session.run_sync(get_contact, profile)
+        department = await db_session.run_sync(get_department, profile)
+        major = await db_session.run_sync(get_major, profile)
 
     return StudentProfileResponse(
         contact=Contact(
@@ -154,8 +156,8 @@ async def get_profile(
             phone=contact.phone,
         ),
         profile=StudentProfile(
-            department=profile.department.name,
-            major_name=profile.major.name,
+            department=department.name,
+            major_name=major.name,
             credit_hours=profile.credit_hours,
             gpa=profile.gpa,
             start_semester=profile.start_semester,
@@ -225,39 +227,26 @@ async def update_profile(
     assert_user_type(session_data, UserType.STUDENT)
 
     contact = data.contact
-    first_name = contact.first_name if contact else None
-    middle_name = contact.middle_name if contact else None
-    last_name = contact.last_name if contact else None
-    email = contact.email if contact else None
-    phone = contact.phone if contact else None
     profile = data.profile
-    department_name = profile.department_name if profile else None
-    major_name = profile.major_name if profile else None
-    credit_hours = profile.credit_hours if profile else None
-    gpa = profile.gpa if profile else None
-    start_semester = profile.start_semester if profile else None
-    start_year = profile.start_year if profile else None
-    transfer = profile.transfer if profile else None
-    resume_link = profile.resume_link if profile else None
 
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile, msg = await update_student_profile(
             db_session,
             account_id,
-            first_name,
-            middle_name,
-            last_name,
-            email,
-            phone,
-            department_name,
-            major_name,
-            credit_hours,
-            gpa,
-            start_semester,
-            start_year,
-            transfer,
-            resume_link,
+            contact.first_name if contact else None,
+            contact.middle_name if contact else None,
+            contact.last_name if contact else None,
+            contact.email if contact else None,
+            contact.phone if contact else None,
+            profile.department_name if profile else None,
+            profile.major_name if profile else None,
+            profile.credit_hours if profile else None,
+            profile.gpa if profile else None,
+            profile.start_semester if profile else None,
+            profile.start_year if profile else None,
+            profile.transfer if profile else None,
+            profile.resume_link if profile else None,
         )
 
     if not profile:

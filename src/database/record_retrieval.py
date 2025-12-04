@@ -1,6 +1,6 @@
-from typing import Optional
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy import select
+from typing import Optional
 
 from src.database.schema import (
     Account,
@@ -9,9 +9,9 @@ from src.database.schema import (
     ContactInfo,
     EmployerProfile,
     Department,
+    FacultyProfile,
     Major,
     StudentProfile,
-    FacultyProfile,
     Internship,
     InternshipMajor,
     Skill,
@@ -20,7 +20,6 @@ from src.database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
-
 from src.database.utils import (
     get_first_column_element,
     get_first_column_element_of_all_rows,

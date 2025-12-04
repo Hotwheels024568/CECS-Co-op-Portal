@@ -1,6 +1,6 @@
-from typing import Optional
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from typing import Optional
 
 from src.database.record_retrieval import (
     get_account_by_id,
@@ -14,19 +14,19 @@ from src.database.record_retrieval import (
     get_application_by_id,
     get_summary_by_id,
 )
-
 from src.database.schema import (
     Account,
     Address,
     Company,
     ContactInfo,
     EmployerProfile,
-    StudentProfile,
     FacultyProfile,
+    StudentProfile,
     Internship,
     InternshipApplication,
     InternshipSummary,
 )
+from src.database.utils import get_constraint_name_from_integrity_error
 
 
 async def update_account(
@@ -84,12 +84,14 @@ async def update_account(
 
     except IntegrityError as e:
         await session.rollback()
+        constraint = get_constraint_name_from_integrity_error(e)
+        print(f"Unique constraint violated in add_account: {constraint}")
         # Likely a username unique constraint violation
         return None
 
     except Exception as e:
         await session.rollback()
-        print(f"Unexpected error in update_account: {e}")
+        print(f"Unexpected error in add_account: {e}")
         return None
 
 
@@ -213,6 +215,8 @@ async def update_company(
     except IntegrityError as e:
         await session.rollback()
         # Likely a name or address_id unique constraint violation
+        constraint = get_constraint_name_from_integrity_error(e)
+        print(f"Unique constraint violated in update_company: {constraint}")
         return None
 
     except Exception as e:
@@ -282,6 +286,8 @@ async def update_contact(
     except IntegrityError as e:
         await session.rollback()
         # Likely an email unique constraint violation
+        constraint = get_constraint_name_from_integrity_error(e)
+        print(f"Unique constraint violated in update_contact: {constraint}")
         return None
 
     except Exception as e:
@@ -410,6 +416,8 @@ async def update_student(
     except IntegrityError as e:
         await session.rollback()
         # Likely a check constraint violation
+        constraint = get_constraint_name_from_integrity_error(e)
+        print(f"Unique constraint violated in update_student: {constraint}")
         return None
 
     except Exception as e:
@@ -550,6 +558,8 @@ async def update_internship(
     except IntegrityError as e:
         await session.rollback()
         # Likely a check constraint violation
+        constraint = get_constraint_name_from_integrity_error(e)
+        print(f"Unique constraint violated in update_internship: {constraint}")
         return None
 
     except Exception as e:

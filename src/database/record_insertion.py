@@ -1,11 +1,10 @@
-from typing import Optional
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from typing import Optional
 
 from datetime import datetime, timezone
 
 from src.database.record_retrieval import (
-    get_account_by_id,
     get_application_by_id,
     get_application_from_ids,
 )
@@ -16,9 +15,9 @@ from src.database.schema import (
     ContactInfo,
     EmployerProfile,
     Department,
+    FacultyProfile,
     Major,
     StudentProfile,
-    FacultyProfile,
     Internship,
     InternshipMajor,
     Skill,
@@ -155,7 +154,7 @@ async def add_company(
         await session.rollback()
         # Likely a name or address_id unique constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_company: {constraint}")
         return None
 
     except Exception as e:
@@ -210,7 +209,7 @@ async def add_contact(
         await session.rollback()
         # Likely an email unique constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_contact: {constraint}")
         return None
 
     except Exception as e:
@@ -281,7 +280,7 @@ async def add_department(
         await session.rollback()
         # Likely a name unique constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_department: {constraint}")
         return None
 
     except Exception as e:
@@ -319,7 +318,7 @@ async def add_major(
         await session.rollback()
         # Likely a name unique constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_major: {constraint}")
         return None
 
     except Exception as e:
@@ -383,7 +382,7 @@ async def add_student(
         await session.rollback()
         # Likely a check constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_student: {constraint}")
         return None
 
     except Exception as e:
@@ -484,7 +483,7 @@ async def add_internship(
         await session.rollback()
         # Likely a check constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_internship: {constraint}")
         return None
 
     except Exception as e:
@@ -555,7 +554,7 @@ async def add_skill(
         await session.rollback()
         # Likely a name unique constraint violation
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
+        print(f"Unique constraint violated in add_skill: {constraint}")
         return None
 
     except Exception as e:

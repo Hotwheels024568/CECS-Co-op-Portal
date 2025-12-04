@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from src.backend.globals import get_db_manager
+from src.backend.globals import AccountInfo, get_db_manager
+from src.backend.routers.utils import get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_departments, get_majors, get_skills
 
@@ -25,6 +26,7 @@ class DepartmentsResponse(BaseModel):
     response_model=DepartmentsResponse,
 )
 async def get_all_departments(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
     db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> DepartmentsResponse:
     """
@@ -35,8 +37,8 @@ async def get_all_departments(
     """
     async with db_manager.session() as db_session:
         departments = await get_departments(db_session)
-        list = [CatalogItem(id=department.id, name=department.name) for department in departments]
-    return DepartmentsResponse(departments=list)
+        result = [CatalogItem(id=department.id, name=department.name) for department in departments]
+    return DepartmentsResponse(departments=result)
 
 
 class MajorsResponse(BaseModel):
@@ -50,7 +52,10 @@ class MajorsResponse(BaseModel):
     description="Returns a list of all majors currently available in the catalog.",
     response_model=MajorsResponse,
 )
-async def get_all_majors(db_manager: AsyncDBManager = Depends(get_db_manager)) -> MajorsResponse:
+async def get_all_majors(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
+) -> MajorsResponse:
     """
     Retrieve all major names available in the catalog.
 
@@ -59,8 +64,8 @@ async def get_all_majors(db_manager: AsyncDBManager = Depends(get_db_manager)) -
     """
     async with db_manager.session() as db_session:
         majors = await get_majors(db_session)
-        list = [CatalogItem(id=major.id, name=major.name) for major in majors]
-    return MajorsResponse(majors=list)
+        result = [CatalogItem(id=major.id, name=major.name) for major in majors]
+    return MajorsResponse(majors=result)
 
 
 class SkillsResponse(BaseModel):
@@ -74,7 +79,10 @@ class SkillsResponse(BaseModel):
     description="Returns a list of all skills currently available in the catalog.",
     response_model=SkillsResponse,
 )
-async def get_all_skills(db_manager: AsyncDBManager = Depends(get_db_manager)) -> SkillsResponse:
+async def get_all_skills(
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
+) -> SkillsResponse:
     """
     Retrieve all skill names available in the catalog.
 
@@ -83,5 +91,5 @@ async def get_all_skills(db_manager: AsyncDBManager = Depends(get_db_manager)) -
     """
     async with db_manager.session() as db_session:
         skills = await get_skills(db_session)
-        list = [CatalogItem(id=skill.id, name=skill.name) for skill in skills]
-    return SkillsResponse(skills=list)
+        result = [CatalogItem(id=skill.id, name=skill.name) for skill in skills]
+    return SkillsResponse(skills=result)

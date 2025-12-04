@@ -3,13 +3,13 @@ from sqlalchemy import func, select, and_
 from typing import Optional
 
 from src.database.schema import (
-    Internship,
     Company,
-    InternshipMajor,
     Major,
+    Internship,
+    InternshipMajor,
+    Skill,
     InternshipReqSkill,
     InternshipPrefSkill,
-    Skill,
 )
 
 

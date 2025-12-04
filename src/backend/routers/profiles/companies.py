@@ -17,7 +17,16 @@ from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
 from src.database.record_retrieval import get_companies, get_employer_by_id
-from src.database.schema import ContactInfo, StudentProfile
+from src.database.sync_retrieval import (
+    get_employer_company,
+    get_company_address,
+    get_contact,
+    get_department,
+    get_employer_company_internships,
+    get_internship_summaries,
+    get_major,
+    get_summary_student,
+)
 
 router = APIRouter()
 
@@ -119,7 +128,7 @@ async def get_company_list(
     async with db_manager.session() as db_session:
         companies = await get_companies(db_session)
         for company in companies:
-            address = company.address
+            address = await db_session.run_sync(get_company_address, company)
             results.append(
                 Company(
                     id=company.id,
@@ -139,9 +148,9 @@ async def get_company_list(
 
 
 class CompanyUpdateDetails(BaseModel):
-    name: Optional[Annotated[str, StringConstraints(min_length=2, max_length=100)]]
+    name: Optional[Annotated[str, StringConstraints(min_length=2, max_length=100)]] = None
     address: Optional[AddressUpdateDetails] = None
-    website_link: Optional[Annotated[str, StringConstraints(min_length=5, max_length=255)]]
+    website_link: Optional[Annotated[str, StringConstraints(min_length=5, max_length=255)]] = None
 
 
 class CompanyUpdateRequest(BaseModel):
@@ -191,31 +200,23 @@ async def update_profile(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     company = data.company
-    name = company.name if company else None
-    website_link = company.website_link if company else None
     address = company.address if company else None
-    address_line1 = address.address_line1 if address else None
-    address_line2 = address.address_line2 if address else None
-    city = address.city if address else None
-    state_province = address.state_province if address else None
-    zip_postal = address.zip_postal if address else None
-    country = address.country if address else None
 
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
-        company_id = profile.company.id
+        company_id = (await db_session.run_sync(get_employer_company, profile)).id
         company, msg = await update_company_profile(
             db_session,
             company_id,
-            name,
-            website_link,
-            address_line1,
-            address_line2,
-            city,
-            state_province,
-            zip_postal,
-            country,
+            company.name if company else None,
+            company.website_link if company else None,
+            address.address_line1 if address else None,
+            address.address_line2 if address else None,
+            address.city if address else None,
+            address.state_province if address else None,
+            address.zip_postal if address else None,
+            address.country if address else None,
         )
 
     if not company:
@@ -290,15 +291,16 @@ async def get_company_internship_summaries(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
-        company = profile.company
-        internships = company.internships
+        internships = await db_session.run_sync(get_employer_company_internships, profile)
 
         results = []
         for internship in internships:
-            summaries = internship.summaries
+            summaries = await db_session.run_sync(get_internship_summaries, internship)
             for summary in summaries:
-                student: StudentProfile = summary.student
-                contact: ContactInfo = student.contact
+                student = await db_session.run_sync(get_summary_student, summary)
+                contact = await db_session.run_sync(get_contact, profile)
+                department = await db_session.run_sync(get_department, student)
+                major = await db_session.run_sync(get_major, student)
                 results.append(
                     EmployerSummaryResponse(
                         summary_id=summary.id,
@@ -311,8 +313,8 @@ async def get_company_internship_summaries(
                                     email=contact.email,
                                     phone=contact.phone,
                                 ),
-                                department_name=student.department.name,
-                                major_name=student.major.name,
+                                department_name=department.name,
+                                major_name=major.name,
                             ),
                             internship=EmployerSummaryInternship(
                                 title=internship.title,

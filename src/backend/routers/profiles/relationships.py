@@ -8,7 +8,13 @@ from src.backend.routers.profiles.students import StudentProfileResponse
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
-from src.database.schema import ContactInfo
+from src.database.sync_retrieval import (
+    get_contact,
+    get_department,
+    get_faculty_students,
+    get_major,
+    get_student_faculty,
+)
 
 router = APIRouter()
 
@@ -53,11 +59,13 @@ async def get_dept_students(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
-        students = profile.department.students
+        students = await db_session.run_sync(get_faculty_students, profile)
 
         results = []
         for student in students:
-            contact: ContactInfo = student.contact
+            contact = await db_session.run_sync(get_contact, student)
+            department = await db_session.run_sync(get_department, student)
+            major = await db_session.run_sync(get_major, student)
             results.append(
                 StudentProfileResponse(
                     contact=Contact(
@@ -68,8 +76,8 @@ async def get_dept_students(
                         phone=contact.phone,
                     ),
                     profile=StudentProfile(
-                        department=student.department.name,
-                        major_name=student.major.name,
+                        department=department.name,
+                        major_name=major.name,
                         credit_hours=student.credit_hours,
                         gpa=student.gpa,
                         start_semester=student.start_semester,
@@ -122,20 +130,12 @@ async def get_dept_faculty(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
-
-        def sync_access_faculty(session, profile):
-            # All lazy relationship loads occur in sync context here
-            return profile.department.faculty
-
-        def sync_access_contact(session, profile):
-            # All lazy relationship loads occur in sync context here
-            return profile.contact
-
-        faculty = await db_session.run_sync(sync_access_faculty, profile)
+        faculty = await db_session.run_sync(get_student_faculty, profile)
 
         results = []
         for staff in faculty:
-            contact: ContactInfo = await db_session.run_sync(sync_access_contact, staff)
+            contact = await db_session.run_sync(get_contact, staff)
+            department = await db_session.run_sync(get_department, staff)
             results.append(
                 FacultyProfileResponse(
                     contact=Contact(
@@ -145,7 +145,7 @@ async def get_dept_faculty(
                         email=contact.email,
                         phone=contact.phone,
                     ),
-                    profile=FacultyProfile(department=staff.department.name),
+                    profile=FacultyProfile(department=department.name),
                 )
             )
     return FacultyListResponse(faculty=results)
@@ -189,7 +189,8 @@ async def get_all_faculty(
 
         results = []
         for staff in faculty:
-            contact: ContactInfo = staff.contact
+            contact = await db_session.run_sync(get_contact, staff)
+            department = await db_session.run_sync(get_department, staff)
             results.append(
                 FacultyProfileResponse(
                     contact=Contact(
@@ -199,7 +200,7 @@ async def get_all_faculty(
                         email=contact.email,
                         phone=contact.phone,
                     ),
-                    profile=FacultyProfile(department=staff.department.name),
+                    profile=FacultyProfile(department=department.name),
                 )
             )
     return FacultyListResponse(faculty=results)

@@ -25,7 +25,15 @@ from src.database.record_retrieval import (
     get_student_by_id,
 )
 from src.database.record_updating import update_application
-from src.database.schema import ContactInfo
+from src.database.sync_retrieval import (
+    get_application_internship,
+    get_application_student,
+    get_contact,
+    get_department,
+    get_internship_company,
+    get_major,
+    get_student_applications,
+)
 from src.utils_semesters import semesters_since_enrollment
 
 router = APIRouter()
@@ -80,9 +88,12 @@ async def get_department_applications_endpoint(
 
         results = []
         for application in applications:
-            student = application.student
-            contact: ContactInfo = student.contact
-            internship = application.internship
+            student = await db_session.run_sync(get_application_student, application)
+            contact = await db_session.run_sync(get_contact, student)
+            major = await db_session.run_sync(get_major, student)
+            department = await db_session.run_sync(get_department, student)
+            internship = await db_session.run_sync(get_application_internship, application)
+            company = await db_session.run_sync(get_internship_company, internship)
             results.append(
                 FacultyApplicationResponse(
                     application_id=application.id,
@@ -95,11 +106,11 @@ async def get_department_applications_endpoint(
                                 email=contact.email,
                                 phone=contact.phone,
                             ),
-                            department_name=student.department.name,
-                            major_name=student.major.name,
+                            department_name=department.name,
+                            major_name=major.name,
                         ),
                         internship=BriefInternship(
-                            company=CompanyName(name=internship.company.name),
+                            company=CompanyName(name=company.name),
                             title=internship.title,
                             description=internship.description,
                             duration_weeks=internship.duration_weeks,
@@ -202,7 +213,7 @@ class StudentApplicationListResponse(BaseModel):
     ),
     response_model=StudentApplicationListResponse,
 )
-async def get_student_applications(
+async def get_student_applications_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
     db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> StudentApplicationListResponse:
@@ -224,17 +235,18 @@ async def get_student_applications(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
-        applications = profile.applications
+        applications = await db_session.run_sync(get_student_applications, profile)
 
         results = []
         for application in applications:
-            internship = application.internship
+            internship = await db_session.run_sync(get_application_internship, application)
+            company = await db_session.run_sync(get_internship_company, internship)
             results.append(
                 StudentApplicationResponse(
                     application_id=application.id,
                     application=StudentApplicationInfo(
                         internship=BriefInternship(
-                            company=CompanyName(name=internship.company.name),
+                            company=CompanyName(name=company.name),
                             title=internship.title,
                             description=internship.description,
                             duration_weeks=internship.duration_weeks,
@@ -302,7 +314,7 @@ async def update_application_endpoint(
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN, "Only the application owner can update an application."
             )
-        internship = application.internship
+        internship = await db_session.run_sync(get_application_internship, application)
 
         result = await update_application(
             db_session,
@@ -372,7 +384,7 @@ async def delete_application(
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN, "Only the application owner can update an application."
             )
-        internship = application.internship
+        internship = await db_session.run_sync(get_application_internship, application)
         if internship.status != InternshipStatus.OPEN.value:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,

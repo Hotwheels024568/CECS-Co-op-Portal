@@ -1,6 +1,6 @@
-from typing import Optional
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.exc import IntegrityError
+from typing import Optional
 
 from src.database.record_retrieval import (
     get_company_by_name,
