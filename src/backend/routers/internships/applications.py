@@ -366,7 +366,7 @@ async def delete_application(
                 status.HTTP_403_FORBIDDEN, "Only the application owner can update an application."
             )
         internship = application.internship
-        if internship.status != InternshipStatus.OPEN:
+        if internship.status != InternshipStatus.OPEN.value:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,
                 "Applications can only be deleted while internship applications are open.",

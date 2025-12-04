@@ -470,6 +470,7 @@ async def update_internship(
     description: Optional[str] = None,
     location_type: Optional[str] = None,
     address_id: Optional[int] = None,
+    update_address_id: bool = False,
     duration_weeks: Optional[int] = None,
     weekly_hours: Optional[int] = None,
     total_work_hours: Optional[int] = None,
@@ -487,7 +488,8 @@ async def update_internship(
         title (Optional[str], optional): Updated title.
         description (Optional[str], optional): Updated description.
         location_type (Optional[str], optional): Updated location type ('Remote', 'Company', 'Other').
-        address_id (Optional[int], optional): Updated address ID.
+        address_id (Optional[int], optional): Updated address ID to set, or None to clear.
+        update_address_id (bool): If True, address_id will be set/cleared. If False, address_id is unchanged.
         duration_weeks (Optional[int], optional): Updated duration in weeks.
         weekly_hours (Optional[int], optional): Updated weekly hours.
         total_work_hours (Optional[int], optional): Updated total work hours.
@@ -517,7 +519,7 @@ async def update_internship(
         if location_type is not None and internship.location_type != location_type:
             internship.location_type = location_type
             updated = True
-        if address_id is not None and internship.address_id != address_id:
+        if update_address_id and internship.address_id != address_id:
             internship.address_id = address_id
             updated = True
         if duration_weeks is not None and internship.duration_weeks != duration_weeks:

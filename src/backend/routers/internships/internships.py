@@ -3,7 +3,6 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import DB_MANAGER, AccountInfo, UserType
-from src.backend.routers.internships.summaries import EmployerSummary
 from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
@@ -16,12 +15,15 @@ from src.backend.routers.models import (
     InternshipStatus,
     LocationType,
 )
+from src.backend.routers.profiles.companies import EmployerSummary
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.internship_insertion import create_internship
 from src.database.internship_retrieval import search_internships
+from src.database.internship_updating import update_internship
 from src.database.record_retrieval import (
     get_application_by_id,
     get_employer_by_id,
+    get_internship_applications,
     get_internship_by_id,
 )
 from src.database.schema import StudentAccount
@@ -85,10 +87,10 @@ async def search_internships_endpoint(
             db_session,
             data.company_id,
             data.title,
-            data.location_type,
+            data.location_type.value,
             data.duration_weeks,
             data.weekly_hours,
-            data.status,
+            data.status.value,
             data.majors,
             data.required_skills,
             data.preferred_skills,
@@ -259,32 +261,29 @@ async def create_internship_endpoint(
     """
     assert_user_type(session_data, UserType.EMPLOYER)
 
-    address_fields: tuple[Optional[str], ...] = (
-        data.address.address_line1 if data.address else None,
-        data.address.address_line2 if data.address else None,
-        data.address.city if data.address else None,
-        data.address.state_province if data.address else None,
-        data.address.zip_postal if data.address else None,
-        data.address.country if data.address else None,
-    )
-
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
+        address = data.address
         result, msg = await create_internship(
             db_session,
             account_id,
             data.title,
             data.description,
-            data.location_type,
-            None,
+            data.location_type.value,
+            None,  # address_id param, if handled elsewhere
             data.duration_weeks,
             data.weekly_hours,
             data.salary_info,
-            data.status,
+            data.status.value,
             data.majors,
             data.required_skills,
             data.preferred_skills,
-            *address_fields,
+            address.address_line1 if address else None,
+            address.address_line2 if address else None,
+            address.city if address else None,
+            address.state_province if address else None,
+            address.zip_postal if address else None,
+            address.country if address else None,
         )
 
     if not result:
@@ -313,8 +312,8 @@ class InternshipUpdateRequest(BaseModel):
 @router.patch(
     "/{internship_id}/update",
     tags=["Employers"],
-    summary="__",
-    description=("__. " "__."),
+    summary="Update an internship",
+    description="Allows authorized employers to update their company's posted internship details.",
     response_model=GeneralRequestResponse,
 )
 async def update_internship_endpoint(
@@ -323,11 +322,11 @@ async def update_internship_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> GeneralRequestResponse:
     """
-    __
+    Update an internship record for an employer account.
 
     Args:
         internship_id (int): The ID of the internship to be updated.
-        data (InternshipUpdateRequest): __
+        data (InternshipUpdateRequest): The fields to update.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
@@ -335,7 +334,7 @@ async def update_internship_endpoint(
 
     Raises:
         HTTPException (401): If the session is invalid or expired.
-        HTTPException (403): If the session's user type is invalid.
+        HTTPException (403): If the session's user type is invalid, or employer does not own the internship.
         HTTPException (500): If the operation fails.
     """
     assert_user_type(session_data, UserType.EMPLOYER)
@@ -343,42 +342,41 @@ async def update_internship_endpoint(
     account_id = session_data[1]["account_id"]
     async with DB_MANAGER.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
-        internship = await get_internship_by_id(db_session, id)
+        internship = await get_internship_by_id(db_session, internship_id)
         if internship.company_id != profile.company_id:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Only __")
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN, "You can only update internships posted by your company."
+            )
 
-        """
-        Employers
-            update
-                after setting the status to pending start, create the student summary records for the selected candidates
-        """
-    #     result, msg = await update_internship(
-    #         db_session,
-    #         internship_id,
-    #         data.title,
-    #         data.description,
-    #         data.location_type,
-    #         None,
-    #         data.duration_weeks,
-    #         data.weekly_hours,
-    #         data.salary_info,
-    #         data.status,
-    #         data.majors,
-    #         data.required_skills,
-    #         data.preferred_skills,
-    #         data.address.address_line1,
-    #         data.address.address_line2,
-    #         data.address.city,
-    #         data.address.state_province,
-    #         data.address.zip_postal,
-    #         data.address.country,
-    #     )
+        address = data.address
+        result, msg = await update_internship(
+            db_session,
+            internship_id,
+            data.title,
+            data.description,
+            data.location_type.value,
+            None,  # address_id param, if handled elsewhere
+            data.duration_weeks,
+            data.weekly_hours,
+            data.salary_info,
+            data.status.value,
+            data.majors,
+            data.required_skills,
+            data.preferred_skills,
+            address.address_line1 if address else None,
+            address.address_line2 if address else None,
+            address.city if address else None,
+            address.state_province if address else None,
+            address.zip_postal if address else None,
+            address.country if address else None,
+        )
 
-    # if not result:
-    #     raise HTTPException(
-    #         status.HTTP_500_INTERNAL_SERVER_ERROR, f"Internship could not be created. Reason: {msg}"
-    #     )
-    # return GeneralRequestResponse(success=True, message=msg)
+    if not result:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Internship could not be updated. Reason: {msg}",
+        )
+    return GeneralRequestResponse(success=True, message=msg)
 
 
 # Could make a delete_internship endpoint
@@ -386,8 +384,7 @@ async def update_internship_endpoint(
 
 
 class EmployerSelectedApplicationsUpdateRequest(BaseModel):
-    added: list[int]
-    removed: list[int]
+    selected: list[int]
 
 
 @router.patch(
@@ -414,7 +411,7 @@ async def update_selected_candidates_for_internship(
 
     Args:
         internship_id (int): The ID of the internship to update.
-        data (EmployerSelectedApplicationsUpdateRequest): Lists of application IDs to add or remove.
+        data (EmployerSelectedApplicationsUpdateRequest): Lists of application IDs selected.
         session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
     Returns:
@@ -434,15 +431,22 @@ async def update_selected_candidates_for_internship(
         internship = await get_internship_by_id(db_session, internship_id)
         if not internship:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist.")
+
         if internship.company_id != profile.company_id:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,
                 "You can only update candidate selection for internships you own.",
             )
 
+        applications = await get_internship_applications(db_session, internship_id)
+        current_selected = set(app.id for app in applications if app.selected)
+        new_selected = set(data.selected)
+
+        to_add = new_selected - current_selected
+        to_remove = current_selected - new_selected
         changed = []
         # Handle additions
-        for app_id in data.added:
+        for app_id in to_add:
             application = await get_application_by_id(db_session, app_id)
             if not application:
                 raise HTTPException(
@@ -459,7 +463,7 @@ async def update_selected_candidates_for_internship(
                 changed.append(app_id)
 
         # Handle removals
-        for app_id in data.removed:
+        for app_id in to_remove:
             application = await get_application_by_id(db_session, app_id)
             if not application:
                 raise HTTPException(
@@ -501,7 +505,7 @@ class EmployerApplicationListResponse(BaseModel):
     ),
     response_model=EmployerApplicationListResponse,
 )
-async def get_internship_applications(
+async def get_internship_applications_endpoint(
     internship_id: int,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
 ) -> EmployerApplicationListResponse:
