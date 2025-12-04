@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     FacultyApplicationInfo,
     BriefInternship,
@@ -12,8 +12,8 @@ from src.backend.routers.models import (
     GeneralRequestResponse,
     Summary,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session
-from src.database.record_updating import update_summary
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import (
     get_department_summaries,
     get_employer_by_id,
@@ -21,7 +21,9 @@ from src.database.record_retrieval import (
     get_student_by_id,
     get_summary_by_id,
 )
+from src.database.record_updating import update_summary
 from src.database.schema import Company, Internship, StudentAccount
+
 
 router = APIRouter()
 
@@ -57,6 +59,7 @@ class FacultySummaryListResponse(BaseModel):
 )
 async def get_department_summaries_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> FacultySummaryListResponse:
     """
     Retrieve all student internship summaries associated with the faculty member's department.
@@ -77,7 +80,7 @@ async def get_department_summaries_endpoint(
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
         department = profile.department
         summaries = await get_department_summaries(db_session, department.id)
@@ -143,6 +146,7 @@ async def update_summary_grade(
     summary_id: int,
     data: UpdateSummaryGradeRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Submit or update the letter grade for a specific internship summary.
@@ -163,7 +167,7 @@ async def update_summary_grade(
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
         faculty_dept = profile.department.id
         summary = await get_summary_by_id(db_session, summary_id)
@@ -214,6 +218,7 @@ class StudentSummaryListResponse(BaseModel):
 )
 async def get_student_summaries(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> StudentSummaryListResponse:
     """
     Retrieve all internship summaries submitted by the currently authenticated student.
@@ -231,7 +236,7 @@ async def get_student_summaries(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
         summaries = profile.summaries
 
@@ -283,6 +288,7 @@ async def update_summary_text(
     summary_id: int,
     data: UpdateSummaryRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update the text and/or file attachment for a student's internship summary.
@@ -302,7 +308,7 @@ async def update_summary_text(
     """
     assert_user_type(session_data, UserType.STUDENT)
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         summary = await get_summary_by_id(db_session, summary_id)
         student: StudentAccount = summary.student
         if student.id != session_data[1]["account_id"]:
@@ -341,6 +347,7 @@ async def update_summary_approval(
     summary_id: int,
     data: UpdateSummaryApprovalRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Change the approval status of a summary associated with an internship you own.
@@ -361,7 +368,7 @@ async def update_summary_approval(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         company = profile.company
         summary = await get_summary_by_id(db_session, summary_id)

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     Contact,
     ContactCreationDetails,
@@ -10,7 +10,8 @@ from src.backend.routers.models import (
     GeneralRequestResponse,
     StudentProfile,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_student_profile
 from src.database.profile_updating import update_student_profile
 from src.database.record_retrieval import get_student_by_id
@@ -48,6 +49,7 @@ class StudentProfileCreationRequest(BaseModel):
 async def create_profile(
     data: StudentProfileCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Create a new student profile with contact information and profile detail assignment.
@@ -69,7 +71,7 @@ async def create_profile(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await create_student_profile(
             db_session,
             account_id,
@@ -109,6 +111,7 @@ class StudentProfileResponse(BaseModel):
 )
 async def get_profile(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> StudentProfileResponse:
     """
     Retrieve the authenticated students's profile information.
@@ -131,7 +134,7 @@ async def get_profile(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
         if not profile:
             raise HTTPException(
@@ -191,6 +194,7 @@ class StudentProfileUpdateRequest(BaseModel):
 async def update_profile(
     data: StudentProfileUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update the authenticated students's profile information.
@@ -236,7 +240,7 @@ async def update_profile(
     resume_link = profile.resume_link if profile else None
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await update_student_profile(
             db_session,
             account_id,

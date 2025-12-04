@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import Contact, FacultyProfile, StudentProfile
-from src.backend.routers.utils import assert_user_type, get_current_session
 from src.backend.routers.profiles.faculty import FacultyProfileResponse
 from src.backend.routers.profiles.students import StudentProfileResponse
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
 
 router = APIRouter()
@@ -27,6 +28,7 @@ class StudentListResponse(BaseModel):
 )
 async def get_dept_students(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> StudentListResponse:
     """
     Retrieve all students within the authenticated faculty member's department.
@@ -48,7 +50,7 @@ async def get_dept_students(
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
         students = profile.department.students
 
@@ -95,6 +97,7 @@ class FacultyListResponse(BaseModel):
 )
 async def get_dept_faculty(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> FacultyListResponse:
     """
     Retrieve all faculty in the authenticated student's department.
@@ -116,7 +119,7 @@ async def get_dept_faculty(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
         faculty = profile.department.faculty
 
@@ -150,6 +153,7 @@ async def get_dept_faculty(
 )
 async def get_all_faculty(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> FacultyListResponse:
     """
     Retrieve all faculty across all departments.
@@ -170,7 +174,7 @@ async def get_all_faculty(
     """
     assert_user_type(session_data, UserType.EMPLOYER)
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         faculty = await get_faculty(db_session)
 
         results = []

@@ -4,14 +4,14 @@ from typing import Annotated, Optional
 import hmac, secrets, time
 
 from src.backend.globals import (
-    DB_MANAGER,
     SESSION_STORE,
     SESSION_EXPIRE_SECONDS,
     AccountInfo,
     UserType,
 )
 from src.backend.routers.models import GeneralRequestResponse
-from src.backend.routers.utils import get_current_session, hash_password
+from src.backend.routers.utils import get_current_session, get_db_manager, hash_password
+from src.database.manage import AsyncDBManager
 from src.database.record_insertion import add_account
 from src.database.record_retrieval import get_account_by_username
 
@@ -40,7 +40,9 @@ class LoginResponse(BaseModel):
     ),
     response_model=LoginResponse,
 )
-async def register(request: AuthRequest) -> LoginResponse:
+async def register(
+    request: AuthRequest, db_manager: AsyncDBManager = Depends(get_db_manager)
+) -> LoginResponse:
     """
     Registers a new user account and logs the user in.
 
@@ -66,7 +68,7 @@ async def register(request: AuthRequest) -> LoginResponse:
     pw_hash = hash_password(request.password, salt)
 
     # 2. Insert into DB
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         account = await add_account(db_session, request.username, pw_hash, salt, commit=True)
         if account is not None:
             # Instant login: create session
@@ -96,7 +98,9 @@ async def register(request: AuthRequest) -> LoginResponse:
     ),
     response_model=LoginResponse,
 )
-async def login(request: AuthRequest) -> LoginResponse:
+async def login(
+    request: AuthRequest, db_manager: AsyncDBManager = Depends(get_db_manager)
+) -> LoginResponse:
     """
     Authenticate a user and create a session.
 
@@ -117,7 +121,7 @@ async def login(request: AuthRequest) -> LoginResponse:
         HTTPException (401): If credentials are invalid.
     """
     # 1. Look up user by username
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         account = await get_account_by_username(db_session, request.username)
 
     # 2. Prepare for timing-attack-resistant check

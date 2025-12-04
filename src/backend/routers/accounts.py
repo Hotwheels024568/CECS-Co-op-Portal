@@ -3,12 +3,13 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated
 import secrets
 
-from src.backend.globals import DB_MANAGER, SESSION_STORE, AccountInfo, UserType
+from src.backend.globals import SESSION_STORE, AccountInfo, UserType
 from src.backend.routers.models import GeneralRequestResponse
-from src.backend.routers.utils import get_current_session
+from src.backend.routers.utils import get_current_session, get_db_manager
 from src.backend.routers.utils import hash_password
-from src.database.record_updating import update_account
+from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import get_account_by_id
+from src.database.record_updating import update_account
 
 router = APIRouter()
 
@@ -27,6 +28,7 @@ class UsernameUpdateRequest(BaseModel):
 async def change_username(
     data: UsernameUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Change the current user's username.
@@ -45,7 +47,7 @@ async def change_username(
     """
     account_id = session_data[1]["account_id"]
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         result = await update_account(
             db_session,
             account_id,
@@ -81,6 +83,7 @@ class PasswordUpdateRequest(BaseModel):
 async def change_password(
     data: PasswordUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Change the current user's password.
@@ -109,7 +112,7 @@ async def change_password(
     salt = secrets.token_bytes(16)
     hashed_pw = hash_password(data.password, salt)
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         result = await update_account(
             db_session,
             account_id,
@@ -141,6 +144,7 @@ class UpdateUserTypeRequest(BaseModel):
 async def set_user_type(
     data: UpdateUserTypeRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Set the user_type for an existing account.
@@ -161,7 +165,7 @@ async def set_user_type(
     session_id = session_data[0]
     account_id = session_data[1]["account_id"]
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         account = await get_account_by_id(db_session, account_id)
 
         if not account:
@@ -231,7 +235,7 @@ async def reset_password(data: CompleteResetRequest) -> dict:
     # Update password with new salt and hash
     salt = secrets.token_bytes(16)
     pw_hash = hash_password(data.new_password, salt, PEPPER)
-    async with DB_MANAGER.session() as session:
+    async with db_manager.session() as session:
         updated = await update_account(
             session, id=account_id, password=pw_hash, salt=salt, commit=True
         )

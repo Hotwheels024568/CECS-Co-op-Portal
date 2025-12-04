@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     Address,
     Company,
@@ -12,7 +12,8 @@ from src.backend.routers.models import (
     EmployerProfile,
     GeneralRequestResponse,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_employer_profile
 from src.database.profile_updating import update_employer_profile
 from src.database.record_retrieval import get_employer_by_id
@@ -38,6 +39,7 @@ class EmployerProfileCreationRequest(BaseModel):
 async def create_profile(
     data: EmployerProfileCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Create a new employer profile with contact information and profile detail assignment.
@@ -59,7 +61,7 @@ async def create_profile(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await create_employer_profile(
             db_session,
             account_id,
@@ -96,6 +98,7 @@ class EmployerProfileResponse(BaseModel):
 )
 async def get_profile(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> EmployerProfileResponse:
     """
     Retrieve the authenticated employer's profile information.
@@ -117,7 +120,7 @@ async def get_profile(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         if not profile:
             raise HTTPException(
@@ -176,6 +179,7 @@ class EmployerProfileUpdateRequest(BaseModel):
 async def update_profile(
     data: EmployerProfileUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update the authenticated employer's profile information.
@@ -214,7 +218,7 @@ async def update_profile(
     company_id = profile.company_id if profile else None
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await update_employer_profile(
             db_session,
             account_id,

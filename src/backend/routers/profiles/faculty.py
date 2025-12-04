@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     Contact,
     ContactCreationDetails,
@@ -10,7 +10,8 @@ from src.backend.routers.models import (
     GeneralRequestResponse,
 )
 from src.backend.routers.models import FacultyProfile
-from src.backend.routers.utils import assert_user_type, get_current_session
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_faculty_profile
 from src.database.profile_updating import update_faculty_profile
 from src.database.record_retrieval import get_faculty_by_id
@@ -40,6 +41,7 @@ class FacultyProfileCreationRequest(BaseModel):
 async def create_profile(
     data: FacultyProfileCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Create a new faculty profile with contact information and profile detail assignment.
@@ -61,7 +63,7 @@ async def create_profile(
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await create_faculty_profile(
             db_session,
             account_id,
@@ -94,6 +96,7 @@ class FacultyProfileResponse(BaseModel):
 )
 async def get_profile(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> FacultyProfileResponse:
     """
     Retrieve the authenticated faculty member's profile information.
@@ -115,7 +118,7 @@ async def get_profile(
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
         if not profile:
             raise HTTPException(
@@ -159,6 +162,7 @@ class FacultyProfileUpdateRequest(BaseModel):
 async def update_profile(
     data: FacultyProfileUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update the authenticated faculty member's profile information.
@@ -197,7 +201,7 @@ async def update_profile(
     department_name = profile.department_name if profile else None
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await update_faculty_profile(
             db_session,
             account_id,

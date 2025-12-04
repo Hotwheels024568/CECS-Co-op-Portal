@@ -161,7 +161,10 @@ class AsyncDBManager:
         from src.backend.routers.utils import hash_password
         from src.database.schema import Account
         from src.database.utils import count
+        from datetime import datetime
         import json, secrets
+
+        DATETIME_FIELDS = {"internship_applications": ["application_date"]}
 
         tables = {table.name: table for table in self.metadata.sorted_tables}
         with open(json_path) as file:
@@ -170,12 +173,27 @@ class AsyncDBManager:
         async with self.engine.begin() as conn:
             for table_name, records in seed_data.items():
                 table = tables.get(table_name)
-                if not table or not records:
+                if table is None or not records:
                     continue
+
+                # Handle None for missing nullable columns
+                nullable_cols = {col.name for col in table.columns if col.nullable}
+                for record in records:
+                    for col in nullable_cols:
+                        if col not in record:
+                            record[col] = None
+
+                # Convert string dates to actual datetime objects
+                for field in DATETIME_FIELDS.get(table_name, []):
+                    for record in records:
+                        if field in record and isinstance(record[field], str):
+                            # Replace with parsed datetime
+                            record[field] = datetime.fromisoformat(
+                                record[field].replace("Z", "+00:00")
+                            )
 
                 # Check if table is empty
                 table_count = await count(conn, table)
-
                 if table_count == 0:
                     if table.name == Account.__tablename__:
                         # Hash passwords for account records

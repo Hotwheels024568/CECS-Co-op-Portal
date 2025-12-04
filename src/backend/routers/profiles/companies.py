@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
@@ -12,7 +12,8 @@ from src.backend.routers.models import (
     Contact,
     GeneralRequestResponse,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
+from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
 from src.database.record_retrieval import get_companies, get_employer_by_id
@@ -44,6 +45,7 @@ class CompanyCreationRequest(BaseModel):
 async def create_profile(
     data: CompanyCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Create a new company with information assignment.
@@ -64,7 +66,7 @@ async def create_profile(
     """
     assert_user_type(session_data, UserType.EMPLOYER)
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile, msg = await create_company(
             db_session,
             data.company.name,
@@ -97,6 +99,7 @@ class CompanyListResponse(BaseModel):
 )
 async def get_company_list(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> CompanyListResponse:
     """
     Retrieve a list of registered companies.
@@ -113,7 +116,7 @@ async def get_company_list(
         HTTPException (401): If the session is invalid or expired.
     """
     results = []
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         companies = await get_companies(db_session)
         for company in companies:
             address = company.address
@@ -158,6 +161,7 @@ class CompanyUpdateRequest(BaseModel):
 async def update_profile(
     data: CompanyUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update company profile information.
@@ -198,7 +202,7 @@ async def update_profile(
     country = address.country if address else None
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         company_id = profile.company.id
         company, msg = await update_company_profile(
@@ -266,6 +270,7 @@ class EmployerSummaryListResponse(BaseModel):
 )
 async def get_company_internship_summaries(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> EmployerSummaryListResponse:
     """
     Retrieve all internship summaries across all internships owned by this employer.
@@ -283,7 +288,7 @@ async def get_company_internship_summaries(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         company = profile.company
         internships = company.internships

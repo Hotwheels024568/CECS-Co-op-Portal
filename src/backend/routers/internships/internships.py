@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
@@ -16,10 +16,11 @@ from src.backend.routers.models import (
     LocationType,
 )
 from src.backend.routers.profiles.companies import EmployerSummary
-from src.backend.routers.utils import assert_user_type, get_current_session
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
 from src.database.internship_insertion import create_internship
 from src.database.internship_retrieval import search_internships
 from src.database.internship_updating import update_internship
+from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import (
     get_application_by_id,
     get_employer_by_id,
@@ -63,6 +64,7 @@ class InternshipSearchResponse(BaseModel):
 async def search_internships_endpoint(
     data: InternshipSearchRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> InternshipSearchResponse:
     """
     Search internships using flexible filters.
@@ -82,7 +84,7 @@ async def search_internships_endpoint(
     """
     assert_user_type(session_data, {UserType.FACULTY, UserType.STUDENT})
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         internships, count = await search_internships(
             db_session,
             data.company_id,
@@ -151,7 +153,9 @@ async def search_internships_endpoint(
     response_model=Internship,
 )
 async def get_internship(
-    internship_id: int, session_data: tuple[str, AccountInfo] = Depends(get_current_session)
+    internship_id: int,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> Internship:
     """
     Retrieve specific internship details by internship ID.
@@ -172,7 +176,7 @@ async def get_internship(
     """
     assert_user_type(session_data, {UserType.FACULTY, UserType.STUDENT})
 
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         internship = await get_internship_by_id(db_session, internship_id)
         if not internship:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Internship does not exist")
@@ -240,6 +244,7 @@ class InternshipCreationRequest(BaseModel):
 async def create_internship_endpoint(
     data: InternshipCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Create a new internship posting.
@@ -262,7 +267,7 @@ async def create_internship_endpoint(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         address = data.address
         result, msg = await create_internship(
             db_session,
@@ -320,6 +325,7 @@ async def update_internship_endpoint(
     internship_id: int,
     data: InternshipUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update an internship record for an employer account.
@@ -340,7 +346,7 @@ async def update_internship_endpoint(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         internship = await get_internship_by_id(db_session, internship_id)
         if internship.company_id != profile.company_id:
@@ -402,6 +408,7 @@ async def update_selected_candidates_for_internship(
     internship_id: int,
     data: EmployerSelectedApplicationsUpdateRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update the list of selected student candidates for a specific internship.
@@ -426,7 +433,7 @@ async def update_selected_candidates_for_internship(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         internship = await get_internship_by_id(db_session, internship_id)
         if not internship:
@@ -508,6 +515,7 @@ class EmployerApplicationListResponse(BaseModel):
 async def get_internship_applications_endpoint(
     internship_id: int,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> EmployerApplicationListResponse:
     """
     Retrieve all student internship applications for a specific employer-owned opportunity.
@@ -532,7 +540,7 @@ async def get_internship_applications_endpoint(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         internship = await get_internship_by_id(db_session, internship_id)
         if not internship:
@@ -599,6 +607,7 @@ class EmployerSpecificSummaryListResponse(BaseModel):
 async def get_internship_summaries(
     internship_id: int,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> EmployerSpecificSummaryListResponse:
     """
     Retrieve all summary submissions for a particular internship owned by the employer.
@@ -617,7 +626,7 @@ async def get_internship_summaries(
     assert_user_type(session_data, UserType.EMPLOYER)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
         company = profile.company
         internship = await get_internship_by_id(db_session, internship_id)

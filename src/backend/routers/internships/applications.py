@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
-from src.backend.globals import DB_MANAGER, AccountInfo, UserType
+from src.backend.globals import AccountInfo, UserType
 from src.backend.routers.models import (
     FacultyApplicationInfo,
     BriefInternship,
@@ -13,8 +13,9 @@ from src.backend.routers.models import (
     InternshipStatus,
     StudentApplicationInfo,
 )
-from src.backend.routers.utils import assert_user_type, get_current_session
+from src.backend.routers.utils import assert_user_type, get_current_session, get_db_manager
 from src.database.internship_insertion import create_application
+from src.database.manage import AsyncDBManager
 from src.database.record_deletion import delete_record
 from src.database.record_retrieval import (
     get_application_by_id,
@@ -50,6 +51,7 @@ class FacultyApplicationListResponse(BaseModel):
 )
 async def get_department_applications_endpoint(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> FacultyApplicationListResponse:
     """
     Retrieve all student internship applications associated with the faculty member's department.
@@ -70,7 +72,7 @@ async def get_department_applications_endpoint(
     assert_user_type(session_data, UserType.FACULTY)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
         department = profile.department
         applications = await get_department_applications(db_session, department.id)
@@ -130,6 +132,7 @@ class StudentApplicationCreationRequest(BaseModel):
 async def create_application_endpoint(
     data: StudentApplicationCreationRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Submit a new internship application as a student.
@@ -152,7 +155,7 @@ async def create_application_endpoint(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
         internship = await get_internship_by_id(db_session, data.internship_id)
         application, msg = await create_application(
@@ -200,6 +203,7 @@ class StudentApplicationListResponse(BaseModel):
 )
 async def get_student_applications(
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> StudentApplicationListResponse:
     """
     Retrieve all internship applications submitted by the currently authenticated student.
@@ -217,7 +221,7 @@ async def get_student_applications(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
         applications = profile.applications
 
@@ -263,6 +267,7 @@ async def update_application_endpoint(
     application_id: int,
     data: StudentApplicationDeletionRequest,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Update a student's existing internship application.
@@ -287,7 +292,7 @@ async def update_application_endpoint(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         profile = await get_student_by_id(db_session, account_id)
         application = await get_application_by_id(db_session, application_id)
         if not application:
@@ -333,6 +338,7 @@ async def update_application_endpoint(
 async def delete_application(
     application_id: int,
     session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
 ) -> GeneralRequestResponse:
     """
     Delete a student's internship application by ID.
@@ -357,7 +363,7 @@ async def delete_application(
     assert_user_type(session_data, UserType.STUDENT)
 
     account_id = session_data[1]["account_id"]
-    async with DB_MANAGER.session() as db_session:
+    async with db_manager.session() as db_session:
         application = await get_application_by_id(db_session, application_id)
         if not application:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Application does not exist.")
