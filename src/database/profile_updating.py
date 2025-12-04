@@ -39,14 +39,14 @@ async def update_company_profile(
     Args:
         session (AsyncSession): Active SQLAlchemy async session for database access.
         company_id (int): The ID of the Company to update.
-        company_name (Optional[str]): Updated company company_name.
-        website_link (Optional[str]): Updated company website_link.
-        address_line1 (Optional[str]): Updated company address's address_line1.
-        address_line2 (Optional[str]): Updated company address's address_line2.
-        city (Optional[str]): Updated company address's city.
-        state_province (Optional[str]): Updated company address's state_province.
-        zip_postal (Optional[str]): Updated company address's zip_postal.
-        country (Optional[str]): Updated company address's country.
+        company_name (Optional[str], optional): Updated company company_name.
+        website_link (Optional[str], optional): Updated company website_link.
+        address_line1 (Optional[str], optional): Updated company address's address_line1.
+        address_line2 (Optional[str], optional): Updated company address's address_line2.
+        city (Optional[str], optional): Updated company address's city.
+        state_province (Optional[str], optional): Updated company address's state_province.
+        zip_postal (Optional[str], optional): Updated company address's zip_postal.
+        country (Optional[str], optional): Updated company address's country.
 
     Returns:
         tuple[Optional[Company], str]:
@@ -121,12 +121,12 @@ async def update_employer_profile(
     Args:
         session (AsyncSession): Active SQLAlchemy async session for database access.
         account_id (int): The ID of the Employer account to update.
-        first_name (str): Updated employer contact's first name.
-        middle_name (Optional[str]): Updated employer contact's middle name.
-        last_name (str): Updated employer contact's last name.
-        email (str): Updated employer contact's unique email address.
-        phone (Optional[str]): Updated employer contact's phone number.
-        company_id (int): The updated ID of a company to associate with this profile.
+        first_name (Optional[str], optional): Updated employer contact's first name.
+        middle_name (Optional[str], optional): Updated employer contact's middle name.
+        last_name (Optional[str], optional): Updated employer contact's last name.
+        email (Optional[str], optional): Updated employer contact's unique email address.
+        phone (Optional[str], optional): Updated employer contact's phone number.
+        company_id (Optional[int], optional): The updated ID of a company to associate with this profile.
 
     Returns:
         tuple[Optional[EmployerAccount], str]:
@@ -182,19 +182,19 @@ async def update_student_profile(
     Args:
         session (AsyncSession): Active SQLAlchemy async session for database access.
         account_id (int): The ID of the Student account to update.
-        first_name (str): Updated student contact's first name.
-        middle_name (Optional[str]): Updated student contact's middle name.
-        last_name (str): Updated student contact's last name.
-        email (str): Updated student contact's unique email address.
-        phone (Optional[str]): Updated student contact's phone number.
-        department_name (Optional[str]): Updated student's department_name.
-        major_name (Optional[str]): Updated student's major_name.
-        credit_hours (Optional[int]): Updated student's credit_hours.
-        gpa (Optional[float]): Updated student's gpa.
-        start_semester (Optional[str]): Updated student's start_semester.
-        start_year (Optional[int]): Updated student's start_year.
-        transfer (Optional[bool]): Updated student's transfer.
-        resume_link (Optional[str]): Updated student's resume_link.
+        first_name (Optional[str], optional): Updated student contact's first name.
+        middle_name (Optional[str], optional): Updated student contact's middle name.
+        last_name (Optional[str], optional): Updated student contact's last name.
+        email (Optional[str], optional): Updated student contact's unique email address.
+        phone (Optional[str], optional): Updated student contact's phone number.
+        department_name (Optional[str], optional): Updated student's department_name.
+        major_name (Optional[str], optional): Updated student's major_name.
+        credit_hours (Optional[int], optional): Updated student's credit_hours.
+        gpa (Optional[float], optional): Updated student's gpa.
+        start_semester (Optional[str], optional): Updated student's start_semester.
+        start_year (Optional[int], optional): Updated student's start_year.
+        transfer (Optional[bool], optional): Updated student's transfer.
+        resume_link (Optional[str], optional): Updated student's resume_link.
 
     Returns:
         tuple[Optional[StudentAccount], str]:
@@ -270,12 +270,12 @@ async def update_faculty_profile(
     Args:
         session (AsyncSession): Active SQLAlchemy async session for database access.
         account_id (int): The ID of the Faculty account to update.
-        first_name (str): Updated faculty contact's first name.
-        middle_name (Optional[str]): Updated faculty contact's middle name.
-        last_name (str): Updated faculty contact's last name.
-        email (str): Updated faculty contact's unique email address.
-        phone (Optional[str]): Updated faculty contact's phone number.
-        department_name (Optional[str]): Updated faculty's department_name.
+        first_name (Optional[str], optional): Updated faculty contact's first name.
+        middle_name (Optional[str], optional): Updated faculty contact's middle name.
+        last_name (Optional[str], optional): Updated faculty contact's last name.
+        email (Optional[str], optional): Updated faculty contact's unique email address.
+        phone (Optional[str], optional): Updated faculty contact's phone number.
+        department_name (Optional[str], optional): Updated faculty's department_name.
 
     Returns:
         tuple[Optional[FacultyAccount], str]:
