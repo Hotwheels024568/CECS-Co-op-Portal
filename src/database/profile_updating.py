@@ -91,10 +91,7 @@ async def update_company_profile(
         if "companies_name_key" in constraint:
             return None, "Company name already exists."
 
-        return (
-            None,
-            f"Unique constraint violated in update_company_profile: {constraint}",
-        )
+        return (None, f"Unique constraint violated in update_company_profile: {constraint}")
 
     except DBAPIError as e:
         await session.rollback()
@@ -243,10 +240,7 @@ async def update_student_profile(
         if "contact_info_email_key" in constraint:
             return None, "Email already in use."
 
-        return (
-            None,
-            f"Unique constraint violated in update_student_profile: {constraint}",
-        )
+        return (None, f"Unique constraint violated in update_student_profile: {constraint}")
 
     except DBAPIError as e:
         await session.rollback()
@@ -317,10 +311,7 @@ async def update_faculty_profile(
         if "contact_info_email_key" in constraint:
             return None, "Email already in use."
 
-        return (
-            None,
-            f"Unique constraint violated in update_faculty_profile: {constraint}",
-        )
+        return (None, f"Unique constraint violated in update_faculty_profile: {constraint}")
 
     except DBAPIError as e:
         await session.rollback()

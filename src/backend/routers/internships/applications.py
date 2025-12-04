@@ -256,10 +256,7 @@ class StudentApplicationDeletionRequest(BaseModel):
     "/{application_id}/update",
     tags=["Students"],
     summary="Update a student's internship application",
-    description=(
-        "Allows a student to update their internship application materials (note, resume link, cover letter link). "
-        "Eligibility and ownership checks are enforced. Only the student who created the application can update it."
-    ),
+    description="Allows a student to update their internship application details (note, resume link, cover letter link).",
     response_model=GeneralRequestResponse,
 )
 async def update_application_endpoint(
@@ -270,7 +267,7 @@ async def update_application_endpoint(
     """
     Update a student's existing internship application.
 
-    This endpoint enables students to update their submitted application materials, such as their note,
+    This endpoint enables students to update their submitted application details, such as their note,
     resume link, or cover letter link. Only authorized students that own the application may perform this action.
 
     Args:

@@ -47,6 +47,7 @@ class Account(Base):
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     password: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
     salt: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
+    # Nullable
     user_type: Mapped[str | None] = mapped_column(
         Enum("Employer", "Student", "Faculty", name="user_type"), nullable=True
     )
@@ -81,8 +82,7 @@ class Address(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     address_line1: Mapped[str] = mapped_column(String(100), nullable=False)
-    # Nullable
-    address_line2: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    address_line2: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Nullable
     city: Mapped[str] = mapped_column(String(50), nullable=False)
     state_province: Mapped[str] = mapped_column(String(50), nullable=False)
     zip_postal: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -108,8 +108,7 @@ class Company(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     address_id: Mapped[int] = mapped_column(ForeignKey("addresses.id"), unique=True, nullable=False)
-    # Nullable
-    website_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    website_link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
 
     # 1-to-1 with Address
     address: Mapped["Address"] = relationship("Address", uselist=False)
@@ -277,7 +276,7 @@ class StudentAccount(Account):
     )
     start_year: Mapped[int] = mapped_column(Integer, nullable=False)
     transfer: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
 
     department: Mapped["Department"] = relationship("Department", back_populates="students")
     major: Mapped["Major"] = relationship("Major", back_populates="students")
@@ -346,7 +345,7 @@ class Internship(Base):
     weekly_hours: Mapped[int] = mapped_column(Integer, nullable=False)
     # Calculated externally
     total_work_hours: Mapped[int] = mapped_column(Integer, nullable=False)
-    salary_info: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    salary_info: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
     status: Mapped[str] = mapped_column(
         Enum(
             "Open",  # Accepting Applications
@@ -534,9 +533,9 @@ class InternshipApplication(Base):
         server_default=func.timezone("utc", func.now()),
     )
     coop_credit_eligibility: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    note: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    cover_letter_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    note: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
+    resume_link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
+    cover_letter_link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
     selected: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("FALSE")
     )
@@ -584,12 +583,12 @@ class InternshipSummary(Base):
         ForeignKey("internship_applications.id", ondelete="CASCADE"), primary_key=True
     )
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
-    file_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    file_link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Nullable
     employer_approval: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("FALSE")
     )
     # Nullable, e.g., "A", "B", "C"
-    letter_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    letter_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)  # Nullable
 
     student: "StudentAccount" = association_proxy("application", "student")
     internship: "Internship" = association_proxy("application", "internship")
