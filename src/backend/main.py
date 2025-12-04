@@ -67,22 +67,3 @@ app.include_router(applications_router, prefix="/applications")
 app.include_router(summaries_router, prefix="/summaries")
 
 app.include_router(catalog_router, prefix="/catalog")
-
-"""
-Core Routers to Implement
-1. Authentication & Account
-    /auth/ (login, logout, registration, token)
-    /accounts/ (generic for all account types: Employer, Student, Faculty)
-    Subroutes: /students/, /employers/, /faculty/
-
-5. Internship Opportunity
-    /internships/
-    CRUD for internship postings (employers, possibly faculty)
-    GET/search for opportunities (students, faculty)
-    Internships can have majors, skills, status (enums), hours, etc.
-
-9. Notifications (Bonus/Optional)
-    /notifications/
-    For system to send emails or portal notifications
-
-"""
