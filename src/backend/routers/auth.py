@@ -6,6 +6,7 @@ import hmac, secrets, time
 from src.backend.globals import (
     SESSION_STORE,
     SESSION_EXPIRE_SECONDS,
+    USER_SESSION_MAP,
     AccountInfo,
     UserType,
     get_db_manager,
@@ -64,7 +65,7 @@ async def register(
     Raises:
         HTTPException (400): If the username is already taken or registration fails.
     """
-    global SESSION_STORE
+    global SESSION_STORE, USER_SESSION_MAP
     # 1. Generate salt and hash
     salt = secrets.token_bytes(16)
     pw_hash = hash_password(request.password, salt)
@@ -82,6 +83,7 @@ async def register(
                 "user_type": user_type,
                 "expires_at": expires_at,
             }
+            USER_SESSION_MAP[account.id] = session_id
             return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
@@ -122,7 +124,7 @@ async def login(
     Raises:
         HTTPException (401): If credentials are invalid.
     """
-    global SESSION_STORE
+    global SESSION_STORE, USER_SESSION_MAP
     # 1. Look up user by username
     async with db_manager.session() as db_session:
         account = await get_account_by_username(db_session, request.username)
@@ -137,11 +139,14 @@ async def login(
         stored_hash = account.password
         user_type = account.user_type
 
-    # 3. Hash the given password + pepper + salt
+    # 3. Hash the given password + pepper + salt & Constant-time comparison
     password_match = hmac.compare_digest(hash_password(request.password, salt), stored_hash)
 
-    # 4. Constant-time comparison
+    # 5. Session management
     if account is not None and password_match:
+        if account.id in USER_SESSION_MAP:
+            SESSION_STORE.pop(USER_SESSION_MAP.get(account.id), None)
+
         # Generate session token, store login info
         session_id = secrets.token_urlsafe(32)
         expires_at = time.time() + SESSION_EXPIRE_SECONDS
@@ -150,6 +155,7 @@ async def login(
             "user_type": user_type,
             "expires_at": expires_at,
         }
+        USER_SESSION_MAP[account.id] = session_id
         return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
@@ -190,6 +196,7 @@ async def logout(
     session_id = session_data[0]
     removed = SESSION_STORE.pop(session_id, None)
     if removed is not None:
+        USER_SESSION_MAP.pop(removed["account_id"], None)
         return GeneralRequestResponse(success=True, message="Logged out")
 
     raise HTTPException(

@@ -32,6 +32,8 @@ DB_MANAGER: Optional[AsyncDBManager] = None
 SESSION_STORE: dict[str, AccountInfo] = {}
 SESSION_EXPIRE_SECONDS = 3600
 
+USER_SESSION_MAP: dict[int, str] = {}
+
 # Load pepper from environment variable for production, fallback for development.
 PEPPER = os.environ.get("APP_PEPPER", "dev-pepper-secret")
 
