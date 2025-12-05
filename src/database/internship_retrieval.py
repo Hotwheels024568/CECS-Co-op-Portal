@@ -55,9 +55,9 @@ async def search_internships(
         statement = statement.join(Company, Internship.company_id == Company.id)
         filters.append(Company.id == company_id)
 
-    if title:
+    if title is not None:
         filters.append(Internship.title.ilike(f"%{title}%"))
-    if location_type:
+    if location_type is not None:
         filters.append(Internship.location_type == location_type)
     if duration_weeks is not None:
         filters.append(Internship.duration_weeks >= duration_weeks)
@@ -66,12 +66,12 @@ async def search_internships(
     if status is not None:
         filters.append(Internship.status == status)
 
-    if majors:
+    if majors is not None:
         statement = statement.join(InternshipMajor, Internship.id == InternshipMajor.internship_id)
         statement = statement.join(Major, InternshipMajor.major_id == Major.id)
         filters.append(Major.name.in_(majors))
 
-    if required_skills:
+    if required_skills is not None:
         for skill in required_skills:
             skill_alias = Skill.__table__.alias()
             req_alias = InternshipReqSkill.__table__.alias()
@@ -81,7 +81,7 @@ async def search_internships(
             )
             filters.append(skill_alias.c.name == skill)
 
-    if preferred_skills:
+    if preferred_skills is not None:
         for skill in preferred_skills:
             skill_alias = Skill.__table__.alias()
             pref_alias = InternshipPrefSkill.__table__.alias()
@@ -96,7 +96,9 @@ async def search_internships(
 
     # ---- TOTAL COUNT ---
     # It's important to construct the COUNT query using the *same joins and filters* so that the count matches the filter
-    count_stmt = statement.with_only_columns(func.count(Internship.id).distinct()).order_by(None)
+    count_stmt = statement.with_only_columns(func.count(func.distinct(Internship.id))).order_by(
+        None
+    )
     count_result = await session.execute(count_stmt)
     total_count = count_result.scalar_one() or 0
 

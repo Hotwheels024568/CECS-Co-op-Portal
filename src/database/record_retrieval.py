@@ -199,6 +199,29 @@ async def get_summary_by_id(session: AsyncSession, id: int) -> Optional[Internsh
     return await session.get(InternshipSummary, id)
 
 
+async def get_summaries_by_student_id(
+    session: AsyncSession, student_id: int
+) -> list[InternshipSummary]:
+    statement = (
+        select(InternshipSummary)
+        .join(InternshipSummary.application)
+        .join(InternshipApplication.student)
+        .filter(StudentProfile.id == student_id)
+    )
+    return await get_first_column_element_of_all_rows(session, statement)
+
+
+async def get_summaries_by_internship_id(
+    session: AsyncSession, internship_id: int
+) -> list[InternshipSummary]:
+    statement = (
+        select(InternshipSummary)
+        .join(InternshipSummary.application)
+        .filter(InternshipApplication.internship_id == internship_id)
+    )
+    return await get_first_column_element_of_all_rows(session, statement)
+
+
 async def get_department_summaries(
     session: AsyncSession, department_id: int
 ) -> list[InternshipSummary]:

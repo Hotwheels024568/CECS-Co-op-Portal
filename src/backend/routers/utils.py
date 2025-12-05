@@ -7,6 +7,7 @@ from src.backend.globals import (
     PEPPER,
     SESSION_EXPIRE_SECONDS,
     SESSION_STORE,
+    USER_SESSION_MAP,
     AccountInfo,
     UserType,
 )
@@ -57,7 +58,9 @@ def get_current_session(
     session = SESSION_STORE.get(session_id)
     now = time.time()
     if not session or session["expires_at"] < now:
-        SESSION_STORE.pop(session_id, None)
+        removed = SESSION_STORE.pop(session_id, None)
+        if removed is not None:
+            USER_SESSION_MAP.pop(removed["account_id"], None)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session expired or invalid")
 
     session["expires_at"] = now + SESSION_EXPIRE_SECONDS

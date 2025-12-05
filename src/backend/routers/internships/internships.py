@@ -22,17 +22,17 @@ from src.database.internship_retrieval import search_internships
 from src.database.internship_updating import update_internship
 from src.database.manage import AsyncDBManager
 from src.database.record_retrieval import (
-    get_application_by_id,
     get_employer_by_id,
     get_internship_by_id,
+    get_summaries_by_internship_id,
 )
-from src.database.schema import ContactInfo, StudentProfile
 from src.database.sync_retrieval import (
-    get_application_internship,
     get_application_student,
     get_company_address,
     get_contact,
     get_department,
+    get_employer_company,
+    get_internship_address,
     get_internship_applications,
     get_internship_company,
     get_internship_majors,
@@ -102,10 +102,10 @@ async def search_internships_endpoint(
             db_session,
             data.company_id,
             data.title,
-            data.location_type.value,
+            data.location_type.value if data.location_type else None,
             data.duration_weeks,
             data.weekly_hours,
-            data.status.value,
+            data.status.value if data.status else None,
             data.majors,
             data.required_skills,
             data.preferred_skills,
@@ -122,8 +122,10 @@ async def search_internships_endpoint(
             preferred_skills = await db_session.run_sync(
                 get_internship_preferred_skills, internship
             )
+            internship_address = await db_session.run_sync(get_internship_address, internship)
             results.append(
                 Internship(
+                    id=internship.id,
                     company=Company(
                         id=company.id,
                         name=company.name,
@@ -139,16 +141,27 @@ async def search_internships_endpoint(
                     ),
                     title=internship.title,
                     description=internship.description,
-                    location_type=internship.location_type,
-                    address=internship.address,
+                    location_type=LocationType(internship.location_type),
+                    address=(
+                        Address(
+                            address_line1=internship_address.address_line1,
+                            address_line2=internship_address.address_line2,
+                            city=internship_address.city,
+                            state_province=internship_address.state_province,
+                            zip_postal=internship_address.zip_postal,
+                            country=internship_address.country,
+                        )
+                        if internship_address
+                        else None
+                    ),
                     duration_weeks=internship.duration_weeks,
                     weekly_hours=internship.weekly_hours,
                     total_work_hours=internship.total_work_hours,
                     salary_info=internship.salary_info,
-                    status=internship.status,
-                    majors=majors,
-                    required_skills=required_skills,
-                    preferred_skills=preferred_skills,
+                    status=InternshipStatus(internship.status),
+                    majors=[major.name for major in majors],
+                    required_skills=[skill.name for skill in required_skills],
+                    preferred_skills=[skill.name for skill in preferred_skills],
                 )
             )
     return InternshipSearchResponse(internships=results, count=count)
@@ -199,7 +212,9 @@ async def get_internship(
         majors = await db_session.run_sync(get_internship_majors, internship)
         required_skills = await db_session.run_sync(get_internship_required_skills, internship)
         preferred_skills = await db_session.run_sync(get_internship_preferred_skills, internship)
+        internship_address = await db_session.run_sync(get_internship_address, internship)
         return Internship(
+            id=internship.id,
             company=Company(
                 id=company.id,
                 name=company.name,
@@ -215,16 +230,27 @@ async def get_internship(
             ),
             title=internship.title,
             description=internship.description,
-            location_type=internship.location_type,
-            address=internship.address,
+            location_type=LocationType(internship.location_type),
+            address=(
+                Address(
+                    address_line1=internship_address.address_line1,
+                    address_line2=internship_address.address_line2,
+                    city=internship_address.city,
+                    state_province=internship_address.state_province,
+                    zip_postal=internship_address.zip_postal,
+                    country=internship_address.country,
+                )
+                if internship_address
+                else None
+            ),
             duration_weeks=internship.duration_weeks,
             weekly_hours=internship.weekly_hours,
             total_work_hours=internship.total_work_hours,
             salary_info=internship.salary_info,
-            status=internship.status,
-            majors=majors,
-            required_skills=required_skills,
-            preferred_skills=preferred_skills,
+            status=InternshipStatus(internship.status),
+            majors=[major.name for major in majors],
+            required_skills=[skill.name for skill in required_skills],
+            preferred_skills=[skill.name for skill in preferred_skills],
         )
 
 
@@ -633,7 +659,7 @@ async def get_internship_summaries(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_employer_by_id(db_session, account_id)
-        company = profile.company
+        company = await db_session.run_sync(get_employer_company, profile)
         internship = await get_internship_by_id(db_session, internship_id)
         if internship.company_id != company.id:
             raise HTTPException(
@@ -641,7 +667,7 @@ async def get_internship_summaries(
                 detail="You do not have permission to view summaries for internships owned by another company.",
             )
 
-        summaries = internship.summaries
+        summaries = await get_summaries_by_internship_id(db_session, internship.id)
         results = []
         for summary in summaries:
             student = await db_session.run_sync(get_summary_student, summary)

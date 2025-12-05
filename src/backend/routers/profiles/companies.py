@@ -16,14 +16,17 @@ from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
-from src.database.record_retrieval import get_companies, get_employer_by_id
+from src.database.record_retrieval import (
+    get_companies,
+    get_employer_by_id,
+    get_summaries_by_internship_id,
+)
 from src.database.sync_retrieval import (
     get_employer_company,
     get_company_address,
     get_contact,
     get_department,
     get_employer_company_internships,
-    get_internship_summaries,
     get_major,
     get_summary_student,
 )
@@ -229,6 +232,8 @@ async def update_profile(
 # Could make a delete_company endpoint (Employer's company)
 #   Would have to handle dangling FKs and prevent if the company is linked to other employers
 
+# Need to make an endpoint to allow employers to get their company's internships
+
 
 class EmployerSummaryInternship(BaseModel):
     title: str
@@ -295,7 +300,7 @@ async def get_company_internship_summaries(
 
         results = []
         for internship in internships:
-            summaries = await db_session.run_sync(get_internship_summaries, internship)
+            summaries = await get_summaries_by_internship_id(db_session, internship.id)
             for summary in summaries:
                 student = await db_session.run_sync(get_summary_student, summary)
                 contact = await db_session.run_sync(get_contact, profile)

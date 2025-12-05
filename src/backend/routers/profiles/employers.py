@@ -143,6 +143,7 @@ async def get_profile(
         ),
         profile=EmployerCompany(
             company=Company(
+                id=company.id,
                 name=company.name,
                 address=Address(
                     address_line1=address.address_line1,

@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from src.database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
+from src.database.sync_retrieval import get_company_address
 from src.database.utils import get_constraint_name_from_integrity_error
 from src.database.record_retrieval import get_company_by_id
 from src.database.record_updating import (
@@ -62,7 +63,7 @@ async def update_company_profile(
         if company is None:
             return None, "Company does not exist."
 
-        address_id = company.address.id
+        address_id = (await session.run_sync(get_company_address, company)).id
         address = await update_address(
             session,
             address_id,

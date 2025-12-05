@@ -19,18 +19,16 @@ from src.database.record_retrieval import (
     get_employer_by_id,
     get_faculty_by_id,
     get_student_by_id,
+    get_summaries_by_student_id,
     get_summary_by_id,
 )
 from src.database.record_updating import update_summary
 from src.database.sync_retrieval import (
-    get_application_internship,
-    get_application_student,
     get_contact,
     get_department,
     get_employer_company,
     get_internship_company,
     get_major,
-    get_student_summaries,
     get_summary_application,
     get_summary_company,
     get_summary_internship,
@@ -100,11 +98,11 @@ async def get_department_summaries_endpoint(
 
         results = []
         for summary in summaries:
-            student = await db_session.run_sync(get_application_student, application)
+            student = await db_session.run_sync(get_summary_student, summary)
             contact = await db_session.run_sync(get_contact, student)
             major = await db_session.run_sync(get_major, student)
             department = await db_session.run_sync(get_department, student)
-            internship = await db_session.run_sync(get_application_internship, application)
+            internship = await db_session.run_sync(get_summary_internship, summary)
             company = await db_session.run_sync(get_internship_company, internship)
             application = await db_session.run_sync(get_summary_application, summary)
             results.append(
@@ -253,8 +251,7 @@ async def get_student_summaries_endpoint(
 
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
-        profile = await get_student_by_id(db_session, account_id)
-        summaries = await db_session.run_sync(get_student_summaries, profile)
+        summaries = await get_summaries_by_student_id(db_session, account_id)
 
         results = []
         for summary in summaries:
@@ -262,7 +259,7 @@ async def get_student_summaries_endpoint(
             application = await db_session.run_sync(get_summary_application, summary)
             company = await db_session.run_sync(get_internship_company, internship)
             results.append(
-                StudentSummaryListResponse(
+                StudentSummaryResponse(
                     summary_id=summary.id,
                     application=StudentSummaryApplication(
                         internship=BriefInternship(

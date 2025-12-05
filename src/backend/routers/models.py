@@ -117,6 +117,7 @@ class InternshipStatus(Enum):
 
 
 class Internship(BaseModel):
+    id: int
     company: Company
     title: str
     description: str

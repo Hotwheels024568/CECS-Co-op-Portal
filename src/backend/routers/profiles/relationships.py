@@ -15,6 +15,7 @@ from src.database.sync_retrieval import (
     get_major,
     get_student_faculty,
 )
+from src.utils_semesters import Semester
 
 router = APIRouter()
 
@@ -76,11 +77,11 @@ async def get_dept_students(
                         phone=contact.phone,
                     ),
                     profile=StudentProfile(
-                        department=department.name,
+                        department_name=department.name,
                         major_name=major.name,
                         credit_hours=student.credit_hours,
                         gpa=student.gpa,
-                        start_semester=student.start_semester,
+                        start_semester=Semester(student.start_semester),
                         start_year=student.start_year,
                         transfer=student.transfer,
                         resume_link=student.resume_link,

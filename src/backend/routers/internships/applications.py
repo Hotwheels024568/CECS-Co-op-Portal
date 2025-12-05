@@ -83,7 +83,7 @@ async def get_department_applications_endpoint(
     account_id = session_data[1]["account_id"]
     async with db_manager.session() as db_session:
         profile = await get_faculty_by_id(db_session, account_id)
-        department = profile.department
+        department = await db_session.run_sync(get_department, profile)
         applications = await get_department_applications(db_session, department.id)
 
         results = []

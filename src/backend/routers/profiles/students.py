@@ -156,11 +156,11 @@ async def get_profile(
             phone=contact.phone,
         ),
         profile=StudentProfile(
-            department=department.name,
+            department_name=department.name,
             major_name=major.name,
             credit_hours=profile.credit_hours,
             gpa=profile.gpa,
-            start_semester=profile.start_semester,
+            start_semester=Semester(profile.start_semester),
             start_year=profile.start_year,
             transfer=profile.transfer,
             resume_link=profile.resume_link,

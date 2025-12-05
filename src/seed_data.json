@@ -160,6 +160,16 @@
             "username": "frank",
             "password": "password6",
             "user_type": "Student"
+        },
+        {
+            "username": "gregory",
+            "password": "password7",
+            "user_type": "Employer"
+        },
+        {
+            "username": "jeremy",
+            "password": "password8",
+            "user_type": "Faculty"
         }
     ],
     "contact_info": [
@@ -200,6 +210,18 @@
             "first": "Frank",
             "last": "Foster",
             "email": "frank@example.com"
+        },
+        {
+            "id": 7,
+            "first": "Gregory",
+            "last": "Garrison",
+            "email": "gregory@garrison.com"
+        },
+        {
+            "id": 8,
+            "first": "Jeremy",
+            "last": "Johnson",
+            "email": "jeremy@johnson.com"
         }
     ],
     "employer_accounts": [
@@ -210,12 +232,20 @@
         {
             "id": 5,
             "company_id": 2
+        },
+        {
+            "id": 7,
+            "company_id": 3
         }
     ],
     "faculty_accounts": [
         {
             "id": 3,
             "department_id": 1
+        },
+        {
+            "id": 8,
+            "department_id": 3
         }
     ],
     "student_accounts": [

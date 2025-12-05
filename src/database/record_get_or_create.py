@@ -45,12 +45,14 @@ async def get_or_create_company(
         website_link=website_link,
     )
     session.add(company)
+    savepoint = await session.begin_nested()
     try:
         await session.flush()
+        await savepoint.commit()
         return company
 
     except IntegrityError:
-        await session.rollback()
+        await savepoint.rollback()
         return await get_company_by_name(session, company_name)
 
 
@@ -69,14 +71,16 @@ async def get_or_create_department(session: AsyncSession, name: str) -> Optional
     Returns:
         Optional[Department]: The existing or newly created Department, or None if the operation fails.
     """
+    savepoint = await session.begin_nested()
     department = Department(name=name)
     session.add(department)
     try:
         await session.flush()
+        await savepoint.commit()
         return department
 
     except IntegrityError:
-        await session.rollback()
+        await savepoint.rollback()
         return await get_department_by_name(session, name)
 
 
@@ -95,14 +99,16 @@ async def get_or_create_major(session: AsyncSession, name: str) -> Optional[Majo
     Returns:
         Optional[Major]: The existing or newly created Major, or None if the operation fails.
     """
+    savepoint = await session.begin_nested()
     major = Major(name=name)
     session.add(major)
     try:
         await session.flush()
+        await savepoint.commit()
         return major
 
     except IntegrityError:
-        await session.rollback()
+        await savepoint.rollback()
         return await get_major_by_name(session, name)
 
 
@@ -121,12 +127,14 @@ async def get_or_create_skill(session: AsyncSession, name: str) -> Optional[Skil
     Returns:
         Optional[Skill]: The existing or newly created Skill, or None if the operation fails.
     """
+    savepoint = await session.begin_nested()
     skill = Skill(name=name)
     session.add(skill)
     try:
         await session.flush()
+        await savepoint.commit()
         return skill
 
     except IntegrityError:
-        await session.rollback()
+        await savepoint.rollback()
         return await get_skill_by_name(session, name)

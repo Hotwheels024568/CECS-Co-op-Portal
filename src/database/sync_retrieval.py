@@ -74,6 +74,11 @@ def get_internship_company(_, internship: Internship) -> Company:
     return internship.company
 
 
+# address = await db_session.run_sync(get_internship_address, internship)
+def get_internship_address(_, internship: Internship) -> Address:
+    return internship.address
+
+
 # majors = await db_session.run_sync(get_internship_majors, internship)
 def get_internship_majors(_, internship: Internship) -> list[Major]:
     return [major.major for major in internship.majors]
@@ -94,11 +99,6 @@ def get_internship_applications(_, internship: Internship) -> list[InternshipApp
     return internship.applications
 
 
-# summaries = await db_session.run_sync(get_internship_summaries, internship)
-def get_internship_summaries(_, internship: Internship) -> list[InternshipSummary]:
-    return internship.summaries
-
-
 # internship = await db_session.run_sync(get_application_internship, application)
 def get_application_internship(_, application: InternshipApplication) -> Internship:
     return application.internship
@@ -111,12 +111,12 @@ def get_application_student(_, application: InternshipApplication) -> StudentPro
 
 # student = await db_session.run_sync(get_summary_student, summary)
 def get_summary_student(_, summary: InternshipSummary) -> StudentProfile:
-    return summary.student
+    return summary.application.student
 
 
 # internship = await db_session.run_sync(get_summary_internship, summary)
 def get_summary_internship(_, summary: InternshipSummary) -> Internship:
-    return summary.internship
+    return summary.application.internship
 
 
 # company = await db_session.run_sync(get_summary_company, summary)
