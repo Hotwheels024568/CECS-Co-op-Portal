@@ -3,6 +3,7 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 
 from src.backend.globals import AccountInfo, UserType, get_db_manager
+from src.backend.routers.internships.internships import InternshipSearchResponse
 from src.backend.routers.models import (
     Address,
     AddressCreationDetails,
@@ -10,9 +11,16 @@ from src.backend.routers.models import (
     BriefStudentProfile,
     Company,
     Contact,
+    EmployerApplicationSummary,
+    EmployerInternshipSummary,
+    EmployerSummary,
     GeneralRequestResponse,
+    Internship,
+    InternshipStatus,
+    LocationType,
 )
 from src.backend.routers.utils import assert_user_type, get_current_session
+from src.database.internship_retrieval import search_internships
 from src.database.manage import AsyncDBManager
 from src.database.profile_insertion import create_company
 from src.database.profile_updating import update_company_profile
@@ -22,11 +30,16 @@ from src.database.record_retrieval import (
     get_summaries_by_internship_id,
 )
 from src.database.sync_retrieval import (
-    get_employer_company,
     get_company_address,
     get_contact,
     get_department,
     get_employer_company_internships,
+    get_employer_company,
+    get_internship_address,
+    get_internship_company,
+    get_internship_majors,
+    get_internship_preferred_skills,
+    get_internship_required_skills,
     get_major,
     get_summary_student,
 )
@@ -232,31 +245,129 @@ async def update_profile(
 # Could make a delete_company endpoint (Employer's company)
 #   Would have to handle dangling FKs and prevent if the company is linked to other employers
 
-# Need to make an endpoint to allow employers to get their company's internships
+
+class CompanyInternshipSearchRequest(BaseModel):
+    title: Optional[Annotated[str, StringConstraints(max_length=255)]] = None
+    location_type: Optional[LocationType] = None
+    duration_weeks: Optional[int] = None
+    weekly_hours: Optional[int] = None
+    status: Optional[InternshipStatus] = None
+    majors: Optional[list[Annotated[str, StringConstraints(max_length=100)]]] = None
+    required_skills: Optional[list[Annotated[str, StringConstraints(max_length=100)]]] = None
+    preferred_skills: Optional[list[Annotated[str, StringConstraints(max_length=100)]]] = None
+    page: int = 1
+    page_size: int = 20
 
 
-class EmployerSummaryInternship(BaseModel):
-    title: str
-    description: str
-    duration_weeks: int
-    weekly_hours: int
-    total_work_hours: int
+@router.post(
+    "/me/internships/summaries",
+    tags=["Employers"],
+    summary="Search your company's internships by filters and keywords",
+    description=(
+        "Allows employers to search their company's internships using multiple filters such as title, "
+        "location type, duration, hours, status, majors, and skills. Returns a paginated list of matching internships."
+    ),
+    response_model=InternshipSearchResponse,
+)
+async def search_company_internships_endpoint(
+    data: CompanyInternshipSearchRequest,
+    session_data: tuple[str, AccountInfo] = Depends(get_current_session),
+    db_manager: AsyncDBManager = Depends(get_db_manager),
+) -> InternshipSearchResponse:
+    """
+    Search company internships using flexible filters.
 
+    Enables authorized users to perform a filtered search on company internships using criteria such as title,
+    location type, duration, status, majors, required and preferred skills. Results are paginated.
 
-class EmployerSummaryApplication(BaseModel):
-    student: BriefStudentProfile
-    internship: EmployerSummaryInternship
+    Args:
+        data (InternshipSearchRequest): Search filters for internships.
+        session_data (tuple[str, AccountInfo], optional): Session information from get_current_session.
 
+    Returns:
+        InternshipSearchResponse: List and count of filtered internships.
 
-class EmployerSummary(BaseModel):
-    summary: str
-    file_link: Optional[str]
-    employer_approval: bool
+    Raises:
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
+    """
+    assert_user_type(session_data, UserType.EMPLOYER)
+
+    account_id = session_data[1]["account_id"]
+    async with db_manager.session() as db_session:
+        profile = await get_employer_by_id(db_session, account_id)
+        internships, count = await search_internships(
+            db_session,
+            profile.company_id,
+            data.title,
+            data.location_type.value if data.location_type else None,
+            data.duration_weeks,
+            data.weekly_hours,
+            data.status.value if data.status else None,
+            data.majors,
+            data.required_skills,
+            data.preferred_skills,
+            data.page,
+            data.page_size,
+        )
+
+        results = []
+        for internship in internships:
+            company = await db_session.run_sync(get_internship_company, internship)
+            address = await db_session.run_sync(get_company_address, company)
+            majors = await db_session.run_sync(get_internship_majors, internship)
+            required_skills = await db_session.run_sync(get_internship_required_skills, internship)
+            preferred_skills = await db_session.run_sync(
+                get_internship_preferred_skills, internship
+            )
+            internship_address = await db_session.run_sync(get_internship_address, internship)
+            results.append(
+                Internship(
+                    id=internship.id,
+                    company=Company(
+                        id=company.id,
+                        name=company.name,
+                        address=Address(
+                            address_line1=address.address_line1,
+                            address_line2=address.address_line2,
+                            city=address.city,
+                            state_province=address.state_province,
+                            zip_postal=address.zip_postal,
+                            country=address.country,
+                        ),
+                        website_link=company.website_link,
+                    ),
+                    title=internship.title,
+                    description=internship.description,
+                    location_type=LocationType(internship.location_type),
+                    address=(
+                        Address(
+                            address_line1=internship_address.address_line1,
+                            address_line2=internship_address.address_line2,
+                            city=internship_address.city,
+                            state_province=internship_address.state_province,
+                            zip_postal=internship_address.zip_postal,
+                            country=internship_address.country,
+                        )
+                        if internship_address
+                        else None
+                    ),
+                    duration_weeks=internship.duration_weeks,
+                    weekly_hours=internship.weekly_hours,
+                    total_work_hours=internship.total_work_hours,
+                    salary_info=internship.salary_info,
+                    status=InternshipStatus(internship.status),
+                    majors=[major.name for major in majors],
+                    required_skills=[skill.name for skill in required_skills],
+                    preferred_skills=[skill.name for skill in preferred_skills],
+                )
+            )
+    return InternshipSearchResponse(internships=results, count=count)
 
 
 class EmployerSummaryResponse(BaseModel):
     summary_id: int
-    application: EmployerSummaryApplication
+    application: EmployerApplicationSummary
     summary: EmployerSummary
 
 
@@ -309,7 +420,7 @@ async def get_company_internship_summaries(
                 results.append(
                     EmployerSummaryResponse(
                         summary_id=summary.id,
-                        application=EmployerSummaryApplication(
+                        application=EmployerApplicationSummary(
                             student=BriefStudentProfile(
                                 contact=Contact(
                                     first_name=contact.first,
@@ -321,7 +432,7 @@ async def get_company_internship_summaries(
                                 department_name=department.name,
                                 major_name=major.name,
                             ),
-                            internship=EmployerSummaryInternship(
+                            internship=EmployerInternshipSummary(
                                 title=internship.title,
                                 description=internship.description,
                                 duration_weeks=internship.duration_weeks,

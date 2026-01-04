@@ -1,18 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
-import hmac, secrets, time
+import hmac, secrets
 
 from src.backend.globals import (
-    SESSION_STORE,
-    SESSION_EXPIRE_SECONDS,
-    USER_SESSION_MAP,
     AccountInfo,
     UserType,
     get_db_manager,
 )
 from src.backend.routers.models import GeneralRequestResponse
-from src.backend.routers.utils import get_current_session, hash_password
+from src.backend.routers.utils import (
+    create_session,
+    get_current_session,
+    hash_password,
+    account_id_session_control,
+    remove_session,
+)
 from src.database.manage import AsyncDBManager
 from src.database.record_insertion import add_account
 from src.database.record_retrieval import get_account_by_username
@@ -65,7 +68,6 @@ async def register(
     Raises:
         HTTPException (400): If the username is already taken or registration fails.
     """
-    global SESSION_STORE, USER_SESSION_MAP
     # 1. Generate salt and hash
     salt = secrets.token_bytes(16)
     pw_hash = hash_password(request.password, salt)
@@ -74,16 +76,8 @@ async def register(
     async with db_manager.session() as db_session:
         account = await add_account(db_session, request.username, pw_hash, salt, commit=True)
         if account is not None:
-            # Instant login: create session
-            session_id = secrets.token_urlsafe(32)
-            expires_at = time.time() + SESSION_EXPIRE_SECONDS
             user_type = account.user_type or None
-            SESSION_STORE[session_id] = {
-                "account_id": account.id,
-                "user_type": user_type,
-                "expires_at": expires_at,
-            }
-            USER_SESSION_MAP[account.id] = session_id
+            session_id = create_session(account.id, user_type)
             return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
@@ -124,7 +118,6 @@ async def login(
     Raises:
         HTTPException (401): If credentials are invalid.
     """
-    global SESSION_STORE, USER_SESSION_MAP
     # 1. Look up user by username
     async with db_manager.session() as db_session:
         account = await get_account_by_username(db_session, request.username)
@@ -144,18 +137,10 @@ async def login(
 
     # 5. Session management
     if account is not None and password_match:
-        if account.id in USER_SESSION_MAP:
-            SESSION_STORE.pop(USER_SESSION_MAP.get(account.id), None)
+        account_id_session_control(account.id)
 
         # Generate session token, store login info
-        session_id = secrets.token_urlsafe(32)
-        expires_at = time.time() + SESSION_EXPIRE_SECONDS
-        SESSION_STORE[session_id] = {
-            "account_id": account.id,
-            "user_type": user_type,
-            "expires_at": expires_at,
-        }
-        USER_SESSION_MAP[account.id] = session_id
+        session_id = create_session(account.id, user_type)
         return LoginResponse(success=True, session_id=session_id, user_type=user_type)
 
     raise HTTPException(
@@ -191,12 +176,7 @@ async def logout(
     Raises:
         HTTPException (401): If the session is invalid or already expired.
     """
-    global SESSION_STORE
-
-    session_id = session_data[0]
-    removed = SESSION_STORE.pop(session_id, None)
-    if removed is not None:
-        USER_SESSION_MAP.pop(removed["account_id"], None)
+    if remove_session(session_data[0]):
         return GeneralRequestResponse(success=True, message="Logged out")
 
     raise HTTPException(

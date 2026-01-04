@@ -243,7 +243,7 @@ async def update_profile(
             profile.major_name if profile else None,
             profile.credit_hours if profile else None,
             profile.gpa if profile else None,
-            profile.start_semester if profile else None,
+            profile.start_semester.value if profile and profile.start_semester else None,
             profile.start_year if profile else None,
             profile.transfer if profile else None,
             profile.resume_link if profile else None,

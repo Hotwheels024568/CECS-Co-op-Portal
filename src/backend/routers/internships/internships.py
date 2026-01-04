@@ -10,12 +10,12 @@ from src.backend.routers.models import (
     Company,
     Contact,
     EmployerApplicationInfo,
+    EmployerSummary,
     GeneralRequestResponse,
     Internship,
     InternshipStatus,
     LocationType,
 )
-from src.backend.routers.profiles.companies import EmployerSummary
 from src.backend.routers.utils import assert_user_type, get_current_session
 from src.database.internship_insertion import create_internship
 from src.database.internship_retrieval import search_internships
@@ -26,6 +26,7 @@ from src.database.record_retrieval import (
     get_internship_by_id,
     get_summaries_by_internship_id,
 )
+from src.database.schema import InternshipApplication
 from src.database.sync_retrieval import (
     get_application_student,
     get_company_address,
@@ -93,7 +94,8 @@ async def search_internships_endpoint(
         InternshipSearchResponse: List and count of filtered internships.
 
     Raises:
-        HTTPException (401): If session is invalid.
+        HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
     """
     assert_user_type(session_data, {UserType.FACULTY, UserType.STUDENT})
 
@@ -199,6 +201,7 @@ async def get_internship(
     Raises:
         HTTPException (400): If the internship does not exist.
         HTTPException (401): If the session is invalid or expired.
+        HTTPException (403): If the session's user type is invalid.
     """
     assert_user_type(session_data, {UserType.FACULTY, UserType.STUDENT})
 
@@ -398,12 +401,12 @@ async def update_internship_endpoint(
             internship_id,
             data.title,
             data.description,
-            data.location_type.value,
+            data.location_type.value if data.location_type else None,
             None,  # address_id param, if handled elsewhere
             data.duration_weeks,
             data.weekly_hours,
             data.salary_info,
-            data.status.value,
+            data.status.value if data.status else None,
             data.majors,
             data.required_skills,
             data.preferred_skills,
@@ -482,17 +485,20 @@ async def update_selected_candidates_for_internship(
                 "You can only update the selected candidates for internships you own.",
             )
 
-        applications = await db_session.run_sync(get_internship_applications, internship)
-        applications_by_id = {app.id: app for app in applications}
-        current_selected = set(app.id for app in applications if app.selected)
-        new_selected = set(data.selected)
+        applications_dict: dict[int, InternshipApplication] = {}
+        current_selected: set[int] = set()
+        for app in await db_session.run_sync(get_internship_applications, internship):
+            applications_dict[app.id] = app
+            if app.selected:
+                current_selected.add(app.id)
+        new_selected: set[int] = set(data.selected)
 
         to_add = new_selected - current_selected
         to_remove = current_selected - new_selected
-        changed = []
+        changed: list[int] = []
         # Handle additions
         for app_id in to_add:
-            application = applications_by_id.get(app_id)
+            application = applications_dict.get(app_id)
             if not application:
                 raise HTTPException(
                     status.HTTP_400_BAD_REQUEST,
@@ -505,7 +511,7 @@ async def update_selected_candidates_for_internship(
 
         # Handle removals
         for app_id in to_remove:
-            application = applications_by_id.get(app_id)
+            application = applications_dict.get(app_id)
             if not application:
                 raise HTTPException(
                     status.HTTP_400_BAD_REQUEST,
@@ -612,13 +618,13 @@ async def get_internship_applications_endpoint(
     return EmployerApplicationListResponse(applications=results)
 
 
-class EmployerSpecificSummaryApplication(BaseModel):
+class EmployerSpecificApplicationSummary(BaseModel):
     student: BriefStudentProfile
 
 
 class EmployerSpecificSummaryResponse(BaseModel):
     summary_id: int
-    application: EmployerSpecificSummaryApplication
+    application: EmployerSpecificApplicationSummary
     summary: EmployerSummary
 
 
@@ -677,7 +683,7 @@ async def get_internship_summaries(
             results.append(
                 EmployerSpecificSummaryResponse(
                     summary_id=summary.id,
-                    application=EmployerSpecificSummaryApplication(
+                    application=EmployerSpecificApplicationSummary(
                         student=BriefStudentProfile(
                             contact=Contact(
                                 first_name=contact.first,

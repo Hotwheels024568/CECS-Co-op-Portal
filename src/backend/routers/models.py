@@ -142,6 +142,14 @@ class BriefInternship(BaseModel):
     total_work_hours: int
 
 
+class EmployerInternshipSummary(BaseModel):
+    title: str
+    description: str
+    duration_weeks: int
+    weekly_hours: int
+    total_work_hours: int
+
+
 class Application(BaseModel):
     application_date: datetime
     coop_credit_eligibility: bool
@@ -173,8 +181,24 @@ class StudentApplicationInfo(BaseModel):
     cover_letter_link: Optional[str]
 
 
+class EmployerApplicationSummary(BaseModel):
+    student: BriefStudentProfile
+    internship: EmployerInternshipSummary
+
+
+class StudentApplicationSummary(BaseModel):
+    internship: BriefInternship
+    coop_credit_eligibility: bool
+
+
 class Summary(BaseModel):
     summary: str
     file_link: Optional[str]
     employer_approval: bool
     letter_grade: Optional[str]
+
+
+class EmployerSummary(BaseModel):
+    summary: str
+    file_link: Optional[str]
+    employer_approval: bool

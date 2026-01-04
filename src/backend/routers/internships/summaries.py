@@ -4,12 +4,13 @@ from typing import Annotated, Optional
 
 from src.backend.globals import AccountInfo, UserType, get_db_manager
 from src.backend.routers.models import (
-    FacultyApplicationInfo,
     BriefInternship,
     BriefStudentProfile,
     CompanyName,
     Contact,
+    FacultyApplicationInfo,
     GeneralRequestResponse,
+    StudentApplicationSummary,
     Summary,
 )
 from src.backend.routers.utils import assert_user_type, get_current_session
@@ -18,7 +19,6 @@ from src.database.record_retrieval import (
     get_department_summaries,
     get_employer_by_id,
     get_faculty_by_id,
-    get_student_by_id,
     get_summaries_by_student_id,
     get_summary_by_id,
 )
@@ -205,14 +205,9 @@ async def update_summary_grade(
     return GeneralRequestResponse(success=True, message="Summary graded")
 
 
-class StudentSummaryApplication(BaseModel):
-    internship: BriefInternship
-    coop_credit_eligibility: bool
-
-
 class StudentSummaryResponse(BaseModel):
     summary_id: int
-    application: StudentSummaryApplication
+    application: StudentApplicationSummary
     summary: Summary
 
 
@@ -261,7 +256,7 @@ async def get_student_summaries_endpoint(
             results.append(
                 StudentSummaryResponse(
                     summary_id=summary.id,
-                    application=StudentSummaryApplication(
+                    application=StudentApplicationSummary(
                         internship=BriefInternship(
                             company=CompanyName(name=company.name),
                             title=internship.title,

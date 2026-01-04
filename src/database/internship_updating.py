@@ -95,8 +95,9 @@ async def update_internship(
         current_location_type = internship.location_type
         new_address_id: Optional[int] = None
         update_address_id: bool = False
-        if location_type is None and address_id is not None:
-            return None, "An updated location_type needs to be provided with an address_id."
+        if location_type is None:
+            if address_id is not None:
+                return None, "An updated location_type needs to be provided with an address_id."
 
         elif location_type not in [status.value for status in InternshipStatus]:
             return None, f"Unknown or unsupported location_type: {location_type}"
