@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy import select
-from typing import Optional
+from sqlalchemy import ColumnElement, Select, Sequence, and_, select
+from typing import Any, Optional
 
 from database.schema import (
     Account,
@@ -21,6 +21,7 @@ from database.schema import (
     InternshipSummary,
 )
 from database.utils import (
+    TModel,
     get_first_element,
     get_first_element_list,
 )
@@ -36,13 +37,78 @@ Method                  Complexity          Syntax                              
 """
 
 
+async def get_element_by_PK(
+    session: AsyncSession, model: type[TModel], PK: Any
+) -> Optional[TModel]:
+    return await session.get(model, PK)
+
+
+async def _build_select_by_filter_statement(
+    session: AsyncSession,
+    model: type[TModel],
+    *,
+    filters: Sequence[ColumnElement[bool]] = (),
+    **fields: Any,
+) -> Select[tuple[TModel]]:
+    """
+    __
+    """
+    conditions: list[ColumnElement[bool]] = list(filters)
+
+    for name, value in fields.items():
+        col = getattr(model, name)
+        conditions.append(col.is_(None) if value is None else (col == value))
+
+    statement = select(model)
+    if conditions:
+        statement = statement.where(and_(*conditions))
+    return statement
+
+
+"""
+Example:
+    await get_first_element_list_by_filter(
+        session,
+        User,
+        filters=(User.email.ilike("%@umich.edu"), or_(User.is_active.is_(True), User.is_admin.is_(True))),
+        deleted_at=None,   # keyword fields still work; None => IS NULL
+    )
+"""
+
+
+async def get_first_element_by_filter(
+    session: AsyncSession,
+    model: type[TModel],
+    *,
+    filters: Sequence[ColumnElement[bool]] = (),
+    **fields: Any,
+) -> Optional[TModel]:
+    return await get_first_element(
+        session, _build_select_by_filter_statement(model, filters=filters, **fields)
+    )
+
+
+async def get_first_element_list_by_filter(
+    session: AsyncSession,
+    model: type[TModel],
+    *,
+    filters: Sequence[ColumnElement[bool]] = (),
+    **fields: Any,
+) -> list[TModel]:
+    return await get_first_element(
+        session, _build_select_by_filter_statement(model, filters=filters, **fields)
+    )
+
+
 async def get_account_by_id(session: AsyncSession, id: int) -> Optional[Account]:
-    return await session.get(Account, id)
+    return await get_element_by_PK(session, Account, id)
+    # return await session.get(Account, id)
 
 
 async def get_account_by_username(session: AsyncSession, username: str) -> Optional[Account]:
-    statement = select(Account).filter_by(username=username)
-    return await get_first_element(session, statement)
+    return await get_first_element_by_filter(session, Account, username=username)
+    # statement = select(Account).filter_by(username=username)
+    # return await get_first_element(session, statement)
 
 
 async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]:
