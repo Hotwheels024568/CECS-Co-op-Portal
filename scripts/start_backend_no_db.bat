@@ -14,6 +14,6 @@ if exist "venv\Scripts\activate.bat" (
 
 REM Start FastAPI/Uvicorn server
 rem fastapi run "src\backend\main.py"
-uvicorn src.backend.main:app --reload --port 8000 --no-use-colors
+uvicorn backend.main:app --reload --port 8000 --no-use-colors
 
 pause

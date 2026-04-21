@@ -73,7 +73,7 @@ echo Running backend (FastAPI @ port 8000)...
 echo.
 
 REM Run FastAPI backend in a new window
-start "Uvicorn Server" cmd /c "uvicorn src.backend.main:app --reload --port 8000 --no-use-colors"
+start "Uvicorn Server" cmd /c "uvicorn backend.main:app --reload --port 8000 --no-use-colors"
 
 REM Wait for user to finish and hit a key before cleaning up
 echo FastAPI server running in a separate window.

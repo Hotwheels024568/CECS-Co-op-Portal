@@ -90,4 +90,4 @@ echo "Environment is ready."
 echo "Running backend (FastAPI @ port 8000)..."
 echo
 
-uvicorn src.backend.main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000

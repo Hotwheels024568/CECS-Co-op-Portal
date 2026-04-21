@@ -13,4 +13,4 @@ else
 fi
 
 # Start FastAPI/Uvicorn server
-uvicorn src.backend.main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000

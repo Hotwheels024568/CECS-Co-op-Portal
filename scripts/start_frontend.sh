@@ -3,5 +3,5 @@
 cd "$(dirname "$0")"/.. || exit 1
 
 # Change to frontend directory and run Vite dev server
-cd src/frontend
+cd frontend
 npm run dev
