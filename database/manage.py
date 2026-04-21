@@ -175,8 +175,10 @@ class AsyncDBManager:
             json_path (Path): File path to the seed JSON data.
         """
         from sqlalchemy.sql.sqltypes import Date, DateTime
+        from backend.routers.utils import hash_password
+        from database.schema import Account
         from datetime import date, datetime
-        import json
+        import json, secrets
 
         tables = {table.name: table for table in self.metadata.sorted_tables}
         if not await self._all_tables_empty():
@@ -208,16 +210,21 @@ class AsyncDBManager:
                     for column in nullable_columns:
                         record.setdefault(column, None)
 
-                    # Only parse keys that are actually present in this record
                     for key in record.keys() & temporal_cols:
-                        val = record.get(key)
-                        if not (isinstance(val, str) and val):
+                        value = record.get(key)
+                        if not (isinstance(value, str) and value):
                             continue
-
                         if key in datetime_cols:
-                            record[key] = datetime.fromisoformat(val.replace("Z", "+00:00"))
+                            record[key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
                         else:  # key in date_cols
-                            record[key] = date.fromisoformat(val)
+                            record[key] = date.fromisoformat(value)
+
+                    if table.name == Account.__tablename__:
+                        password = record.get("password")
+                        if password is not None:
+                            salt = secrets.token_bytes(16)
+                            record["password"] = hash_password(password, salt)
+                            record["salt"] = salt
 
                 await conn.execute(table.insert(), records)
 
