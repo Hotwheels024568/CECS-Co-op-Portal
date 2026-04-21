@@ -1,9 +1,10 @@
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from typing import Optional
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from typing import Any, Optional
 
 from datetime import datetime, timezone
 
+from backend.routers.models import Contact
 from database.record_retrieval import (
     get_application_by_id,
     get_application_from_ids,
@@ -26,7 +27,35 @@ from database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
-from database.utils import get_constraint_name_from_integrity_error
+from database.utils import TModel, get_constraint_name_from_integrity_error
+
+
+async def add_row(
+    session: AsyncSession,
+    model: type[TModel],
+    *,
+    commit: bool = False,
+    **fields: Any,
+) -> Optional[TModel]:
+    entry = model(**fields)
+    session.add(entry)
+
+    try:
+        await session.flush()
+        if commit:
+            await session.commit()
+        return entry
+
+    except SQLAlchemyError as e:
+        await session.rollback()
+
+        if isinstance(e, IntegrityError):
+            constraint = get_constraint_name_from_integrity_error(e)
+            print(f"Constraint violated when adding {model.__name__}: {constraint}")
+        else:
+            print(f"Error adding {model.__name__}: {e}")
+
+        return None
 
 
 async def add_account(
@@ -52,25 +81,15 @@ async def add_account(
     Returns:
         Optional[Account]: The newly created Account object if successful, or None if insertion fails.
     """
-    entry = Account(username=username, password=password, salt=salt, user_type=user_type)
-    session.add(entry)
-    try:
-        await session.flush()  # Tries the insert
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a username unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_account: {e}")
-        return None
+    return await add_row(
+        session,
+        Address,
+        username=username,
+        password=password,
+        salt=salt,
+        user_type=user_type,
+        commit=commit,
+    )
 
 
 async def add_address(
@@ -100,25 +119,17 @@ async def add_address(
     Returns:
         Optional[Address]: The newly created Address object if successful, or None if insertion fails.
     """
-    entry = Address(
+    return await add_row(
+        session,
+        Address,
         address_line1=address_line1,
         address_line2=address_line2,
         city=city,
         state_province=state_province,
         zip_postal=zip_postal,
         country=country,
+        commit=commit,
     )
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_address: {e}")
-        return None
 
 
 async def add_company(
@@ -142,25 +153,14 @@ async def add_company(
     Returns:
         Optional[Company]: The newly created Company object if successful, or None if insertion fails.
     """
-    entry = Company(name=name, address_id=address_id, website_link=website_link)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a name or address_id unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_company: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_company: {e}")
-        return None
+    return await add_row(
+        session,
+        Company,
+        name=name,
+        address_id=address_id,
+        website_link=website_link,
+        commit=commit,
+    )
 
 
 async def add_contact(
@@ -190,32 +190,17 @@ async def add_contact(
     Returns:
         Optional[ContactInfo]: The newly created ContactInfo object if successful, or None if insertion fails.
     """
-    entry = ContactInfo(
+    return await add_row(
+        session,
+        Contact,
         id=account_id,
         first=first_name,
         middle=middle_name,
         last=last_name,
         email=email,
         phone=phone,
+        commit=commit,
     )
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely an email unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_contact: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_contact: {e}")
-        return None
 
 
 async def add_employer(
@@ -237,18 +222,13 @@ async def add_employer(
     Returns:
         Optional[EmployerAccount]: The newly created EmployerAccount object if successful, or None if insertion fails.
     """
-    entry = EmployerProfile(id=account_id, company_id=company_id)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_employer: {e}")
-        return None
+    return await add_row(
+        session,
+        EmployerProfile,
+        id=account_id,
+        company_id=company_id,
+        commit=commit,
+    )
 
 
 async def add_department(
@@ -268,25 +248,12 @@ async def add_department(
     Returns:
         Optional[Department]: The newly created Department object if successful, or None if insertion fails.
     """
-    entry = Department(name=name)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a name unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_department: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_department: {e}")
-        return None
+    return await add_row(
+        session,
+        Department,
+        name=name,
+        commit=commit,
+    )
 
 
 async def add_major(
@@ -306,25 +273,12 @@ async def add_major(
     Returns:
         Optional[Major]: The newly created Major object if successful, or None if insertion fails.
     """
-    entry = Major(name=name)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a name unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_major: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_major: {e}")
-        return None
+    return await add_row(
+        session,
+        Major,
+        name=name,
+        commit=commit,
+    )
 
 
 async def add_student(
@@ -360,7 +314,9 @@ async def add_student(
     Returns:
         Optional[StudentAccount]: The newly created StudentAccount object if successful, or None if insertion fails.
     """
-    entry = StudentProfile(
+    return await add_row(
+        session,
+        Account,
         id=account_id,
         department_id=department_id,
         major_id=major_id,
@@ -370,25 +326,8 @@ async def add_student(
         start_year=start_year,
         transfer=transfer,
         resume_link=resume_link,
+        commit=commit,
     )
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a check constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_student: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_student: {e}")
-        return None
 
 
 async def add_faculty(
@@ -410,18 +349,13 @@ async def add_faculty(
     Returns:
         Optional[FacultyAccount]: The newly created FacultyAccount object if successful, or None if insertion fails.
     """
-    entry = FacultyProfile(id=account_id, department_id=department_id)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_faculty: {e}")
-        return None
+    return await add_row(
+        session,
+        FacultyProfile,
+        id=account_id,
+        department_id=department_id,
+        commit=commit,
+    )
 
 
 async def add_internship(
@@ -460,7 +394,9 @@ async def add_internship(
     Returns:
         Optional[Internship]: The newly created Internship object if successful, or None if insertion fails.
     """
-    entry = Internship(
+    return await add_row(
+        session,
+        Internship,
         company_id=company_id,
         title=title,
         description=description,
@@ -471,25 +407,8 @@ async def add_internship(
         total_work_hours=total_work_hours,
         salary_info=salary_info,
         status=status,
+        commit=commit,
     )
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a check constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_internship: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_internship: {e}")
-        return None
 
 
 async def add_internship_major(
@@ -511,18 +430,13 @@ async def add_internship_major(
     Returns:
         Optional[InternshipMajor]: The newly created InternshipMajor association object if successful, or None if insertion fails.
     """
-    entry = InternshipMajor(internship_id=internship_id, major_id=major_id)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_internship_major: {e}")
-        return None
+    return await add_row(
+        session,
+        InternshipMajor,
+        internship_id=internship_id,
+        major_id=major_id,
+        commit=commit,
+    )
 
 
 async def add_skill(
@@ -542,25 +456,12 @@ async def add_skill(
     Returns:
         Optional[Skill]: The newly created Skill object if successful, or None if insertion fails.
     """
-    entry = Skill(name=name)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a name unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_skill: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_skill: {e}")
-        return None
+    return await add_row(
+        session,
+        Skill,
+        name=name,
+        commit=commit,
+    )
 
 
 async def add_internship_required_skill(
@@ -582,18 +483,9 @@ async def add_internship_required_skill(
     Returns:
         Optional[InternshipReqSkill]: The newly created InternshipReqSkill association object if successful, or None if insertion fails.
     """
-    entry = InternshipReqSkill(internship_id=internship_id, skill_id=skill_id)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_internship_required_skill: {e}")
-        return None
+    return await add_row(
+        session, InternshipReqSkill, internship_id=internship_id, skill_id=skill_id
+    )
 
 
 async def add_internship_preferred_skill(
@@ -615,18 +507,13 @@ async def add_internship_preferred_skill(
     Returns:
         Optional[InternshipPrefSkill]: The newly created InternshipPrefSkill association object if successful, or None if insertion fails.
     """
-    entry = InternshipPrefSkill(internship_id=internship_id, skill_id=skill_id)
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_internship_preferred_skill: {e}")
-        return None
+    return await add_row(
+        session,
+        InternshipPrefSkill,
+        internship_id=internship_id,
+        skill_id=skill_id,
+        commit=commit,
+    )
 
 
 async def add_application(
@@ -658,7 +545,9 @@ async def add_application(
     Returns:
         Optional[InternshipApplication]: The newly created InternshipApplication object if successful, or None if insertion fails.
     """
-    entry = InternshipApplication(
+    return await add_row(
+        session,
+        InternshipApplication,
         student_id=student_id,
         internship_id=internship_id,
         application_date=datetime.now(timezone.utc),
@@ -667,18 +556,8 @@ async def add_application(
         resume_link=resume_link,
         cover_letter_link=cover_letter_link,
         selected=selected,
+        commit=commit,
     )
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_application: {e}")
-        return None
 
 
 async def add_summary(
@@ -780,21 +659,13 @@ async def _add_summary(
     Returns:
         Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
     """
-    entry = InternshipSummary(
+    return await add_row(
+        session,
+        InternshipSummary,
         id=application_id,
         summary=summary,
         file_link=file_link,
         employer_approval=employer_approval,
         letter_grade=letter_grade,
+        commit=commit,
     )
-    session.add(entry)
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Error in add_summary: {e}")
-        return None

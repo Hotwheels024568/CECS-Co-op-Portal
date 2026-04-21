@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from typing import Optional
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy import and_, select
+from typing import Any, Optional
 
 from database.record_retrieval import (
     get_company_by_name,
@@ -14,6 +15,62 @@ from database.schema import (
     Major,
     Skill,
 )
+from database.utils import TModel
+
+
+async def get_or_create(
+    session: AsyncSession,
+    model: type[TModel],
+    *,
+    commit_savepoint: bool = True,
+    **unique_fields: Any,
+) -> Optional[TModel]:
+    """
+    Generic get-or-create for 1+ unique fields (passed as keyword args).
+    Example: await get_or_create(session, Department, org_id=1, name="Cardiology")
+
+    - Requires a UNIQUE constraint matching unique_fields (or a superset) for correctness under concurrency.
+    - Does not commit the outer transaction.
+    """
+    if not unique_fields:
+        raise ValueError("get_or_create requires at least one unique field")
+
+    # 1) Try to get first (fast path)
+    try:
+        where_clause = and_(*(getattr(model, k) == v for k, v in unique_fields.items()))
+        existing = await session.scalar(select(model).where(where_clause))
+        if existing is not None:
+            return existing
+
+    except SQLAlchemyError as e:
+        print(f"Error querying {model.__name__}: {e}")
+        return None
+
+    # 2) Try to create inside a SAVEPOINT
+    savepoint = await session.begin_nested()
+    obj = model(**unique_fields)
+    session.add(obj)
+
+    try:
+        await session.flush()
+        if commit_savepoint:
+            await savepoint.commit()
+        return obj
+
+    except IntegrityError:
+        await savepoint.rollback()
+        # Another transaction likely inserted it; fetch it
+        try:
+            return await session.scalar(select(model).where(where_clause))
+
+        except SQLAlchemyError as e:
+            print(f"Error re-querying {model.__name__}: {e}")
+            return None
+
+    except SQLAlchemyError as e:
+        await savepoint.rollback()
+        print(f"Error creating {model.__name__}: {e}")
+        return None
 
 
 async def get_or_create_company(
@@ -39,21 +96,13 @@ async def get_or_create_company(
     Returns:
         Optional[Company]: The existing or newly created Company, or None if the operation fails.
     """
-    company = Company(
+    return await get_or_create(
+        session,
+        Department,
         name=company_name,
         address_id=address_id,
         website_link=website_link,
     )
-    session.add(company)
-    savepoint = await session.begin_nested()
-    try:
-        await session.flush()
-        await savepoint.commit()
-        return company
-
-    except IntegrityError:
-        await savepoint.rollback()
-        return await get_company_by_name(session, company_name)
 
 
 async def get_or_create_department(session: AsyncSession, name: str) -> Optional[Department]:
@@ -71,17 +120,7 @@ async def get_or_create_department(session: AsyncSession, name: str) -> Optional
     Returns:
         Optional[Department]: The existing or newly created Department, or None if the operation fails.
     """
-    savepoint = await session.begin_nested()
-    department = Department(name=name)
-    session.add(department)
-    try:
-        await session.flush()
-        await savepoint.commit()
-        return department
-
-    except IntegrityError:
-        await savepoint.rollback()
-        return await get_department_by_name(session, name)
+    return await get_or_create(session, Department, name=name)
 
 
 async def get_or_create_major(session: AsyncSession, name: str) -> Optional[Major]:
@@ -99,17 +138,7 @@ async def get_or_create_major(session: AsyncSession, name: str) -> Optional[Majo
     Returns:
         Optional[Major]: The existing or newly created Major, or None if the operation fails.
     """
-    savepoint = await session.begin_nested()
-    major = Major(name=name)
-    session.add(major)
-    try:
-        await session.flush()
-        await savepoint.commit()
-        return major
-
-    except IntegrityError:
-        await savepoint.rollback()
-        return await get_major_by_name(session, name)
+    return await get_or_create(session, Major, name=name)
 
 
 async def get_or_create_skill(session: AsyncSession, name: str) -> Optional[Skill]:
@@ -127,14 +156,4 @@ async def get_or_create_skill(session: AsyncSession, name: str) -> Optional[Skil
     Returns:
         Optional[Skill]: The existing or newly created Skill, or None if the operation fails.
     """
-    savepoint = await session.begin_nested()
-    skill = Skill(name=name)
-    session.add(skill)
-    try:
-        await session.flush()
-        await savepoint.commit()
-        return skill
-
-    except IntegrityError:
-        await savepoint.rollback()
-        return await get_skill_by_name(session, name)
+    return await get_or_create(session, Skill, name=name)

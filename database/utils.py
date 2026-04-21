@@ -2,6 +2,11 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy import Executable, Row, Select
 from typing import Any, Optional, TypeVar
 
+from database.schema import Base
+
+TModel = TypeVar("T", bound=Base)
+T = TypeVar("T")
+
 """  Result helpers
 Method                  Returns if 0 rows	If 1 row	            If >1 row	        Notes
 .scalar()	            None	            first column	        first column	    No error, just first column
@@ -62,11 +67,11 @@ async def exists(
     return False
 
 
-async def get_first_column_element(
-    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
-) -> Optional[Any]:
+async def get_first_element(
+    session: AsyncSession, statement: Select[tuple[T]], parameters: Optional[dict] = None
+) -> Optional[T]:
     """
-    Executes a SQLAlchemy SELECT query and returns the first column element (or object) from the first Row.
+    Executes a SQLAlchemy SELECT query and returns the first element (or object) from the first column of the first Row.
 
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.
@@ -74,7 +79,7 @@ async def get_first_column_element(
         parameters (dict, optional): Optional dictionary of bind parameters for the query. Defaults to {}.
 
     Returns:
-        Optional[Any]: The first column's element of the first row, or None if no result is found.
+        Optional[T]: The first column's element of the first row, or None if no result is found.
     """
     parameters = parameters or {}
     try:
@@ -108,11 +113,11 @@ async def get_row(
     return None
 
 
-async def get_first_column_element_of_all_rows(
-    session: AsyncSession, statement: Select, parameters: Optional[dict] = None
-) -> list[Any]:
+async def get_first_element_list(
+    session: AsyncSession, statement: Select[tuple[T]], parameters: Optional[dict] = None
+) -> list[T]:
     """
-    Executes a SQLAlchemy SELECT query and returns a list of the first column's element (or object) from each Row.
+    Executes a SQLAlchemy SELECT query and returns a list of elements (or object) from the first column of each Row.
 
     Args:
         session (AsyncSession): The SQLAlchemy asynchronous database session.

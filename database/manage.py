@@ -11,7 +11,7 @@ from database.schema import Base
 
 
 def get_database_url() -> str:
-    config_path = Path(__file__).parent.parent.parent / "config.ini"
+    config_path = Path(__file__).parent.parent / "config.ini"
     parser = configparser.ConfigParser()
     try:
         with open(config_path, "r") as file:
@@ -24,9 +24,10 @@ def get_database_url() -> str:
     config = parser["db"]
     username = config.get("Username")
     password = config.get("Password")
+    ip_address = "localhost"  # 127.0.0.1
+    port = "5432"  # The default port for Postgres (you can omit if the default)
     database = config.get("Database")
-    return f"postgresql+asyncpg://{username}:{password}@localhost:5432/{database}"
-    # 5432 = the default port for Postgres (you can omit if the default)
+    return f"postgresql+asyncpg://{username}:{password}@{ip_address}:{port}/{database}"
 
 
 DATABASE_URL = get_database_url()
@@ -98,6 +99,7 @@ class AsyncDBManager:
     @classmethod
     async def create(
         cls,
+        *,
         rebuild_tables: bool = False,
         rebuild_schema: bool = False,
         seed: bool = False,
@@ -127,7 +129,7 @@ class AsyncDBManager:
         await self._create_db()
         if seed:
             await self._seed()
-
+            await self._sync_sequences()
         return self
 
     async def _create_db(self) -> None:
@@ -148,7 +150,7 @@ class AsyncDBManager:
             print(
                 f"Standard drop_all failed with error: {e}. Attempting full schema drop and recreation..."
             )
-            self._drop_db_schema()
+            await self._drop_db_schema()
 
     async def _drop_db_schema(self) -> None:
         """
@@ -172,13 +174,9 @@ class AsyncDBManager:
         Args:
             json_path (Path): File path to the seed JSON data.
         """
-        from backend.routers.utils import hash_password
-        from database.schema import Account
-        from database.utils import count
-        from datetime import datetime
-        import json, secrets
-
-        DATETIME_FIELDS = {"internship_applications": ["application_date"]}
+        from sqlalchemy.sql.sqltypes import Date, DateTime
+        from datetime import date, datetime
+        import json
 
         tables = {table.name: table for table in self.metadata.sorted_tables}
         if not await self._all_tables_empty():
@@ -194,41 +192,34 @@ class AsyncDBManager:
                 if table is None or not records:
                     continue
 
-                # Handle None for missing nullable columns
-                nullable_cols = {
-                    col.name
-                    for col in table.columns
-                    if col.nullable and not (col.primary_key and col.autoincrement)
+                # Find nullable columns (excluding autoincrement PKs)
+                nullable_columns = {
+                    column.name
+                    for column in table.columns
+                    if column.nullable and not (column.primary_key and column.autoincrement)
                 }
+                # Find date & datetime columns
+                date_cols = {c.name for c in table.columns if isinstance(c.type, Date)}
+                datetime_cols = {c.name for c in table.columns if isinstance(c.type, DateTime)}
+                temporal_cols = date_cols | datetime_cols
+
                 for record in records:
-                    for col in nullable_cols:
-                        if col not in record:
-                            record[col] = None
+                    # Fill missing nullable columns
+                    for column in nullable_columns:
+                        record.setdefault(column, None)
 
-                # Convert string dates to actual datetime objects
-                for field in DATETIME_FIELDS.get(table_name, []):
-                    for record in records:
-                        if field in record and isinstance(record[field], str):
-                            # Replace with parsed datetime
-                            record[field] = datetime.fromisoformat(
-                                record[field].replace("Z", "+00:00")
-                            )
+                    # Only parse keys that are actually present in this record
+                    for key in record.keys() & temporal_cols:
+                        val = record.get(key)
+                        if not (isinstance(val, str) and val):
+                            continue
 
-                if table.name == Account.__tablename__:
-                    # Hash passwords for account records
-                    processed_records = []
-                    for record in records:
-                        current_record = record.copy()
-                        password = current_record.get("password")
-                        if password is not None:
-                            salt = secrets.token_bytes(16)
-                            hashed_pw = hash_password(password, salt)
-                            current_record["password"] = hashed_pw
-                            current_record["salt"] = salt
-                        processed_records.append(current_record)
-                    await conn.execute(table.insert(), processed_records)
-                else:
-                    await conn.execute(table.insert(), records)
+                        if key in datetime_cols:
+                            record[key] = datetime.fromisoformat(val.replace("Z", "+00:00"))
+                        else:  # key in date_cols
+                            record[key] = date.fromisoformat(val)
+
+                await conn.execute(table.insert(), records)
 
     async def _all_tables_empty(self) -> bool:
         from database.utils import count
@@ -239,8 +230,43 @@ class AsyncDBManager:
                     return False
         return True
 
-    # --- context manager (manager.session())
-    @asynccontextmanager
+    async def _sync_sequences(self) -> None:
+        """Sync autoincrement PK sequences to MAX(pk) for all metadata tables to prevent duplicate-key inserts after seeding."""
+        from sqlalchemy import text
+
+        async with self.engine.begin() as conn:
+            for table in self.metadata.sorted_tables:
+                pk_cols = list(table.primary_key.columns)
+                if len(pk_cols) != 1:
+                    continue
+
+                pk = pk_cols[0]
+                # Only attempt sequence sync for integer PKs (common autoincrement case)
+                try:
+                    py_type = pk.type.python_type
+                except NotImplementedError:
+                    continue
+                if py_type is not int:
+                    continue
+
+                # In Postgres, pg_get_serial_sequence returns the sequence name for SERIAL/IDENTITY-backed columns.
+                # If the PK is not sequence-backed, this returns NULL.
+                statement = text("""SELECT pg_get_serial_sequence(:tbl, :col)""")
+                seq_name = await conn.scalar(statement, {"tbl": table.name, "col": pk.name})
+                if not seq_name:
+                    continue
+
+                # Set sequence to max(pk) (or 1 if empty). The 'true' flag makes nextval return max + 1.
+                sync_stmt = text(
+                    f"""SELECT setval(
+                        :seq,
+                        COALESCE((SELECT MAX("{pk.name}") FROM "{table.name}"), 1),
+                        true
+                    );"""
+                )
+                await conn.execute(sync_stmt, {"seq": seq_name})
+
+    @asynccontextmanager  # --- context manager (manager.session())
     async def session(
         self, autocommit: Optional[bool] = None
     ) -> AsyncGenerator[AsyncSession, None]:
@@ -290,8 +316,15 @@ class AsyncDBManager:
             self._current_autocommit = None
             self._session = None
 
+    @classmethod
+    async def close(cls) -> None:
+        """Release database resources by disposing the engine and resetting the AsyncDBManager singleton."""
+        if cls._instance:
+            await cls._instance.engine.dispose()
+        cls._instance = None
 
-async def main(recreate: bool = False) -> None:
+
+async def main(recreate: bool = False, seed: bool = False) -> None:
     from database.schema import (
         Account,
         Address,
@@ -312,7 +345,7 @@ async def main(recreate: bool = False) -> None:
     )
     from database.utils import count
 
-    manager = await AsyncDBManager.create()
+    manager = await AsyncDBManager.create(rebuild_tables=recreate, seed=seed)
     async with manager.session() as session:
         print(
             f"""
@@ -338,7 +371,7 @@ async def main(recreate: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(True, True))
 
 """
 Migration (Schema swap) Instructions

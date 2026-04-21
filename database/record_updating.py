@@ -1,19 +1,7 @@
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from typing import Optional
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from typing import Any, Optional
 
-from database.record_retrieval import (
-    get_account_by_id,
-    get_address_by_id,
-    get_company_by_id,
-    get_contact_by_id,
-    get_employer_by_id,
-    get_student_by_id,
-    get_faculty_by_id,
-    get_internship_by_id,
-    get_application_by_id,
-    get_summary_by_id,
-)
 from database.schema import (
     Account,
     Address,
@@ -26,7 +14,63 @@ from database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
-from database.utils import get_constraint_name_from_integrity_error
+from database.utils import TModel, get_constraint_name_from_integrity_error
+
+
+async def update_row_by_id(
+    session: AsyncSession,
+    model: type[TModel],
+    id: Any,
+    *,
+    commit: bool = False,
+    skip_none: bool = True,
+    **patch: Any,
+) -> Optional[TModel]:
+    """
+    Patch-update a row by primary key.
+    - If skip_none=True, fields with value None are ignored (so you can't set NULL via this helper).
+    """
+    try:
+        obj = await session.get(model, id)
+        if obj is None:
+            return None
+
+        updated = False
+        for name, value in patch.items():
+            if skip_none and value is None:
+                continue
+            if not hasattr(obj, name):
+                raise AttributeError(f"{model.__name__} has no attribute '{name}'")
+
+            current = getattr(obj, name)
+            if current != value:
+                setattr(obj, name, value)
+                updated = True
+
+        if not updated:
+            return obj
+
+        if commit:
+            await session.commit()
+        else:
+            await session.flush()
+        return obj
+
+    except IntegrityError as e:
+        await session.rollback()
+        constraint = get_constraint_name_from_integrity_error(e)
+        print(f"DB {constraint} integrity error updating {model.__name__}: {e}")
+        return None
+
+    except SQLAlchemyError as e:
+        await session.rollback()
+        print(f"DB error updating {model.__name__} id={id}: {e}")
+        return None
+
+    except Exception as e:
+        await session.rollback()
+        print(f"Unexpected error updating {model.__name__} id={id}: {e}")
+        return None
 
 
 async def update_account(
@@ -54,45 +98,16 @@ async def update_account(
     Returns:
         Optional[Account]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        account = await get_account_by_id(session, id)
-        if not account:
-            return None
-
-        updated = False
-        if username is not None and account.username != username:
-            account.username = username
-            updated = True
-        if password is not None and account.password != password:
-            account.password = password
-            updated = True
-        if salt is not None and account.salt != salt:
-            account.salt = salt
-            updated = True
-        if user_type is not None and account.user_type != user_type:
-            account.user_type = user_type
-            updated = True
-
-        if not updated:
-            return account  # Return the (unchanged) instance for transparency
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return account
-
-    except IntegrityError as e:
-        await session.rollback()
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in add_account: {constraint}")
-        # Likely a username unique constraint violation
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in add_account: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Account,
+        id,
+        username=username,
+        password=password,
+        salt=salt,
+        user_type=user_type,
+        commit=commit,
+    )
 
 
 async def update_address(
@@ -124,44 +139,18 @@ async def update_address(
     Returns:
         Optional[Address]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        address = await get_address_by_id(session, id)
-        if not address:
-            return None
-
-        updated = False
-        if address_line1 is not None and address.address_line1 != address_line1:
-            address.address_line1 = address_line1
-            updated = True
-        if address_line2 is not None and address.address_line2 != address_line2:
-            address.address_line2 = address_line2
-            updated = True
-        if city is not None and address.city != city:
-            address.city = city
-            updated = True
-        if state_province is not None and address.state_province != state_province:
-            address.state_province = state_province
-            updated = True
-        if zip_postal is not None and address.zip_postal != zip_postal:
-            address.zip_postal = zip_postal
-            updated = True
-        if country is not None and address.country != country:
-            address.country = country
-            updated = True
-
-        if not updated:
-            return address
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return address
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_address: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        address_line1=address_line1,
+        address_line2=address_line2,
+        city=city,
+        state_province=state_province,
+        zip_postal=zip_postal,
+        country=country,
+        commit=commit,
+    )
 
 
 async def update_company(
@@ -187,42 +176,15 @@ async def update_company(
     Returns:
         Optional[Company]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        company = await get_company_by_id(session, id)
-        if not company:
-            return None
-
-        updated = False
-        if name is not None and company.name != name:
-            company.name = name
-            updated = True
-        if address_id is not None and company.address_id != address_id:
-            company.address_id = address_id
-            updated = True
-        if website_link is not None and company.website_link != website_link:
-            company.website_link = website_link
-            updated = True
-
-        if not updated:
-            return company
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return company
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a name or address_id unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in update_company: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_company: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        name=name,
+        address_id=address_id,
+        website_link=website_link,
+        commit=commit,
+    )
 
 
 async def update_contact(
@@ -252,48 +214,17 @@ async def update_contact(
     Returns:
         Optional[ContactInfo]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        contact = await get_contact_by_id(session, id)
-        if not contact:
-            return None
-
-        updated = False
-        if first is not None and contact.first != first:
-            contact.first = first
-            updated = True
-        if middle is not None and contact.middle != middle:
-            contact.middle = middle
-            updated = True
-        if last is not None and contact.last != last:
-            contact.last = last
-            updated = True
-        if email is not None and contact.email != email:
-            contact.email = email
-            updated = True
-        if phone is not None and contact.phone != phone:
-            contact.phone = phone
-            updated = True
-
-        if not updated:
-            return contact
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return contact
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely an email unique constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in update_contact: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_contact: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        first=first,
+        middle=middle,
+        last=last,
+        email=email,
+        phone=phone,
+        commit=commit,
+    )
 
 
 async def update_employer(
@@ -315,29 +246,13 @@ async def update_employer(
     Returns:
         Optional[EmployerAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        employer = await get_employer_by_id(session, id)
-        if not employer:
-            return None
-
-        updated = False
-        if company_id is not None and employer.company_id != company_id:
-            employer.company_id = company_id
-            updated = True
-
-        if not updated:
-            return employer
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return employer
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_employer: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        company_id=company_id,
+        commit=commit,
+    )
 
 
 async def update_student(
@@ -373,57 +288,20 @@ async def update_student(
     Returns:
         Optional[StudentAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        student = await get_student_by_id(session, id)
-        if not student:
-            return None
-
-        updated = False
-        if department_id is not None and student.department_id != department_id:
-            student.department_id = department_id
-            updated = True
-        if major_id is not None and student.major_id != major_id:
-            student.major_id = major_id
-            updated = True
-        if credit_hours is not None and student.credit_hours != credit_hours:
-            student.credit_hours = credit_hours
-            updated = True
-        if gpa is not None and student.gpa != gpa:
-            student.gpa = gpa
-            updated = True
-        if start_semester is not None and student.start_semester != start_semester:
-            student.start_semester = start_semester
-            updated = True
-        if start_year is not None and student.start_year != start_year:
-            student.start_year = start_year
-            updated = True
-        if transfer is not None and student.transfer != transfer:
-            student.transfer = transfer
-            updated = True
-        if resume_link is not None and student.resume_link != resume_link:
-            student.resume_link = resume_link
-            updated = True
-
-        if not updated:
-            return student
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return student
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a check constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in update_student: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_student: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        department_id=department_id,
+        major_id=major_id,
+        credit_hours=credit_hours,
+        gpa=gpa,
+        start_semester=start_semester,
+        start_year=start_year,
+        transfer=transfer,
+        resume_link=resume_link,
+        commit=commit,
+    )
 
 
 async def update_faculty(
@@ -445,29 +323,13 @@ async def update_faculty(
     Returns:
         Optional[FacultyAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        faculty = await get_faculty_by_id(session, id)
-        if not faculty:
-            return None
-
-        updated = False
-        if department_id is not None and faculty.department_id != department_id:
-            faculty.department_id = department_id
-            updated = True
-
-        if not updated:
-            return faculty
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return faculty
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_faculty: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        department_id=department_id,
+        commit=commit,
+    )
 
 
 async def update_internship(
@@ -509,63 +371,23 @@ async def update_internship(
     Returns:
         Optional[Internship]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        internship = await get_internship_by_id(session, id)
-        if not internship:
-            return None
-
-        updated = False
-        if company_id is not None and internship.company_id != company_id:
-            internship.company_id = company_id
-            updated = True
-        if title is not None and internship.title != title:
-            internship.title = title
-            updated = True
-        if description is not None and internship.description != description:
-            internship.description = description
-            updated = True
-        if location_type is not None and internship.location_type != location_type:
-            internship.location_type = location_type
-            updated = True
-        if update_address_id and internship.address_id != address_id:
-            internship.address_id = address_id
-            updated = True
-        if duration_weeks is not None and internship.duration_weeks != duration_weeks:
-            internship.duration_weeks = duration_weeks
-            updated = True
-        if weekly_hours is not None and internship.weekly_hours != weekly_hours:
-            internship.weekly_hours = weekly_hours
-            updated = True
-        if total_work_hours is not None and internship.total_work_hours != total_work_hours:
-            internship.total_work_hours = total_work_hours
-            updated = True
-        if salary_info is not None and internship.salary_info != salary_info:
-            internship.salary_info = salary_info
-            updated = True
-        if status is not None and internship.status != status:
-            internship.status = status
-            updated = True
-
-        if not updated:
-            return internship
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return internship
-
-    except IntegrityError as e:
-        await session.rollback()
-        # Likely a check constraint violation
-        constraint = get_constraint_name_from_integrity_error(e)
-        print(f"Unique constraint violated in update_internship: {constraint}")
-        return None
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_internship: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        company_id=company_id,
+        title=title,
+        description=description,
+        location_type=location_type,
+        address_id=address_id,
+        update_address_id=update_address_id,
+        duration_weeks=duration_weeks,
+        weekly_hours=weekly_hours,
+        total_work_hours=total_work_hours,
+        salary_info=salary_info,
+        status=status,
+        commit=commit,
+    )
 
 
 async def update_application(
@@ -595,44 +417,17 @@ async def update_application(
     Returns:
         Optional[InternshipApplication]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        application = await get_application_by_id(session, id)
-        if not application:
-            return None
-
-        updated = False
-        if (
-            coop_credit_eligibility is not None
-            and application.coop_credit_eligibility != coop_credit_eligibility
-        ):
-            application.coop_credit_eligibility = coop_credit_eligibility
-            updated = True
-        if note is not None and application.note != note:
-            application.note = note
-            updated = True
-        if resume_link is not None and application.resume_link != resume_link:
-            application.resume_link = resume_link
-            updated = True
-        if cover_letter_link is not None and application.cover_letter_link != cover_letter_link:
-            application.cover_letter_link = cover_letter_link
-            updated = True
-        if selected is not None and application.selected != selected:
-            application.selected = selected
-            updated = True
-
-        if not updated:
-            return application
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return application
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_application: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        coop_credit_eligibility=coop_credit_eligibility,
+        note=note,
+        resume_link=resume_link,
+        cover_letter_link=cover_letter_link,
+        selected=selected,
+        commit=commit,
+    )
 
 
 async def update_summary(
@@ -660,35 +455,13 @@ async def update_summary(
     Returns:
         Optional[InternshipSummary]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    try:
-        summary = await get_summary_by_id(session, id)
-        if not summary:
-            return None
-
-        updated = False
-        if summary_text is not None and summary.summary != summary_text:
-            summary.summary = summary_text
-            updated = True
-        if file_link is not None and summary.file_link != file_link:
-            summary.file_link = file_link
-            updated = True
-        if employer_approval is not None and summary.employer_approval != employer_approval:
-            summary.employer_approval = employer_approval
-            updated = True
-        if letter_grade is not None and summary.letter_grade != letter_grade:
-            summary.letter_grade = letter_grade
-            updated = True
-
-        if not updated:
-            return summary
-
-        if commit:
-            await session.commit()
-        else:
-            await session.flush()
-        return summary
-
-    except Exception as e:
-        await session.rollback()
-        print(f"Unexpected error in update_summary: {e}")
-        return None
+    return await update_row_by_id(
+        session,
+        Address,
+        id,
+        summary_text=summary_text,
+        file_link=file_link,
+        employer_approval=employer_approval,
+        letter_grade=letter_grade,
+        commit=commit,
+    )
