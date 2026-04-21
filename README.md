@@ -356,4 +356,4 @@ repository-root/
 
 This portal models real internship workflow for students (credit, eligibility), employers (posting/hiring), and faculty (validation, grading). If you have questions or feedback, please [open a GitHub issue](https://github.com/Hotwheels024568/CECS-Co-op-Portal/issues).
 
-Team: *Jacob Sampt & Michael Asman* | *CIS 425, Fall 2025*
+Team: *Jacob Sampt* | *CIS 425, Fall 2025*
