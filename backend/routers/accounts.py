@@ -8,8 +8,8 @@ from backend.routers.models import GeneralRequestResponse
 from backend.routers.utils import get_current_session
 from backend.routers.utils import hash_password
 from database.manage import AsyncDBManager
-from database.record_retrieval import get_account_by_id
-from database.record_updating import update_account
+from database.row_retrieval import get_account_by_id
+from database.row_updating import update_account
 
 router = APIRouter()
 

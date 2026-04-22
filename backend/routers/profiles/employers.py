@@ -16,7 +16,7 @@ from backend.routers.utils import assert_user_type, get_current_session
 from database.manage import AsyncDBManager
 from database.profile_insertion import create_employer_profile
 from database.profile_updating import update_employer_profile
-from database.record_retrieval import get_employer_by_id
+from database.row_retrieval import get_employer_by_id
 from database.sync_retrieval import get_employer_company, get_company_address, get_contact
 
 router = APIRouter()

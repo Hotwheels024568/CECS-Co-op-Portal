@@ -16,15 +16,15 @@ from backend.routers.models import (
 from backend.routers.utils import assert_user_type, get_current_session
 from database.internship_insertion import create_application
 from database.manage import AsyncDBManager
-from database.record_deletion import delete_record
-from database.record_retrieval import (
+from database.row_deletion import delete_row
+from database.row_retrieval import (
     get_application_by_id,
     get_department_applications,
     get_faculty_by_id,
     get_internship_by_id,
     get_student_by_id,
 )
-from database.record_updating import update_application
+from database.row_updating import update_application
 from database.sync_retrieval import (
     get_application_internship,
     get_application_student,
@@ -391,7 +391,7 @@ async def delete_application(
                 "Applications can only be deleted while internship applications are open.",
             )
 
-        result = await delete_record(db_session, application, commit=True)
+        result = await delete_row(db_session, application, commit=True)
 
     if not result:
         raise HTTPException(

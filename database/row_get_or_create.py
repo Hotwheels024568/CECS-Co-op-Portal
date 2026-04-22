@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import and_, select
 from typing import Any, Optional
 
-from database.record_retrieval import (
+from database.row_retrieval import (
     get_company_by_name,
     get_department_by_name,
     get_major_by_name,
@@ -18,7 +18,7 @@ from database.schema import (
 from database.utils import TModel
 
 
-async def get_or_create(
+async def get_or_create_row(
     session: AsyncSession,
     model: type[TModel],
     *,
@@ -96,7 +96,7 @@ async def get_or_create_company(
     Returns:
         Optional[Company]: The existing or newly created Company, or None if the operation fails.
     """
-    return await get_or_create(
+    return await get_or_create_row(
         session,
         Department,
         name=company_name,
@@ -120,7 +120,7 @@ async def get_or_create_department(session: AsyncSession, name: str) -> Optional
     Returns:
         Optional[Department]: The existing or newly created Department, or None if the operation fails.
     """
-    return await get_or_create(session, Department, name=name)
+    return await get_or_create_row(session, Department, name=name)
 
 
 async def get_or_create_major(session: AsyncSession, name: str) -> Optional[Major]:
@@ -138,7 +138,7 @@ async def get_or_create_major(session: AsyncSession, name: str) -> Optional[Majo
     Returns:
         Optional[Major]: The existing or newly created Major, or None if the operation fails.
     """
-    return await get_or_create(session, Major, name=name)
+    return await get_or_create_row(session, Major, name=name)
 
 
 async def get_or_create_skill(session: AsyncSession, name: str) -> Optional[Skill]:
@@ -156,4 +156,4 @@ async def get_or_create_skill(session: AsyncSession, name: str) -> Optional[Skil
     Returns:
         Optional[Skill]: The existing or newly created Skill, or None if the operation fails.
     """
-    return await get_or_create(session, Skill, name=name)
+    return await get_or_create_row(session, Skill, name=name)

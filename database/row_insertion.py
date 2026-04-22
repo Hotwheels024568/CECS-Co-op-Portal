@@ -5,7 +5,7 @@ from typing import Any, Optional
 from datetime import datetime, timezone
 
 from backend.routers.models import Contact
-from database.record_retrieval import (
+from database.row_retrieval import (
     get_application_by_id,
     get_application_from_ids,
 )

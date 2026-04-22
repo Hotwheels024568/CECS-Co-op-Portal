@@ -21,7 +21,7 @@ from database.internship_insertion import create_internship
 from database.internship_retrieval import search_internships
 from database.internship_updating import update_internship
 from database.manage import AsyncDBManager
-from database.record_retrieval import (
+from database.row_retrieval import (
     get_employer_by_id,
     get_internship_by_id,
     get_summaries_by_internship_id,

@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
 from database.sync_retrieval import get_company_address
 from database.utils import get_constraint_name_from_integrity_error
-from database.record_retrieval import get_company_by_id
-from database.record_updating import (
+from database.row_retrieval import get_company_by_id
+from database.row_updating import (
     update_address,
     update_company,
     update_contact,
@@ -14,7 +14,7 @@ from database.record_updating import (
     update_student,
     update_faculty,
 )
-from database.record_get_or_create import (
+from database.row_get_or_create import (
     get_or_create_department,
     get_or_create_major,
 )

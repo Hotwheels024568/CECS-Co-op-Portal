@@ -24,7 +24,7 @@ from database.internship_retrieval import search_internships
 from database.manage import AsyncDBManager
 from database.profile_insertion import create_company
 from database.profile_updating import update_company_profile
-from database.record_retrieval import (
+from database.row_retrieval import (
     get_companies,
     get_employer_by_id,
     get_summaries_by_internship_id,

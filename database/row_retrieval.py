@@ -37,9 +37,7 @@ Method                  Complexity          Syntax                              
 """
 
 
-async def get_element_by_PK(
-    session: AsyncSession, model: type[TModel], PK: Any
-) -> Optional[TModel]:
+async def get_row_by_PK(session: AsyncSession, model: type[TModel], PK: Any) -> Optional[TModel]:
     return await session.get(model, PK)
 
 
@@ -101,7 +99,7 @@ async def get_first_element_list_by_filter(
 
 
 async def get_account_by_id(session: AsyncSession, id: int) -> Optional[Account]:
-    return await get_element_by_PK(session, Account, id)
+    return await get_row_by_PK(session, Account, id)
     # return await session.get(Account, id)
 
 

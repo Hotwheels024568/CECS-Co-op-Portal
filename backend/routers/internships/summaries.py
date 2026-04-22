@@ -15,14 +15,14 @@ from backend.routers.models import (
 )
 from backend.routers.utils import assert_user_type, get_current_session
 from database.manage import AsyncDBManager
-from database.record_retrieval import (
+from database.row_retrieval import (
     get_department_summaries,
     get_employer_by_id,
     get_faculty_by_id,
     get_summaries_by_student_id,
     get_summary_by_id,
 )
-from database.record_updating import update_summary
+from database.row_updating import update_summary
 from database.sync_retrieval import (
     get_contact,
     get_department,

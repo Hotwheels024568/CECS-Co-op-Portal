@@ -7,7 +7,7 @@ from database.schema import InternshipMajor, InternshipReqSkill, InternshipPrefS
 from database.utils import TModel
 
 
-async def delete_record(
+async def delete_row(
     session: AsyncSession,
     instance: Optional[TModel],
     *,
@@ -42,7 +42,7 @@ async def delete_record(
         return False
 
 
-async def delete_record_by_fields(
+async def delete_row_by_fields(
     session: AsyncSession,
     model: type[TModel],
     *,
@@ -101,7 +101,7 @@ async def delete_record_by_fields(
 async def remove_internship_major(
     session: AsyncSession, internship_id: int, major_id: int, commit: bool = False
 ) -> bool:
-    return await delete_record_by_fields(
+    return await delete_row_by_fields(
         session,
         InternshipMajor,
         internship_id=internship_id,
@@ -113,7 +113,7 @@ async def remove_internship_major(
 async def remove_internship_required_skill(
     session: AsyncSession, internship_id: int, skill_id: int, commit: bool = False
 ) -> bool:
-    return await delete_record_by_fields(
+    return await delete_row_by_fields(
         session,
         InternshipReqSkill,
         internship_id=internship_id,
@@ -125,7 +125,7 @@ async def remove_internship_required_skill(
 async def remove_internship_preferred_skill(
     session: AsyncSession, internship_id: int, skill_id: int, commit: bool = False
 ) -> bool:
-    return await delete_record_by_fields(
+    return await delete_row_by_fields(
         session,
         InternshipPrefSkill,
         internship_id=internship_id,

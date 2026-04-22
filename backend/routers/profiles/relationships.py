@@ -7,7 +7,7 @@ from backend.routers.profiles.faculty import FacultyProfileResponse
 from backend.routers.profiles.students import StudentProfileResponse
 from backend.routers.utils import assert_user_type, get_current_session
 from database.manage import AsyncDBManager
-from database.record_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
+from database.row_retrieval import get_faculty, get_faculty_by_id, get_student_by_id
 from database.sync_retrieval import (
     get_contact,
     get_department,

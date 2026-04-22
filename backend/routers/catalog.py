@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from backend.globals import AccountInfo, get_db_manager
 from backend.routers.utils import get_current_session
 from database.manage import AsyncDBManager
-from database.record_retrieval import get_departments, get_majors, get_skills
+from database.row_retrieval import get_departments, get_majors, get_skills
 
 router = APIRouter()
 
