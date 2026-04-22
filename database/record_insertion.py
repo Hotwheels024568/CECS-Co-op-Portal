@@ -51,9 +51,9 @@ async def add_row(
 
         if isinstance(e, IntegrityError):
             constraint = get_constraint_name_from_integrity_error(e)
-            print(f"Constraint violated when adding {model.__name__}: {constraint}")
+            print(f"Constraint violated when adding {model.__name__}:\n{constraint}\n")
         else:
-            print(f"Error adding {model.__name__}: {e}")
+            print(f"Error adding {model.__name__}:\n{e}\n")
 
         return None
 

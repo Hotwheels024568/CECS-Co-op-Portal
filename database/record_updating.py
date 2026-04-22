@@ -59,17 +59,17 @@ async def update_row_by_id(
     except IntegrityError as e:
         await session.rollback()
         constraint = get_constraint_name_from_integrity_error(e)
-        print(f"DB {constraint} integrity error updating {model.__name__}: {e}")
+        print(f"DB {constraint} integrity error updating {model.__name__} id={id}:\n{e}\n")
         return None
 
     except SQLAlchemyError as e:
         await session.rollback()
-        print(f"DB error updating {model.__name__} id={id}: {e}")
+        print(f"DB error updating {model.__name__} id={id}:\n{e}\n")
         return None
 
     except Exception as e:
         await session.rollback()
-        print(f"Unexpected error updating {model.__name__} id={id}: {e}")
+        print(f"Unexpected error updating {model.__name__} id={id}:\n{e}\n")
         return None
 
 

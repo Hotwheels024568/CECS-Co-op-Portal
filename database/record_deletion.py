@@ -38,7 +38,7 @@ async def delete_record(
 
     except SQLAlchemyError as e:
         await session.rollback()
-        print(f"Error deleting {type(instance).__name__}: {e}")
+        print(f"Error deleting {type(instance).__name__}:\n{e}\n")
         return False
 
 
@@ -94,7 +94,7 @@ async def delete_record_by_fields(
 
     except SQLAlchemyError as e:
         await session.rollback()
-        print(f"Error deleting {model.__name__} with {fields}: {e}")
+        print(f"Error deleting {model.__name__} with {fields}:\n{e}\n")
         return False
 
 

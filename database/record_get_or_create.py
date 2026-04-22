@@ -43,7 +43,7 @@ async def get_or_create(
             return existing
 
     except SQLAlchemyError as e:
-        print(f"Error querying {model.__name__}: {e}")
+        print(f"Error querying {model.__name__}:\n{e}\n")
         return None
 
     # 2) Try to create inside a SAVEPOINT
@@ -64,12 +64,12 @@ async def get_or_create(
             return await session.scalar(select(model).where(where_clause))
 
         except SQLAlchemyError as e:
-            print(f"Error re-querying {model.__name__}: {e}")
+            print(f"Error re-querying {model.__name__}:\n{e}\n")
             return None
 
     except SQLAlchemyError as e:
         await savepoint.rollback()
-        print(f"Error creating {model.__name__}: {e}")
+        print(f"Error creating {model.__name__}:\n{e}\n")
         return None
 
 
