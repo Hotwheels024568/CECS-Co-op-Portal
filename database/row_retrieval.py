@@ -42,14 +42,16 @@ async def get_row_by_PK(session: AsyncSession, model: type[TModel], PK: Any) -> 
 
 
 async def _build_select_by_filter_statement(
-    session: AsyncSession,
     model: type[TModel],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
     **fields: Any,
 ) -> Select[tuple[TModel]]:
     """
-    __
+    Examples:
+        `filters=(User.email.ilike("%@umich.edu"), or_(User.is_active.is_(True), User.is_admin.is_(True)))`
+        or into **fields:
+        `deleted_at=None` # keyword fields still work; None => IS NULL
     """
     conditions: list[ColumnElement[bool]] = list(filters)
 
@@ -63,17 +65,6 @@ async def _build_select_by_filter_statement(
     return statement
 
 
-"""
-Example:
-    await get_first_element_list_by_filter(
-        session,
-        User,
-        filters=(User.email.ilike("%@umich.edu"), or_(User.is_active.is_(True), User.is_admin.is_(True))),
-        deleted_at=None,   # keyword fields still work; None => IS NULL
-    )
-"""
-
-
 async def get_first_element_by_filter(
     session: AsyncSession,
     model: type[TModel],
@@ -82,7 +73,7 @@ async def get_first_element_by_filter(
     **fields: Any,
 ) -> Optional[TModel]:
     return await get_first_element(
-        session, _build_select_by_filter_statement(model, filters=filters, **fields)
+        session, await _build_select_by_filter_statement(model, filters=filters, **fields)
     )
 
 
@@ -94,7 +85,7 @@ async def get_first_element_list_by_filter(
     **fields: Any,
 ) -> list[TModel]:
     return await get_first_element(
-        session, _build_select_by_filter_statement(model, filters=filters, **fields)
+        session, await _build_select_by_filter_statement(model, filters=filters, **fields)
     )
 
 
