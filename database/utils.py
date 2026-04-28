@@ -80,7 +80,7 @@ Method                  Complexity          Syntax                              
 
 
 @overload
-async def build_select_from_filters(
+async def build_select_statement(
     select: type[TModel],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
@@ -89,7 +89,7 @@ async def build_select_from_filters(
 
 
 @overload
-async def build_select_from_filters(
+async def build_select_statement(
     select: InstrumentedAttribute[TAttr],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
@@ -97,7 +97,7 @@ async def build_select_from_filters(
 ) -> Select[tuple[TAttr]]: ...
 
 
-async def build_select_from_filters(
+async def build_select_statement(
     select: type[TModel] | InstrumentedAttribute[TAttr],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
@@ -144,7 +144,7 @@ async def build_select_from_filters(
     - Select a single column while still filtering on the owning model:
         ```statement = build_select_from_filters(User.email, is_active=True, deleted_at=None)``
     """
-    from sqlalchemy import and_, select
+    from sqlalchemy import and_, select as select_
 
     conditions = list(filters)
     model = select.parent.entity if isinstance(select, InstrumentedAttribute) else select
@@ -153,7 +153,7 @@ async def build_select_from_filters(
         column = getattr(model, name)
         conditions.append(column.is_(None) if value is None else (column == value))
 
-    return select(select).where(and_(*conditions)) if conditions else select(select)
+    return select_(select).where(and_(*conditions)) if conditions else select_(select)
 
 
 async def count(session: AsyncSession, model: type[TModel]) -> int:
