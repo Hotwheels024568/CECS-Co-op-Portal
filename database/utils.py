@@ -80,8 +80,8 @@ Method                  Complexity          Syntax                              
 
 
 @overload
-def build_select_from_filters(
-    selected: type[TModel],
+async def build_select_from_filters(
+    select: type[TModel],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
     **fields: Any,
@@ -89,8 +89,8 @@ def build_select_from_filters(
 
 
 @overload
-def build_select_from_filters(
-    selected: InstrumentedAttribute[TAttr],
+async def build_select_from_filters(
+    select: InstrumentedAttribute[TAttr],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
     **fields: Any,
@@ -98,7 +98,7 @@ def build_select_from_filters(
 
 
 async def build_select_from_filters(
-    selected: type[TModel] | InstrumentedAttribute[TAttr],
+    select: type[TModel] | InstrumentedAttribute[TAttr],
     *,
     filters: Sequence[ColumnElement[bool]] = (),
     **fields: Any,
@@ -147,13 +147,13 @@ async def build_select_from_filters(
     from sqlalchemy import and_, select
 
     conditions = list(filters)
-    model = selected.parent.entity if isinstance(selected, InstrumentedAttribute) else selected
+    model = select.parent.entity if isinstance(select, InstrumentedAttribute) else select
 
     for name, value in fields.items():
         column = getattr(model, name)
         conditions.append(column.is_(None) if value is None else (column == value))
 
-    return select(selected).where(and_(*conditions)) if conditions else select(selected)
+    return select(select).where(and_(*conditions)) if conditions else select(select)
 
 
 async def count(session: AsyncSession, model: type[TModel]) -> int:

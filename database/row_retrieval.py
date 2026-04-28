@@ -34,7 +34,8 @@ async def get_account_by_id(session: AsyncSession, id: int) -> Optional[Account]
 
 
 async def get_account_by_username(session: AsyncSession, username: str) -> Optional[Account]:
-    return await get_first_element(session, build_select_from_filters(Account, username=username))
+    statement = await build_select_from_filters(Account, username=username)
+    return await get_first_element(session, statement)
 
 
 async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]:
@@ -42,7 +43,7 @@ async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]
 
 
 async def get_companies(session: AsyncSession) -> list[Company]:
-    return await get_first_element_list(session, build_select_from_filters(Company))
+    return await get_first_element_list(session, await build_select_from_filters(Company))
 
 
 async def get_company_by_id(session: AsyncSession, id: int) -> Optional[Company]:
@@ -50,7 +51,7 @@ async def get_company_by_id(session: AsyncSession, id: int) -> Optional[Company]
 
 
 async def get_company_by_name(session: AsyncSession, name: str) -> Optional[Company]:
-    return await get_first_element(session, build_select_from_filters(Company, name=name))
+    return await get_first_element(session, await build_select_from_filters(Company, name=name))
 
 
 async def get_contact_by_id(session: AsyncSession, id: int) -> Optional[ContactInfo]:
@@ -58,7 +59,8 @@ async def get_contact_by_id(session: AsyncSession, id: int) -> Optional[ContactI
 
 
 async def get_contact_by_email(session: AsyncSession, email: str) -> Optional[ContactInfo]:
-    return await get_first_element(session, build_select_from_filters(ContactInfo, email=email))
+    statement = await build_select_from_filters(ContactInfo, email=email)
+    return await get_first_element(session, statement)
 
 
 async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[EmployerProfile]:
@@ -66,7 +68,7 @@ async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[Employe
 
 
 async def get_departments(session: AsyncSession) -> list[Department]:
-    return await get_first_element_list(session, build_select_from_filters(Department))
+    return await get_first_element_list(session, await build_select_from_filters(Department))
 
 
 async def get_department_by_id(session: AsyncSession, id: int) -> Optional[Department]:
@@ -74,11 +76,11 @@ async def get_department_by_id(session: AsyncSession, id: int) -> Optional[Depar
 
 
 async def get_department_by_name(session: AsyncSession, name: str) -> Optional[Department]:
-    return await get_first_element(session, build_select_from_filters(Department, name=name))
+    return await get_first_element(session, await build_select_from_filters(Department, name=name))
 
 
 async def get_majors(session: AsyncSession) -> list[Major]:
-    return await get_first_element_list(session, build_select_from_filters(Major))
+    return await get_first_element_list(session, await build_select_from_filters(Major))
 
 
 async def get_major_by_id(session: AsyncSession, id: int) -> Optional[Major]:
@@ -86,7 +88,7 @@ async def get_major_by_id(session: AsyncSession, id: int) -> Optional[Major]:
 
 
 async def get_major_by_name(session: AsyncSession, name: str) -> Optional[Major]:
-    return await get_first_element(session, build_select_from_filters(Major, name=name))
+    return await get_first_element(session, await build_select_from_filters(Major, name=name))
 
 
 async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentProfile]:
@@ -94,7 +96,7 @@ async def get_student_by_id(session: AsyncSession, id: int) -> Optional[StudentP
 
 
 async def get_faculty(session: AsyncSession) -> list[FacultyProfile]:
-    return await get_first_element_list(session, build_select_from_filters(FacultyProfile))
+    return await get_first_element_list(session, await build_select_from_filters(FacultyProfile))
 
 
 async def get_faculty_by_id(session: AsyncSession, id: int) -> Optional[FacultyProfile]:
@@ -115,7 +117,7 @@ async def get_internship_majors_by_id(session: AsyncSession, id: int) -> list[Ma
 
 
 async def get_skills(session: AsyncSession) -> list[Skill]:
-    return await get_first_element_list(session, build_select_from_filters(Skill))
+    return await get_first_element_list(session, await build_select_from_filters(Skill))
 
 
 async def get_skill_by_id(session: AsyncSession, id: int) -> Optional[Skill]:
@@ -123,7 +125,7 @@ async def get_skill_by_id(session: AsyncSession, id: int) -> Optional[Skill]:
 
 
 async def get_skill_by_name(session: AsyncSession, name: str) -> Optional[Skill]:
-    return await get_first_element(session, build_select_from_filters(Skill, name=name))
+    return await get_first_element(session, await build_select_from_filters(Skill, name=name))
 
 
 async def get_internship_required_skills_by_id(session: AsyncSession, id: int) -> list[Skill]:
@@ -151,7 +153,7 @@ async def get_application_by_id(session: AsyncSession, id: int) -> Optional[Inte
 async def get_application_from_ids(
     session: AsyncSession, internship_id: int, student_id: int
 ) -> Optional[InternshipApplication]:
-    statement = build_select_from_filters(
+    statement = await build_select_from_filters(
         InternshipApplication, internship_id=internship_id, student_id=student_id
     )
     return await get_first_element(session, statement)
@@ -171,14 +173,14 @@ async def get_department_applications(
 async def get_internship_applications(
     session: AsyncSession, internship_id: int
 ) -> list[InternshipApplication]:
-    statement = build_select_from_filters(InternshipApplication, internship_id=internship_id)
+    statement = await build_select_from_filters(InternshipApplication, internship_id=internship_id)
     return await get_first_element_list(session, statement)
 
 
 async def get_selected_internship_applications(
     session: AsyncSession, internship_id: int
 ) -> list[InternshipApplication]:
-    statement = build_select_from_filters(
+    statement = await build_select_from_filters(
         InternshipApplication, internship_id=internship_id, selected=True
     )
     return await get_first_element_list(session, statement)
