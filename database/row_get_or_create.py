@@ -1,21 +1,11 @@
-from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy import and_, select
 from typing import Any, Optional
 
-from database.row_retrieval import (
-    get_company_by_name,
-    get_department_by_name,
-    get_major_by_name,
-    get_skill_by_name,
-)
-from database.schema import (
-    Company,
-    Department,
-    Major,
-    Skill,
-)
-from database.utils import TModel
+from sqlalchemy import and_, select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio.session import AsyncSession
+
+from database.schema import Company, Department, Major, Skill
+from database.crud import TModel
 
 
 async def get_or_create_row(

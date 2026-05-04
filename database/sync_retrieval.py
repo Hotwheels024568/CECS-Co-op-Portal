@@ -1,6 +1,5 @@
 from typing import Union
 
-# from sqlalchemy.ext.asyncio.session import AsyncSession
 from database.schema import (
     Address,
     Company,

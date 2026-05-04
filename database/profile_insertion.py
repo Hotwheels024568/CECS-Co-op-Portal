@@ -1,10 +1,10 @@
-from sqlalchemy.exc import IntegrityError, DBAPIError
-from sqlalchemy.ext.asyncio.session import AsyncSession
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError, DBAPIError
+from sqlalchemy.ext.asyncio.session import AsyncSession
+
 from database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
-from database.utils import get_constraint_name_from_integrity_error
-from database.row_retrieval import get_company_by_id
+from database.crud import get_constraint_name_from_integrity_error
 from database.row_insertion import (
     add_address,
     add_company,
@@ -13,6 +13,7 @@ from database.row_insertion import (
     add_student,
     add_faculty,
 )
+from database.row_retrieval import get_company_by_id
 from database.row_get_or_create import (
     get_or_create_department,
     get_or_create_major,

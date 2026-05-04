@@ -1,14 +1,9 @@
-from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from datetime import datetime, timezone
 from typing import Any, Optional
 
-from datetime import datetime, timezone
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from backend.routers.models import Contact
-from database.row_retrieval import (
-    get_application_by_id,
-    get_application_from_ids,
-)
 from database.schema import (
     Account,
     Address,
@@ -27,7 +22,8 @@ from database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
-from database.utils import TModel, get_constraint_name_from_integrity_error
+from database.crud import TModel, get_constraint_name_from_integrity_error
+from database.row_retrieval import get_application_by_id, get_application_from_ids
 
 
 async def add_row(
@@ -192,7 +188,7 @@ async def add_contact(
     """
     return await add_row(
         session,
-        Contact,
+        ContactInfo,
         id=account_id,
         first=first_name,
         middle=middle_name,

@@ -1,8 +1,7 @@
 from typing import AsyncGenerator, Optional, Self
 from contextlib import asynccontextmanager
+from configparser import ConfigParser
 from pathlib import Path
-import configparser
-import asyncio
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -12,7 +11,7 @@ from database.schema import Base
 
 def get_database_url() -> str:
     config_path = Path(__file__).parent.parent / "config.ini"
-    parser = configparser.ConfigParser()
+    parser = ConfigParser()
     try:
         with open(config_path, "r") as file:
             parser.read_file(file)
@@ -90,10 +89,12 @@ class AsyncDBManager:
         Args:
             autocommit (bool): Default session autocommit behavior. If True, sessions commit automatically.
         """
-        self.engine = create_async_engine(DATABASE_URL, echo=False)
-        self.SessionMaker = async_sessionmaker(self.engine, expire_on_commit=False, autoflush=False)
-        self.metadata = Base.metadata
-        self.autocommit = autocommit
+        self._engine = create_async_engine(DATABASE_URL, echo=False)
+        self._SessionMaker = async_sessionmaker(
+            self._engine, expire_on_commit=False, autoflush=False
+        )
+        self._metadata = Base.metadata
+        self._autocommit = autocommit
         self._session = None
 
     @classmethod
@@ -134,8 +135,8 @@ class AsyncDBManager:
 
     async def _create_db(self) -> None:
         """Create (initialize) all tables in the database schema."""
-        async with self.engine.begin() as conn:
-            await conn.run_sync(self.metadata.create_all)
+        async with self._engine.begin() as conn:
+            await conn.run_sync(self._metadata.create_all)
 
     async def _drop_db_tables(self) -> None:
         """
@@ -144,8 +145,8 @@ class AsyncDBManager:
         If standard table drop fails, attempts to drop and recreate the entire 'public' schema (PostgreSQL only).
         """
         try:
-            async with self.engine.begin() as conn:
-                await conn.run_sync(self.metadata.drop_all)
+            async with self._engine.begin() as conn:
+                await conn.run_sync(self._metadata.drop_all)
         except Exception as e:
             print(
                 f"Standard drop_all failed with error: {e}. Attempting full schema drop and recreation..."
@@ -159,7 +160,7 @@ class AsyncDBManager:
         """
         from sqlalchemy import text
 
-        async with self.engine.begin() as conn:
+        async with self._engine.begin() as conn:
             await conn.execute(text("DROP SCHEMA public CASCADE"))
             await conn.execute(text("CREATE SCHEMA public"))
 
@@ -180,7 +181,7 @@ class AsyncDBManager:
         from datetime import date, datetime
         import json, secrets
 
-        tables = {table.name: table for table in self.metadata.sorted_tables}
+        tables = {table.name: table for table in self._metadata.sorted_tables}
         if not await self._all_tables_empty():
             print("Skipping seed: Database is not empty.")
             return
@@ -188,7 +189,7 @@ class AsyncDBManager:
         with open(json_path) as file:
             seed_data = json.load(file)
 
-        async with self.engine.begin() as conn:
+        async with self._engine.begin() as conn:
             for table_name, records in seed_data.items():
                 table = tables.get(table_name)
                 if table is None or not records:
@@ -229,10 +230,10 @@ class AsyncDBManager:
                 await conn.execute(table.insert(), records)
 
     async def _all_tables_empty(self) -> bool:
-        from database.utils import count
+        from database.crud import count
 
-        async with self.engine.begin() as conn:
-            for table in self.metadata.sorted_tables:
+        async with self._engine.begin() as conn:
+            for table in self._metadata.sorted_tables:
                 if (await count(conn, table)) > 0:
                     return False
         return True
@@ -241,8 +242,8 @@ class AsyncDBManager:
         """Sync autoincrement PK sequences to MAX(pk) for all metadata tables to prevent duplicate-key inserts after seeding."""
         from sqlalchemy import text
 
-        async with self.engine.begin() as conn:
-            for table in self.metadata.sorted_tables:
+        async with self._engine.begin() as conn:
+            for table in self._metadata.sorted_tables:
                 pk_cols = list(table.primary_key.columns)
                 if len(pk_cols) != 1:
                     continue
@@ -264,13 +265,11 @@ class AsyncDBManager:
                     continue
 
                 # Set sequence to max(pk) (or 1 if empty). The 'true' flag makes nextval return max + 1.
-                sync_stmt = text(
-                    f"""SELECT setval(
+                sync_stmt = text(f"""SELECT setval(
                         :seq,
                         COALESCE((SELECT MAX("{pk.name}") FROM "{table.name}"), 1),
                         true
-                    );"""
-                )
+                    );""")
                 await conn.execute(sync_stmt, {"seq": seq_name})
 
     @asynccontextmanager  # --- context manager (manager.session())
@@ -288,8 +287,8 @@ class AsyncDBManager:
         Yields:
             AsyncSession: An async SQLAlchemy session.
         """
-        auto = self.autocommit if autocommit is None else autocommit
-        async with self.SessionMaker() as session:
+        auto = self._autocommit if autocommit is None else autocommit
+        async with self._SessionMaker() as session:
             self._session = session
             try:
                 yield session
@@ -305,9 +304,9 @@ class AsyncDBManager:
 
     async def __aenter__(self) -> AsyncSession:
         """Enter async context with an open session. Uses manager's default autocommit setting."""
-        self._session_obj = self.SessionMaker()
+        self._session_obj = self._SessionMaker()
         self._session = await self._session_obj.__aenter__()
-        self._current_autocommit = self.autocommit
+        self._current_autocommit = self._autocommit
         return self._session
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -327,7 +326,7 @@ class AsyncDBManager:
     async def close(cls) -> None:
         """Release database resources by disposing the engine and resetting the AsyncDBManager singleton."""
         if cls._instance:
-            await cls._instance.engine.dispose()
+            await cls._instance._engine.dispose()
         cls._instance = None
 
 
@@ -350,12 +349,11 @@ async def main(recreate: bool = False, seed: bool = False) -> None:
         InternshipApplication,
         InternshipSummary,
     )
-    from database.utils import count
+    from database.crud import count
 
     manager = await AsyncDBManager.create(rebuild_tables=recreate, seed=seed)
     async with manager.session() as session:
-        print(
-            f"""
+        print(f"""
             Counts:
             \tAccount                  {await count(session, Account)}
             \tAddress                  {await count(session, Address)}
@@ -373,11 +371,12 @@ async def main(recreate: bool = False, seed: bool = False) -> None:
             \tInternshipPrefSkill      {await count(session, InternshipPrefSkill)}
             \tInternshipApplication    {await count(session, InternshipApplication)}
             \tInternshipSummary        {await count(session, InternshipSummary)}
-            """.strip()
-        )
+            """.strip())
 
 
 if __name__ == "__main__":
+    import asyncio
+
     asyncio.run(main(True, True))
 
 """

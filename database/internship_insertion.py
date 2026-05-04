@@ -1,9 +1,10 @@
 from typing import Optional
+
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import Internship, InternshipApplication, InternshipSummary
-from database.utils import get_constraint_name_from_integrity_error
+from database.crud import get_constraint_name_from_integrity_error
 from database.row_insertion import (
     add_address,
     add_application,

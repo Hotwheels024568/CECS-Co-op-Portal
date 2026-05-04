@@ -1,13 +1,14 @@
-from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, delete
 from typing import Any, Optional
 
+from sqlalchemy import and_, delete
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio.session import AsyncSession
+
 from database.schema import InternshipMajor, InternshipReqSkill, InternshipPrefSkill
-from database.utils import TModel
+from database.crud import TModel
 
 
-async def delete_row(
+async def delete_row_instance(
     session: AsyncSession,
     instance: Optional[TModel],
     *,

@@ -1,18 +1,15 @@
 from typing import Awaitable, Callable, Optional, Protocol, TypeVar
+
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from backend.routers.models import InternshipStatus
-from database.internship_insertion import create_summary
+from database.schema import Internship
+from database.crud import get_constraint_name_from_integrity_error
 from database.row_insertion import (
     add_address,
     add_internship_major,
     add_internship_preferred_skill,
     add_internship_required_skill,
-)
-from database.row_updating import (
-    update_address,
-    update_internship as update_internship_record,
 )
 from database.row_retrieval import (
     get_internship_by_id,
@@ -21,15 +18,20 @@ from database.row_retrieval import (
     get_internship_required_skills_by_id,
     get_selected_internship_applications,
 )
+from database.row_updating import (
+    update_address,
+    update_internship as update_internship_record,
+)
 from database.row_deletion import (
-    delete_row,
+    delete_row_instance,
     remove_internship_major,
     remove_internship_preferred_skill,
     remove_internship_required_skill,
 )
 from database.row_get_or_create import get_or_create_major, get_or_create_skill
-from database.utils import get_constraint_name_from_integrity_error
-from database.schema import Internship
+from database.internship_insertion import create_summary
+
+from backend.routers.models import InternshipStatus
 
 
 async def update_internship(
@@ -133,7 +135,7 @@ async def update_internship(
                     )
                     new_address_id = address.id
             else:  # A new address_id is directly supplied, so delete the old one
-                result = await delete_row(session, internship.address)
+                result = await delete_row_instance(session, internship.address)
                 if not result:
                     await session.rollback()
                     return (
@@ -145,7 +147,7 @@ async def update_internship(
             update_address_id = True
             if current_location_type == "Other":
                 address = internship.address
-                result = await delete_row(session, address)
+                result = await delete_row_instance(session, address)
                 if not result:
                     await session.rollback()
                     return (

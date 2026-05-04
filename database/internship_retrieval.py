@@ -1,6 +1,7 @@
-from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy import func, select, and_
 from typing import Optional
+
+from sqlalchemy import func, select, and_
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import (
     Company,

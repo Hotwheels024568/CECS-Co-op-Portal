@@ -16,7 +16,7 @@ from backend.routers.models import (
 from backend.routers.utils import assert_user_type, get_current_session
 from database.internship_insertion import create_application
 from database.manage import AsyncDBManager
-from database.row_deletion import delete_row
+from database.row_deletion import delete_row_instance
 from database.row_retrieval import (
     get_application_by_id,
     get_department_applications,
@@ -391,7 +391,7 @@ async def delete_application(
                 "Applications can only be deleted while internship applications are open.",
             )
 
-        result = await delete_row(db_session, application, commit=True)
+        result = await delete_row_instance(db_session, application, commit=True)
 
     if not result:
         raise HTTPException(

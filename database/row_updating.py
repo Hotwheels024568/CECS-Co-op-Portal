@@ -1,6 +1,7 @@
-from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from typing import Any, Optional
+
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import (
     Account,
@@ -14,10 +15,10 @@ from database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
-from database.utils import TModel, get_constraint_name_from_integrity_error
+from database.crud import TModel, get_constraint_name_from_integrity_error
 
 
-async def update_row_by_id(
+async def update_row_by_pk(
     session: AsyncSession,
     model: type[TModel],
     id: Any,
@@ -98,7 +99,7 @@ async def update_account(
     Returns:
         Optional[Account]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Account,
         id,
@@ -139,7 +140,7 @@ async def update_address(
     Returns:
         Optional[Address]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -176,7 +177,7 @@ async def update_company(
     Returns:
         Optional[Company]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -214,7 +215,7 @@ async def update_contact(
     Returns:
         Optional[ContactInfo]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -246,7 +247,7 @@ async def update_employer(
     Returns:
         Optional[EmployerAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -288,7 +289,7 @@ async def update_student(
     Returns:
         Optional[StudentAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -323,7 +324,7 @@ async def update_faculty(
     Returns:
         Optional[FacultyAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -371,7 +372,7 @@ async def update_internship(
     Returns:
         Optional[Internship]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -417,7 +418,7 @@ async def update_application(
     Returns:
         Optional[InternshipApplication]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
@@ -455,7 +456,7 @@ async def update_summary(
     Returns:
         Optional[InternshipSummary]: The updated object if successful, or None if it doesn't exist or an error occurs.
     """
-    return await update_row_by_id(
+    return await update_row_by_pk(
         session,
         Address,
         id,
