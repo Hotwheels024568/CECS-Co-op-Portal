@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import Company, EmployerProfile, FacultyProfile, StudentProfile
 from database.crud import get_constraint_name_from_integrity_error
-from database.sync_retrieval import get_company_address
 from database.schema_operations.read import get_company_by_id
 from database.schema_operations.update import (
     update_address,
@@ -61,10 +60,9 @@ async def update_company_profile(
         if company is None:
             return None, "Company does not exist."
 
-        address_id = (await session.run_sync(get_company_address, company)).id
         address = await update_address(
             session,
-            address_id,
+            company.address_id,
             address_line1,
             address_line2,
             city,
