@@ -315,21 +315,23 @@ async def update_application_endpoint(
                 status.HTTP_403_FORBIDDEN, "Only the application owner can update an application."
             )
         internship = await db_session.run_sync(get_application_internship, application)
-
-        result = await update_application(
-            db_session,
-            application_id,
-            (
-                profile.gpa >= 2
-                and internship.duration_weeks >= 7
-                and internship.total_work_hours >= 140
-                and semesters_since_enrollment(profile.start_semester, profile.start_year)
-                >= (1 if profile.transfer else 2)
-            ),
-            data.note,
-            data.resume_link,
-            data.cover_letter_link,
-        )
+        try:
+            result = await update_application(
+                db_session,
+                application_id,
+                (
+                    profile.gpa >= 2
+                    and internship.duration_weeks >= 7
+                    and internship.total_work_hours >= 140
+                    and semesters_since_enrollment(profile.start_semester, profile.start_year)
+                    >= (1 if profile.transfer else 2)
+                ),
+                data.note,
+                data.resume_link,
+                data.cover_letter_link,
+            )
+        except:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Application could not be updated.")
 
     if not result:
         raise HTTPException(
@@ -391,7 +393,7 @@ async def delete_application(
                 "Applications can only be deleted while internship applications are open.",
             )
 
-        result = await delete_row_instance(db_session, application, commit=True)
+        result = await delete_row_instance(db_session, application)
 
     if not result:
         raise HTTPException(

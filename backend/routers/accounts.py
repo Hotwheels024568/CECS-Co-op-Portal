@@ -3,6 +3,8 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated
 import secrets
 
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+
 from backend.globals import SESSION_STORE, AccountInfo, UserType, get_db_manager
 from backend.routers.models import GeneralRequestResponse
 from backend.routers.utils import get_current_session
@@ -45,23 +47,21 @@ async def change_username(
         HTTPException (409): If the requested username is already taken.
         HTTPException (500): If the operation fails.
     """
+    from sqlalchemy.exc import IntegrityError
+
     account_id = session_data[1]["account_id"]
 
     async with db_manager.session() as db_session:
-        result = await update_account(
-            db_session,
-            account_id,
-            data.username,
-            commit=True,
-        )
-
-    """
-    if __ contains "IntegrityError":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username already taken."
-        )
-    """
+        try:
+            result = await update_account(
+                db_session,
+                account_id,
+                data.username,
+            )
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Username already taken."
+            )
 
     if result is None:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update username.")
@@ -113,13 +113,15 @@ async def change_password(
     hashed_pw = hash_password(data.password, salt)
 
     async with db_manager.session() as db_session:
-        result = await update_account(
-            db_session,
-            account_id,
-            hashed_pw,
-            salt,
-            commit=True,
-        )
+        try:
+            result = await update_account(
+                db_session,
+                account_id,
+                hashed_pw,
+                salt,
+            )
+        except SQLAlchemyError:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Failed to update password.")
 
     if result is None:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update password.")
@@ -176,9 +178,10 @@ async def set_user_type(
                 status.HTTP_409_CONFLICT, "User type already set. Contact support to change."
             )
 
-        result = await update_account(
-            db_session, account_id, user_type=data.user_type.value, commit=True
-        )
+        try:
+            result = await update_account(db_session, account_id, user_type=data.user_type.value)
+        except SQLAlchemyError:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Failed to update user type.")
 
     if not result:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Failed to update user type.")
@@ -233,9 +236,7 @@ async def reset_password(data: CompleteResetRequest) -> dict:
     salt = secrets.token_bytes(16)
     pw_hash = hash_password(data.new_password, salt, PEPPER)
     async with db_manager.session() as session:
-        updated = await update_account(
-            session, id=account_id, password=pw_hash, salt=salt, commit=True
-        )
+        updated = await update_account(session, id=account_id, password=pw_hash, salt=salt)
         if not updated:
             raise HTTPException(500, "Password reset failed.")
         await invalidate_password_reset_token(data.token)

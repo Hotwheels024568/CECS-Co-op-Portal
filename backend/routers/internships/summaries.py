@@ -192,14 +192,17 @@ async def update_summary_grade(
                 detail="You can only grade internship summaries for students in your own department.",
             )
 
-        result = await update_summary(
-            db_session, summary_id, letter_grade=data.letter_grade, commit=True
-        )
+        try:
+            result = await update_summary(db_session, summary_id, letter_grade=data.letter_grade)
+        except:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Summary grade could not be updated."
+            )
 
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Summary grade could not be updated due to a server or database error.",
+            detail="Summary grade could not be updated.",
         )
     return GeneralRequestResponse(success=True, message="Summary graded")
 
@@ -325,9 +328,12 @@ async def update_summary_text(
                 detail="Only the student who owns this summary may update its contents.",
             )
 
-        result = await update_summary(
-            db_session, summary_id, data.summary_text, data.file_link, commit=True
-        )
+        try:
+            result = await update_summary(db_session, summary_id, data.summary_text, data.file_link)
+        except:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Summary could not be updated."
+            )
 
     if result is None:
         raise HTTPException(
@@ -388,13 +394,17 @@ async def update_summary_approval(
                 detail="Only employers of internship's company may update an internship summary's employer approval status.",
             )
 
-        result = await update_summary(
-            db_session, summary_id, employer_approval=data.approval, commit=True
-        )
+        try:
+            result = await update_summary(db_session, summary_id, employer_approval=data.approval)
+        except:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Summary employer approval could not be updated.",
+            )
 
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Employer approval status could not be updated.",
+            detail="Summary employer approval status could not be updated.",
         )
-    return GeneralRequestResponse(success=True, message="Employer approval status updated")
+    return GeneralRequestResponse(success=True, message="Summary employer approval status updated")
