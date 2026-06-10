@@ -4,31 +4,30 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import Internship
-from database.crud import get_constraint_name_from_integrity_error
-from database.row_insertion import (
+from database.crud import delete_row_instance, get_constraint_name_from_integrity_error
+from database.schema_operations.create import (
     add_address,
     add_internship_major,
     add_internship_preferred_skill,
     add_internship_required_skill,
 )
-from database.row_retrieval import (
+from database.schema_operations.read import (
     get_internship_by_id,
     get_internship_majors_by_id,
     get_internship_preferred_skills_by_id,
     get_internship_required_skills_by_id,
     get_selected_internship_applications,
 )
-from database.row_updating import (
+from database.schema_operations.update import (
     update_address,
     update_internship as update_internship_record,
 )
-from database.row_deletion import (
-    delete_row_instance,
+from database.schema_operations.delete import (
     remove_internship_major,
     remove_internship_preferred_skill,
     remove_internship_required_skill,
 )
-from database.row_get_or_create import get_or_create_major, get_or_create_skill
+from database.schema_operations.get_or_create import get_or_create_major, get_or_create_skill
 from database.internship_insertion import create_summary
 
 from backend.routers.models import InternshipStatus

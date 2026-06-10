@@ -17,8 +17,8 @@ from backend.routers.utils import (
     remove_session,
 )
 from database.manage import AsyncDBManager
-from database.row_insertion import add_account
-from database.row_retrieval import get_account_by_username
+from database.schema_operations.create import add_account
+from database.schema_operations.read import get_account_by_username
 
 router = APIRouter()
 

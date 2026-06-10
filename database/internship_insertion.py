@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import Internship, InternshipApplication, InternshipSummary
 from database.crud import get_constraint_name_from_integrity_error
-from database.row_insertion import (
+from database.schema_operations.create import (
     add_address,
     add_application,
     add_internship,
@@ -14,7 +14,7 @@ from database.row_insertion import (
     add_internship_required_skill,
     add_summary,
 )
-from database.row_retrieval import (
+from database.schema_operations.read import (
     get_address_by_id,
     get_application_by_id,
     get_application_from_ids,
@@ -23,7 +23,7 @@ from database.row_retrieval import (
     get_internship_by_id,
     get_student_by_id,
 )
-from database.row_get_or_create import (
+from database.schema_operations.get_or_create import (
     get_or_create_major,
     get_or_create_skill,
 )

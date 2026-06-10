@@ -22,7 +22,7 @@ from database.schema import (
     InternshipSummary,
 )
 from database.crud import add_row
-from database.row_retrieval import get_application_by_id, get_application_from_ids
+from database.schema_operations.read import get_application_by_id, get_application_from_ids
 
 
 async def add_account(
