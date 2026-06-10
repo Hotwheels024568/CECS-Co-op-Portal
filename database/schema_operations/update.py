@@ -37,7 +37,7 @@ async def update_account(
         user_type (Optional[str], optional): Updated user type ('Employer', 'Student', 'Faculty').
 
     Returns:
-        Optional[Account]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[Account]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -74,7 +74,7 @@ async def update_address(
         country (Optional[str], optional): Updated country.
 
     Returns:
-        Optional[Address]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[Address]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -107,7 +107,7 @@ async def update_company(
         website_link (Optional[str], optional): Updated website link.
 
     Returns:
-        Optional[Company]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[Company]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -141,7 +141,7 @@ async def update_contact(
         phone (Optional[str], optional): Updated phone number.
 
     Returns:
-        Optional[ContactInfo]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[ContactInfo]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -169,7 +169,7 @@ async def update_employer(
         company_id (Optional[int], optional): Updated company ID.
 
     Returns:
-        Optional[EmployerAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[EmployerAccount]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -207,7 +207,7 @@ async def update_student(
         resume_link (Optional[str], optional): Updated resume link.
 
     Returns:
-        Optional[StudentAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[StudentAccount]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -238,7 +238,7 @@ async def update_faculty(
         department_id (Optional[int], optional): Updated department ID.
 
     Returns:
-        Optional[FacultyAccount]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[FacultyAccount]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -282,7 +282,7 @@ async def update_internship(
         status (Optional[str], optional): Updated status ('Open', 'Closed', etc.).
 
     Returns:
-        Optional[Internship]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[Internship]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -324,7 +324,7 @@ async def update_application(
         selected (Optional[bool], optional): Updated selection status.
 
     Returns:
-        Optional[InternshipApplication]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[InternshipApplication]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
@@ -358,7 +358,7 @@ async def update_summary(
         letter_grade (Optional[str], optional): Updated letter grade.
 
     Returns:
-        Optional[InternshipSummary]: The updated object if successful, or None if it doesn't exist or an error occurs.
+        Optional[InternshipSummary]: The updated object if successful, or None if it doesn't exist.
     """
     return await update_row_by_pk(
         session,
