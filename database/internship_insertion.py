@@ -305,39 +305,39 @@ async def create_summary(
     )
 
 
-async def create_summary_from_internship(
-    session: AsyncSession,
-    internship_id: int,
-    student_id: int,
-    summary_text: str = "",
-    file_link: Optional[str] = None,
-    employer_approval: bool = False,
-    letter_grade: Optional[str] = None,
-) -> tuple[Optional[InternshipSummary], str]:
-    """
-    Atomically creates an internship summary for a given internship application.
+# async def create_summary_from_internship(
+#     session: AsyncSession,
+#     internship_id: int,
+#     student_id: int,
+#     summary_text: str = "",
+#     file_link: Optional[str] = None,
+#     employer_approval: bool = False,
+#     letter_grade: Optional[str] = None,
+# ) -> tuple[Optional[InternshipSummary], str]:
+#     """
+#     Atomically creates an internship summary for a given internship application.
 
-    Args:
-        session (AsyncSession): The database session.
-        student_id (int): The ID of the student.
-        internship_id (int): The ID of the internship.
-        summary_text (str, optional): Summary text, defaults to empty string.
-        file_link (Optional[str], optional): Link to supporting document(s).
-        employer_approval (bool, optional): Employer approval, defaults to False.
-        letter_grade (Optional[str], optional): Letter grade.
+#     Args:
+#         session (AsyncSession): The database session.
+#         student_id (int): The ID of the student.
+#         internship_id (int): The ID of the internship.
+#         summary_text (str, optional): Summary text, defaults to empty string.
+#         file_link (Optional[str], optional): Link to supporting document(s).
+#         employer_approval (bool, optional): Employer approval, defaults to False.
+#         letter_grade (Optional[str], optional): Letter grade.
 
-    Returns:
-        tuple[Optional[InternshipSummary], str]
-            (InternshipSummary, "Internship summary created successfully.") on success.
-            (None, "Reason") with a descriptive message on failure.
-    """
-    application = await get_application_from_ids(session, internship_id, student_id)
-    if not application:
-        return None, "Internship application not found for this internship/student."
+#     Returns:
+#         tuple[Optional[InternshipSummary], str]
+#             (InternshipSummary, "Internship summary created successfully.") on success.
+#             (None, "Reason") with a descriptive message on failure.
+#     """
+#     application = await get_application_from_ids(session, internship_id, student_id)
+#     if not application:
+#         return None, "Internship application not found for this internship/student."
 
-    return await _create_summary(
-        session, application.id, summary_text, file_link, employer_approval, letter_grade
-    )
+#     return await _create_summary(
+#         session, application.id, summary_text, file_link, employer_approval, letter_grade
+#     )
 
 
 async def _create_summary(
