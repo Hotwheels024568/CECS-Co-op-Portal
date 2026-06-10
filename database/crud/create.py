@@ -11,7 +11,7 @@ async def add_row(
     *,
     flush: bool = True,
     **fields: Any,
-) -> type[TModel]:
+) -> TModel:
     """
     Create and add a new ORM instance to the session.
 

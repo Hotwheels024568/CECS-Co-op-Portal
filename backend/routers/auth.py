@@ -74,11 +74,14 @@ async def register(
 
     # 2. Insert into DB
     async with db_manager.session() as db_session:
-        account = await add_account(db_session, request.username, pw_hash, salt, commit=True)
-        if account is not None:
-            user_type = account.user_type or None
-            session_id = create_session(account.id, user_type)
-            return LoginResponse(success=True, session_id=session_id, user_type=user_type)
+        try:
+            account = await add_account(db_session, request.username, pw_hash, salt)
+            if account is not None:
+                user_type = account.user_type or None
+                session_id = create_session(account.id, user_type)
+                return LoginResponse(success=True, session_id=session_id, user_type=user_type)
+        except:
+            pass
 
     raise HTTPException(
         status.HTTP_400_BAD_REQUEST,

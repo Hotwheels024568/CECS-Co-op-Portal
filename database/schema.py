@@ -6,7 +6,6 @@ from sqlalchemy import (
     Integer,
     LargeBinary,
     Numeric,
-    PrimaryKeyConstraint,
     String,
     Text,
     UniqueConstraint,
@@ -418,18 +417,14 @@ class InternshipMajor(Base):
     __tablename__ = "internship_majors"
 
     internship_id: Mapped[int] = mapped_column(
-        ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("internships.id", ondelete="CASCADE"), primary_key=True
     )
     major_id: Mapped[int] = mapped_column(
-        ForeignKey("majors.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("majors.id", ondelete="CASCADE"), primary_key=True
     )
 
     internship: Mapped["Internship"] = relationship("Internship", back_populates="majors")
     major: Mapped["Major"] = relationship("Major", back_populates="internships")
-
-    __table_args__ = (
-        PrimaryKeyConstraint("internship_id", "major_id", name="_internship_major_pk"),
-    )
 
 
 class Skill(Base):
@@ -463,18 +458,14 @@ class InternshipReqSkill(Base):
     __tablename__ = "internship_required_skills"
 
     internship_id: Mapped[int] = mapped_column(
-        ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("internships.id", ondelete="CASCADE"), primary_key=True
     )
     skill_id: Mapped[int] = mapped_column(
-        ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("skills.id", ondelete="CASCADE"), primary_key=True
     )
 
     internship: Mapped["Internship"] = relationship("Internship", back_populates="required_skills")
     skill: Mapped["Skill"] = relationship("Skill")
-
-    __table_args__ = (
-        PrimaryKeyConstraint("internship_id", "skill_id", name="_internship_required_skill_pk"),
-    )
 
 
 class InternshipPrefSkill(Base):
@@ -493,18 +484,14 @@ class InternshipPrefSkill(Base):
     __tablename__ = "internship_preferred_skills"
 
     internship_id: Mapped[int] = mapped_column(
-        ForeignKey("internships.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("internships.id", ondelete="CASCADE"), primary_key=True
     )
     skill_id: Mapped[int] = mapped_column(
-        ForeignKey("skills.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("skills.id", ondelete="CASCADE"), primary_key=True
     )
 
     internship: Mapped["Internship"] = relationship("Internship", back_populates="preferred_skills")
     skill: Mapped["Skill"] = relationship("Skill")
-
-    __table_args__ = (
-        PrimaryKeyConstraint("internship_id", "skill_id", name="_internship_preferred_skill_pk"),
-    )
 
 
 class InternshipApplication(Base):

@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Optional
 
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from database.schema import (
@@ -22,36 +21,8 @@ from database.schema import (
     InternshipApplication,
     InternshipSummary,
 )
-from database.crud import TModel, get_constraint_name_from_integrity_error
+from database.crud import add_row
 from database.row_retrieval import get_application_by_id, get_application_from_ids
-
-
-async def add_row(
-    session: AsyncSession,
-    model: type[TModel],
-    *,
-    commit: bool = False,
-    **fields: Any,
-) -> Optional[TModel]:
-    entry = model(**fields)
-    session.add(entry)
-
-    try:
-        await session.flush()
-        if commit:
-            await session.commit()
-        return entry
-
-    except SQLAlchemyError as e:
-        await session.rollback()
-
-        if isinstance(e, IntegrityError):
-            constraint = get_constraint_name_from_integrity_error(e)
-            print(f"Constraint violated when adding {model.__name__}:\n{constraint}\n")
-        else:
-            print(f"Error adding {model.__name__}:\n{e}\n")
-
-        return None
 
 
 async def add_account(
@@ -60,8 +31,7 @@ async def add_account(
     password: bytes,
     salt: bytes,
     user_type: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[Account]:
+) -> Account:
     """
     Adds a new Account record to the database.
 
@@ -71,11 +41,9 @@ async def add_account(
         password (bytes): Pre-hashed password.
         salt (bytes): Password salt for hashing.
         user_type (Optional[str], optional): The type of account, one of: 'Employer', 'Student', or 'Faculty'. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Account]: The newly created Account object if successful, or None if insertion fails.
+        Account: The newly created Account object.
     """
     return await add_row(
         session,
@@ -84,7 +52,6 @@ async def add_account(
         password=password,
         salt=salt,
         user_type=user_type,
-        commit=commit,
     )
 
 
@@ -96,8 +63,7 @@ async def add_address(
     state_province: str,
     zip_postal: str,
     country: str,
-    commit: bool = False,
-) -> Optional[Address]:
+) -> Address:
     """
     Adds a new Address record to the database.
 
@@ -109,11 +75,9 @@ async def add_address(
         state_province (str): State or province for the address.
         zip_postal (str): ZIP or postal code for the address.
         country (str): Country for the address.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Address]: The newly created Address object if successful, or None if insertion fails.
+        Address: The newly created Address object.
     """
     return await add_row(
         session,
@@ -124,7 +88,6 @@ async def add_address(
         state_province=state_province,
         zip_postal=zip_postal,
         country=country,
-        commit=commit,
     )
 
 
@@ -133,8 +96,7 @@ async def add_company(
     name: str,
     address_id: int,
     website_link: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[Company]:
+) -> Company:
     """
     Adds a new Company record to the database.
 
@@ -143,11 +105,9 @@ async def add_company(
         name (str): The name of the company (must be unique).
         address_id (int): The ID of an existing Address to associate with the company.
         website_link (Optional[str], optional): Link to the company's website. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Company]: The newly created Company object if successful, or None if insertion fails.
+        Company: The newly created Company object.
     """
     return await add_row(
         session,
@@ -155,7 +115,6 @@ async def add_company(
         name=name,
         address_id=address_id,
         website_link=website_link,
-        commit=commit,
     )
 
 
@@ -167,8 +126,7 @@ async def add_contact(
     last_name: str,
     email: str,
     phone: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[ContactInfo]:
+) -> ContactInfo:
     """
     Adds a new ContactInfo record to the database.
 
@@ -180,11 +138,9 @@ async def add_contact(
         last_name (str): Last name of the contact.
         email (str): Email address of the contact (must be unique).
         phone (Optional[str], optional): Phone number of the contact. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[ContactInfo]: The newly created ContactInfo object if successful, or None if insertion fails.
+        ContactInfo: The newly created ContactInfo.
     """
     return await add_row(
         session,
@@ -195,7 +151,6 @@ async def add_contact(
         last=last_name,
         email=email,
         phone=phone,
-        commit=commit,
     )
 
 
@@ -203,8 +158,7 @@ async def add_employer(
     session: AsyncSession,
     account_id: int,
     company_id: int,
-    commit: bool = False,
-) -> Optional[EmployerProfile]:
+) -> EmployerProfile:
     """
     Adds a new EmployerAccount record to the database.
 
@@ -212,68 +166,57 @@ async def add_employer(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         account_id (int): The ID of the associated Account.
         company_id (int): The ID of the associated Company.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[EmployerAccount]: The newly created EmployerAccount object if successful, or None if insertion fails.
+        EmployerProfile: The newly created EmployerAccount object.
     """
     return await add_row(
         session,
         EmployerProfile,
         id=account_id,
         company_id=company_id,
-        commit=commit,
     )
 
 
 async def add_department(
     session: AsyncSession,
     name: str,
-    commit: bool = False,
-) -> Optional[Department]:
+) -> Department:
     """
     Adds a new Department record to the database.
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         name (str): The name of the department (must be unique).
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Department]: The newly created Department object if successful, or None if insertion fails.
+        Department: The newly created Department object.
     """
     return await add_row(
         session,
         Department,
         name=name,
-        commit=commit,
     )
 
 
 async def add_major(
     session: AsyncSession,
     name: str,
-    commit: bool = False,
-) -> Optional[Major]:
+) -> Major:
     """
     Adds a new Major record to the database.
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         name (str): The name of the major (must be unique).
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Major]: The newly created Major object if successful, or None if insertion fails.
+        Major: The newly created Major object.
     """
     return await add_row(
         session,
         Major,
         name=name,
-        commit=commit,
     )
 
 
@@ -288,10 +231,9 @@ async def add_student(
     start_year: int,
     transfer: bool,
     resume_link: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[StudentProfile]:
+) -> StudentProfile:
     """
-    Adds a new StudentAccount record to the database.
+    Adds a new StudentProfile record to the database.
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
@@ -304,11 +246,9 @@ async def add_student(
         start_year (int): The year the student started.
         transfer (bool): Indicates whether the student is a transfer student.
         resume_link (Optional[str], optional): Link to the student's resume. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[StudentAccount]: The newly created StudentAccount object if successful, or None if insertion fails.
+        StudentProfile: The newly created StudentProfile object
     """
     return await add_row(
         session,
@@ -322,7 +262,6 @@ async def add_student(
         start_year=start_year,
         transfer=transfer,
         resume_link=resume_link,
-        commit=commit,
     )
 
 
@@ -330,27 +269,23 @@ async def add_faculty(
     session: AsyncSession,
     account_id: int,
     department_id: int,
-    commit: bool = False,
-) -> Optional[FacultyProfile]:
+) -> FacultyProfile:
     """
-    Adds a new FacultyAccount record to the database.
+    Adds a new FacultyProfile record to the database.
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         account_id (int): The ID of the associated Account.
         department_id (int): The ID of the Department the faculty member belongs to.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[FacultyAccount]: The newly created FacultyAccount object if successful, or None if insertion fails.
+        FacultyProfile: The newly created FacultyProfile object.
     """
     return await add_row(
         session,
         FacultyProfile,
         id=account_id,
         department_id=department_id,
-        commit=commit,
     )
 
 
@@ -366,8 +301,7 @@ async def add_internship(
     total_work_hours: int,
     salary_info: Optional[str],
     status: str = "Open",
-    commit: bool = False,
-) -> Optional[Internship]:
+) -> Internship:
     """
     Adds a new Internship record to the database.
 
@@ -384,11 +318,9 @@ async def add_internship(
         salary_info (str): Information regarding internship compensation (may be empty).
         status (str, optional): The current status of the internship
             (e.g., 'Open', 'Closed', 'PendingStart', etc.). Defaults to 'Open'.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Internship]: The newly created Internship object if successful, or None if insertion fails.
+        Internship: The newly created Internship object.
     """
     return await add_row(
         session,
@@ -403,7 +335,6 @@ async def add_internship(
         total_work_hours=total_work_hours,
         salary_info=salary_info,
         status=status,
-        commit=commit,
     )
 
 
@@ -411,8 +342,7 @@ async def add_internship_major(
     session: AsyncSession,
     internship_id: int,
     major_id: int,
-    commit: bool = False,
-) -> Optional[InternshipMajor]:
+) -> InternshipMajor:
     """
     Adds a new InternshipMajor association record to the database.
 
@@ -420,43 +350,36 @@ async def add_internship_major(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         internship_id (int): The ID of the Internship to associate with a major.
         major_id (int): The ID of the Major to associate with the internship.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipMajor]: The newly created InternshipMajor association object if successful, or None if insertion fails.
+        InternshipMajor: The newly created InternshipMajor association object.
     """
     return await add_row(
         session,
         InternshipMajor,
         internship_id=internship_id,
         major_id=major_id,
-        commit=commit,
     )
 
 
 async def add_skill(
     session: AsyncSession,
     name: str,
-    commit: bool = False,
-) -> Optional[Skill]:
+) -> Skill:
     """
     Adds a new Skill record to the database.
 
     Args:
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         name (str): The name of the skill (must be unique).
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[Skill]: The newly created Skill object if successful, or None if insertion fails.
+        Skill: The newly created Skill object.
     """
     return await add_row(
         session,
         Skill,
         name=name,
-        commit=commit,
     )
 
 
@@ -464,8 +387,7 @@ async def add_internship_required_skill(
     session: AsyncSession,
     internship_id: int,
     skill_id: int,
-    commit: bool = False,
-) -> Optional[InternshipReqSkill]:
+) -> InternshipReqSkill:
     """
     Adds a new InternshipReqSkill association record to the database.
 
@@ -473,11 +395,9 @@ async def add_internship_required_skill(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         internship_id (int): The ID of the Internship requiring the skill.
         skill_id (int): The ID of the required Skill to associate with the internship.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipReqSkill]: The newly created InternshipReqSkill association object if successful, or None if insertion fails.
+        InternshipReqSkill: The newly created InternshipReqSkill association object.
     """
     return await add_row(
         session, InternshipReqSkill, internship_id=internship_id, skill_id=skill_id
@@ -488,8 +408,7 @@ async def add_internship_preferred_skill(
     session: AsyncSession,
     internship_id: int,
     skill_id: int,
-    commit: bool = False,
-) -> Optional[InternshipPrefSkill]:
+) -> InternshipPrefSkill:
     """
     Adds a new InternshipPrefSkill association record to the database.
 
@@ -497,18 +416,15 @@ async def add_internship_preferred_skill(
         session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
         internship_id (int): The ID of the Internship for which the skill is preferred.
         skill_id (int): The ID of the preferred Skill to associate with the internship.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipPrefSkill]: The newly created InternshipPrefSkill association object if successful, or None if insertion fails.
+        InternshipPrefSkill: The newly created InternshipPrefSkill association object.
     """
     return await add_row(
         session,
         InternshipPrefSkill,
         internship_id=internship_id,
         skill_id=skill_id,
-        commit=commit,
     )
 
 
@@ -521,8 +437,7 @@ async def add_application(
     resume_link: Optional[str] = None,
     cover_letter_link: Optional[str] = None,
     selected: bool = False,
-    commit: bool = False,
-) -> Optional[InternshipApplication]:
+) -> InternshipApplication:
     """
     Adds a new InternshipApplication record to the database.
 
@@ -535,11 +450,9 @@ async def add_application(
         resume_link (str, optional): Application specific resume link. Defaults to None.
         cover_letter_link (str, optional): Application specific cover letter link. Defaults to None.
         selected (bool, optional): Indicates if this application was chosen by the employer for the internship. Defaults to False.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipApplication]: The newly created InternshipApplication object if successful, or None if insertion fails.
+        InternshipApplication: The newly created InternshipApplication object.
     """
     return await add_row(
         session,
@@ -552,7 +465,6 @@ async def add_application(
         resume_link=resume_link,
         cover_letter_link=cover_letter_link,
         selected=selected,
-        commit=commit,
     )
 
 
@@ -563,8 +475,7 @@ async def add_summary(
     file_link: Optional[str] = None,
     employer_approval: bool = False,
     letter_grade: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[InternshipSummary]:
+) -> InternshipSummary:
     """
     Adds a new InternshipSummary record to the database.
 
@@ -575,85 +486,9 @@ async def add_summary(
         file_link (str, optional): Link to supporting document(s) or file(s). Defaults to None.
         employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
         letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
 
     Returns:
-        Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
-    """
-
-    application = await get_application_by_id(session, application_id)
-    if application is None:
-        print("No InternshipApplication found for provided application_id.")
-        return None
-
-    return await _add_summary(
-        session, application.id, summary, file_link, employer_approval, letter_grade, commit
-    )
-
-
-async def add_summary_from_internship(
-    session: AsyncSession,
-    internship_id: int,
-    student_id: int,
-    summary: str = "",
-    file_link: Optional[str] = None,
-    employer_approval: bool = False,
-    letter_grade: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[InternshipSummary]:
-    """
-    Adds a new InternshipSummary record to the database.
-
-    Args:
-        session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        internship_id (int): The ID of the InternshipApplication's internship.
-        student_id (int): The ID of the InternshipApplication's student.
-        summary (str, optional): The summary text describing the internship experience. Defaults to "".
-        file_link (str, optional): Link to supporting document(s) or file(s). Defaults to None.
-        employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
-        letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
-
-    Returns:
-        Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
-    """
-
-    application = await get_application_from_ids(session, internship_id, student_id)
-    if application is None:
-        print("No InternshipApplication found for provided internship_id and student_id.")
-        return None
-
-    return await _add_summary(
-        session, application.id, summary, file_link, employer_approval, letter_grade, commit
-    )
-
-
-async def _add_summary(
-    session: AsyncSession,
-    application_id: int,
-    summary: str = "",
-    file_link: Optional[str] = None,
-    employer_approval: bool = False,
-    letter_grade: Optional[str] = None,
-    commit: bool = False,
-) -> Optional[InternshipSummary]:
-    """
-    Adds a new InternshipSummary record to the database.
-
-    Args:
-        session (AsyncSession): An open SQLAlchemy asynchronous session (must be managed externally).
-        application_id (int): The ID of the InternshipApplication.
-        summary (str, optional): The summary text describing the internship experience. Defaults to "".
-        file_link (str, optional): Link to supporting document(s) or file(s). Defaults to None.
-        employer_approval (bool, optional): Indicates whether the employer has approved the summary. Defaults to False.
-        letter_grade (Optional[str], optional): The letter grade for the internship (e.g., 'A', 'B', 'C'), if assigned. Defaults to None.
-        commit (bool, optional): If True, commits the transaction after adding.
-            If False, commit must be handled externally. Defaults to False.
-
-    Returns:
-        Optional[InternshipSummary]: The newly created InternshipSummary object if successful, or None if insertion fails.
+        InternshipSummary: The newly created InternshipSummary object.
     """
     return await add_row(
         session,
@@ -663,5 +498,4 @@ async def _add_summary(
         file_link=file_link,
         employer_approval=employer_approval,
         letter_grade=letter_grade,
-        commit=commit,
     )

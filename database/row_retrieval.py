@@ -34,8 +34,7 @@ async def get_account_by_id(session: AsyncSession, id: int) -> Optional[Account]
 
 
 async def get_account_by_username(session: AsyncSession, username: str) -> Optional[Account]:
-    statement = build_select_statement(Account, username=username)
-    return await get_first_element(session, statement)
+    return await get_first_element(session, build_select_statement(Account, username=username))
 
 
 async def get_address_by_id(session: AsyncSession, id: int) -> Optional[Address]:
@@ -59,8 +58,7 @@ async def get_contact_by_id(session: AsyncSession, id: int) -> Optional[ContactI
 
 
 async def get_contact_by_email(session: AsyncSession, email: str) -> Optional[ContactInfo]:
-    statement = build_select_statement(ContactInfo, email=email)
-    return await get_first_element(session, statement)
+    return await get_first_element(session,  build_select_statement(ContactInfo, email=email))
 
 
 async def get_employer_by_id(session: AsyncSession, id: int) -> Optional[EmployerProfile]:
