@@ -235,69 +235,65 @@ repository-root/
 |   ├── start_venv.bat                  # Activates the Python virtual environment (Windows)
 |   └── start_venv.sh                   # Activates the Python virtual environment (Linux/Mac)
 |
-|   ├── backend/                      # FastAPI backend application
-|   |   ├── routers/                      # API endpoint definitions
-|   |   |   ├── internships/                  # Endpoints for Internship management
-|   |   |   |   ├── __init__.py                   # Package marker
-|   |   |   |   ├── applications.py               # Endpoints for internship applications
-|   |   |   |   ├── internships.py                # Endpoints for internship management
-|   |   |   |   └── summaries.py                  # Endpoints for internship summaries/statistics
-|   |   |   ├── profiles/                     # Endpoints for profile management
-|   |   |   |   ├── __init__.py                   # Package marker
-|   |   |   |   ├── companies.py                  # Endpoints for company profiles
-|   |   |   |   ├── employers.py                  # Endpoints for employer profiles
-|   |   |   |   ├── faculty.py                    # Endpoints for faculty profiles
-|   |   |   |   ├── relationships.py              # Endpoints for browsing profiles
-|   |   |   |   └── students.py                   # Endpoints for student profiles
+├── backend/                      # FastAPI backend application
+|   ├── routers/                      # API endpoint definitions
+|   |   ├── internships/                  # Endpoints for Internship management
 |   |   |   ├── __init__.py                   # Package marker
-|   |   |   ├── accounts.py                   # Endpoints for user account actions (change username, password, or user type)
-|   |   |   ├── auth.py                       # Endpoints for user authentication (login, registration, etc.)
-|   |   |   ├── catalog.py                    # Endpoints for course/major/department catalogs
-|   |   |   ├── models.py                     # API-level data models (Pydantic schemas for request/response validation)
-|   |   |   ├── notifications.py              # Endpoints for system/user notifications
-|   |   |   └── utils.py                      # Utility functions for routers
+|   |   |   ├── applications.py               # Endpoints for internship applications
+|   |   |   ├── internships.py                # Endpoints for internship management
+|   |   |   └── summaries.py                  # Endpoints for internship summaries/statistics
+|   |   ├── profiles/                     # Endpoints for profile management
+|   |   |   ├── __init__.py                   # Package marker
+|   |   |   ├── companies.py                  # Endpoints for company profiles
+|   |   |   ├── employers.py                  # Endpoints for employer profiles
+|   |   |   ├── faculty.py                    # Endpoints for faculty profiles
+|   |   |   ├── relationships.py              # Endpoints for browsing profiles
+|   |   |   └── students.py                   # Endpoints for student profiles
 |   |   ├── __init__.py                   # Package marker
-|   |   ├── globals.py                    # Global backend definitions/constants
-|   |   └── main.py                       # FastAPI app entrypoint
-|   |
-|   ├── database/                     # Database management and logic
-|   |   ├── __init__.py                   # Package marker
-|   |   ├── internship_insertion.py       # Functions for inserting internship-related records
-|   |   ├── internship_retrieval.py       # Functions for retrieving internship-related records
-|   |   ├── manage.py                     # Asynchronous singleton DB engine/session manager & schema control
-|   |   ├── profile_insertion.py          # Functions for inserting profile records
-|   |   ├── profile_updating.py           # Functions to update profile records
-|   |   ├── record_deletion.py            # Generic deletion logic for DB records
-|   |   ├── record_get_or_create.py       # Get-or-create logic for DB records
-|   |   ├── record_insertion.py           # Generic insertion logic for DB records
-|   |   ├── record_retrieval.py           # Generic retrieval logic for DB records
-|   |   ├── record_updating.py            # Generic updating logic for DB records
-|   |   ├── schema.py                     # Database table and ORM schema definitions
-|   |   └── utils.py                      # Core DB utility functions
-|   |
-|   ├── frontend/                     # React frontend
-|   |   ├── .react_router/...             # React router configuration files
-|   |   ├── app/                          # Main React App files/components
-|   |   |   ├── routes/...                    # Route-specific React components
-|   |   |   ├── components/...                # Shared React components (ex: welcome/)
-|   |   |   ├── app.css                       # App-specific styles
-|   |   |   ├── root.tsx                      # Main React root app component
-|   |   |   └── routes.ts                     # Route configuration
-|   |   ├── node_modules/...              # Installed JavaScript dependencies
-|   |   ├── public/...                    # Static assets/public files for the React app
-|   |   ├── .dockerignore                 # Docker ignore rules for frontend
-|   |   ├── .gitignore                    # Git ignore rules for frontend code
-|   |   ├── Dockerfile                    # Docker build instructions for frontend
-|   |   ├── package-lock.json             # NPM lock file for JS dependencies
-|   |   ├── package.json                  # NPM config for frontend
-|   |   ├── react-router.config.ts        # React Router configuration
-|   |   ├── README.md                     # Frontend README/documentation
-|   |   ├── tsconfig.json                 # TypeScript config
-|   |   └── vite.config.ts                # Vite build tool config
-|   |
-|   ├── __init__.py               # Package marker
-|   ├── seed_data.json            # DB seed data
-|   └── utils_semesters.json      # Semester util functions
+|   |   ├── accounts.py                   # Endpoints for user account actions (change username, password, or user type)
+|   |   ├── auth.py                       # Endpoints for user authentication (login, registration, etc.)
+|   |   ├── catalog.py                    # Endpoints for course/major/department catalogs
+|   |   ├── models.py                     # API-level data models (Pydantic schemas for request/response validation)
+|   |   ├── notifications.py              # Endpoints for system/user notifications
+|   |   └── utils.py                      # Utility functions for routers
+|   ├── __init__.py                   # Package marker
+|   ├── globals.py                    # Global backend definitions/constants
+|   └── main.py                       # FastAPI app entrypoint
+|
+├── database/                     # Database management and logic
+|   ├── __init__.py                   # Package marker
+|   ├── internship_insertion.py       # Functions for inserting internship-related records
+|   ├── internship_retrieval.py       # Functions for retrieving internship-related records
+|   ├── manage.py                     # Asynchronous singleton DB engine/session manager & schema control
+|   ├── profile_insertion.py          # Functions for inserting profile records
+|   ├── profile_updating.py           # Functions to update profile records
+|   ├── record_deletion.py            # Generic deletion logic for DB records
+|   ├── record_get_or_create.py       # Get-or-create logic for DB records
+|   ├── record_insertion.py           # Generic insertion logic for DB records
+|   ├── record_retrieval.py           # Generic retrieval logic for DB records
+|   ├── record_updating.py            # Generic updating logic for DB records
+|   ├── schema.py                     # Database table and ORM schema definitions
+|   └── utils.py                      # Core DB utility functions
+|
+├── frontend/                     # React frontend
+|   ├── .react_router/...             # React router configuration files
+|   ├── app/                          # Main React App files/components
+|   |   ├── routes/...                    # Route-specific React components
+|   |   ├── components/...                # Shared React components (ex: welcome/)
+|   |   ├── app.css                       # App-specific styles
+|   |   ├── root.tsx                      # Main React root app component
+|   |   └── routes.ts                     # Route configuration
+|   ├── node_modules/...              # Installed JavaScript dependencies
+|   ├── public/...                    # Static assets/public files for the React app
+|   ├── .dockerignore                 # Docker ignore rules for frontend
+|   ├── .gitignore                    # Git ignore rules for frontend code
+|   ├── Dockerfile                    # Docker build instructions for frontend
+|   ├── package-lock.json             # NPM lock file for JS dependencies
+|   ├── package.json                  # NPM config for frontend
+|   ├── react-router.config.ts        # React Router configuration
+|   ├── README.md                     # Frontend README/documentation
+|   ├── tsconfig.json                 # TypeScript config
+|   └── vite.config.ts                # Vite build tool config
 |
 ├── venv/...                  # Python virtual environment
 ├── .gitattributes            # Git attributes configuration
@@ -305,7 +301,9 @@ repository-root/
 ├── config.ini                # Project-wide configuration file
 ├── docker-compose.yml        # Docker compose file for PostgreSQL and backend
 ├── README.md                 # Top-level project documentation
-└── requirements.txt          # Python dependencies for backend
+├── requirements.txt          # Python dependencies for backend
+├── seed_data.json            # DB seed data
+└── utils_semesters.json      # Semester util functions
 ~~~
 
 ---
