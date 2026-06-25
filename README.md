@@ -48,7 +48,7 @@ A collaborative project for the CIS 425 course designed to streamline the connec
     pip install -r min_requirements.txt
 
 # 3. Set up Node.js frontend dependencies
-    cd src/frontend
+    cd frontend
     npm install
 
 # 4. Make shell scripts executable (Linux/macOS only)
@@ -85,7 +85,7 @@ cd CECS-Co-op-Portal
 Recommended: Use Python 3.12 for best compatibility.
 
 - **Windows:**
-  - Open **Command Prompt** in your repository root folder (**the folder containing `src/` and `README.md`**).
+  - Open **Command Prompt** in your repository root folder (**the folder containing `README.md`**).
   - Create the virtual environment:
     ~~~bat
     python -m venv venv
@@ -94,13 +94,13 @@ Recommended: Use Python 3.12 for best compatibility.
     - Use a program such as Notepad++, VS Code, or Sublime Text (**Notepad may corrupt line endings**).
     - In `venv\Scripts\activate.bat`, add the following at the end of the file (**before** `:END`):
       ~~~bat
-      rem Enforces Python to see the src folder and run code as a module
-      set PYTHONPATH=%VIRTUAL_ENV%\..\src;%PYTHONPATH%
+      rem Adds the project root folder to Python's module search path to import modules/packages without installing them into the venv
+      set PYTHONPATH=%VIRTUAL_ENV%\..;%PYTHONPATH%
       ~~~
     - In `venv\Scripts\Activate.ps1`, add the following at the end of the file (**before** the signature block, if any):
       ~~~powershell
-      # Enforces Python to see the src folder and run code as a module
-      $env:PYTHONPATH = "$env:VIRTUAL_ENV\..\src;$env:PYTHONPATH"
+      # Adds the project root folder to Python's module search path to import modules/packages without installing them into the venv
+      $env:PYTHONPATH = "$env:VIRTUAL_ENV\..;$env:PYTHONPATH"
       ~~~
     - Save both files and return to the project root.
   - Activate the virtual environment and install project dependencies:
@@ -110,7 +110,7 @@ Recommended: Use Python 3.12 for best compatibility.
     ~~~
 
 - **Linux/macOS:**
-  - Open a **Terminal** in your repository root folder (**the folder containing `src/` and `README.md`**).
+  - Open a **Terminal** in your repository root folder (**the folder containing `README.md`**).
   - Create the virtual environment:
     ~~~sh
     python3 -m venv venv
@@ -124,7 +124,7 @@ Recommended: Use Python 3.12 for best compatibility.
     - Edit `venv/bin/activate` at the end of the file:
       ~~~sh
       # type i to enter insert mode
-      export PYTHONPATH="$VIRTUAL_ENV/../src:$PYTHONPATH"
+      export PYTHONPATH="$VIRTUAL_ENV/..:$PYTHONPATH"
       # press Esc to exit insert mode
       # type :wq to save text edits
       ~~~
@@ -145,7 +145,7 @@ Recommended: Use Python 3.12 for best compatibility.
   - [Docker Desktop for Windows/macOS](https://docs.docker.com/get-docker/)  
   - [Docker Engine for Linux](https://docs.docker.com/engine/install/)
 
-> Ensure Docker Desktop/Engine is running before starting backend.
+> Ensure Docker Desktop/Engine is running before starting the backend.
 
 ### 4. Node.js & Frontend Setup
 
@@ -154,14 +154,14 @@ Recommended: Use Python 3.12 for best compatibility.
     > Use the standalone installer, not Docker or Visual Studio. Select all default components, and optionally enable "Tools for Native Modules."
   - Run the following in **Command Prompt** from your repository root:
     ~~~bat
-    cd src\frontend
+    cd frontend
     npm install
     ~~~
 - **Linux/macOS:**
   - Make sure Node.js is installed (via your package manager or [nodejs.org](https://nodejs.org/en/download)).
   - Run the following in a **Terminal** from your repository root:
     ~~~sh
-    cd src/frontend
+    cd frontend
     npm install
     ~~~
 
@@ -199,7 +199,7 @@ Database = db
     # Start the Python venv
     source venv/bin/activate    # (Linux/macOS) OR venv\Scripts\activate.bat (Windows)
     # Start the FastAPI Backend using uvicorn
-    uvicorn src.backend.main:app --reload --port 8000   # --no-use-colors (Windows)
+    uvicorn backend.main:app --reload --port 8000   # --no-use-colors (Windows)
     ~~~
 
 ### 3. Frontend
@@ -211,7 +211,7 @@ Database = db
   - Run `./scripts/start_frontend.sh`
 - The script executes the following:
     ~~~sh
-    cd src/frontend
+    cd frontend
     npm run dev
     ~~~
 
@@ -235,7 +235,6 @@ repository-root/
 |   ├── start_venv.bat                  # Activates the Python virtual environment (Windows)
 |   └── start_venv.sh                   # Activates the Python virtual environment (Linux/Mac)
 |
-├── src/                          # Source code and main project files
 |   ├── backend/                      # FastAPI backend application
 |   |   ├── routers/                      # API endpoint definitions
 |   |   |   ├── internships/                  # Endpoints for Internship management
@@ -314,7 +313,7 @@ repository-root/
 ## Other Notes
 
 - Only re-run `pip install -r requirements.txt` if `requirements.txt` changes.
-- Only re-run `npm install` if `package.json` or `package-lock.json` in `src/frontend` changes.
+- Only re-run `npm install` if `package.json` or `package-lock.json` in `frontend` changes.
 - Backend and frontend both support live-reload during development.
 - For development, passwords are visible in config.ini/docker-compose.yml for simplicity; for production, these should use Docker secrets/env vars.
 
@@ -325,7 +324,7 @@ repository-root/
 - **Permission errors for `.sh` scripts:**
   - Run `chmod +x start_backend.sh start_frontend.sh` in the repository root.
 - **Frontend/backend won't start:**
-  - Confirm directory activations (repository root or `src/frontend`)
+  - Confirm directory activations (repository root or `frontend`)
   - Ensure the Python virtual environment is activated (Not necessary to run the frontend)
   - Node.js and npm are installed and in your PATH (`node -v`, `npm -v`)
 - **Unable to get (docker) image 'postgres:15'**
